@@ -6,7 +6,9 @@
 
 **Architecture:** Next.js (App Router, TypeScript) talking directly to Supabase (Postgres + Auth + Realtime) via `@supabase/ssr` on the server and `@supabase/supabase-js` on the client. All tenant isolation and role-based access is enforced at the database layer through Postgres Row Level Security (RLS) — the app never relies on its own query filtering as the security boundary. Sensitive public-facing operations (booking, client lookup) go through `SECURITY DEFINER` RPC functions rather than direct table grants to the `anon` role, so anonymous clients never get broad table access.
 
-**Tech Stack:** Next.js >=15 (App Router), React >=19, TypeScript >=5.4, Tailwind CSS ^3.4, shadcn/ui, Supabase (Postgres, Auth, Realtime, CLI), pgTAP (DB-level tests via `supabase test db`), Vitest (pure TypeScript unit tests).
+**Tech Stack:** Next.js >=15 (App Router), React >=19, TypeScript >=5.4, Tailwind CSS v4 (CSS-first theming via `@theme inline` in `globals.css` — no `tailwind.config.ts`/`postcss.config.js`), shadcn/ui on Base UI primitives (`components.json` preset `base-nova`, not Radix UI), Supabase (Postgres, Auth, Realtime, CLI), pgTAP (DB-level tests via `supabase test db`), Vitest (pure TypeScript unit tests).
+
+**Amendment (post Task 1 review, human-approved):** the plan originally specified Tailwind ^3.4 and implicitly assumed Radix-based shadcn/ui, reflecting tool versions current when the plan was written. `create-next-app@latest`/`shadcn@latest` now default to Tailwind v4 and a Base UI preset; the human partner chose to accept current tooling defaults rather than pin back to older versions. Every later task's UI work (new shadcn components, custom theming) must target Tailwind v4's CSS-first conventions and Base UI's `useRender`/`mergeProps` component API, not Radix's `asChild`/`Slot` pattern.
 
 ## Global Constraints
 

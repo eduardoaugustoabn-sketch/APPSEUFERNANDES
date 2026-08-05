@@ -19,12 +19,14 @@
 - Single central stock per barbearia — no per-barbeiro consigned stock in this phase (spec: Decisões de escopo).
 - Commission is a flat percentage per category (produto/serviço), defined on reusable `planos_carreira` linked to each `membro` — not the full revenue-tier plan (that is Phase 2) (spec: Decisões de escopo, Modelo de dados).
 - Every lançamento (`atendimentos`, `vendas_produtos`) requires a `cliente_id` — no anonymous/unlinked sales (spec: Modelo de dados).
-- Price and commission percentage are frozen ("snapshot") on the lançamento row at insert time; later changes to `planos_carreira`, `servicos.preco`, or `produtos.preco_venda` never retroactively alter past lançamentos (spec: Modelo de dados).
-- `clientes.telefone` is unique per `barbearia_id`, used to recognize returning clients (spec: Modelo de dados, Tratamento de erros).
+- Price and commission percentage are frozen ("snapshot") on the lançamento row at insert time. This freeze is enforced server-side by the `BEFORE INSERT` triggers on `atendimentos`/`vendas_produtos` (Task 12), which overwrite any client-supplied `preco`/`preco_unitario` with the current `servicos.preco`/`produtos.preco_venda` looked up by id — the client-submitted value is never trusted, only used for optimistic UI display before the insert. Later changes to `planos_carreira`, `servicos.preco`, or `produtos.preco_venda` never retroactively alter past lançamentos (spec: Modelo de dados).
+- `clientes.telefone` is unique per `barbearia_id`, used to recognize returning clients (spec: Modelo de dados, Tratamento de erros). Phone numbers are normalized to digits-only (`regexp_replace(telefone, '\D', '', 'g')`) inside `criar_ou_obter_cliente`/`reconhecer_cliente` before comparison/storage, so differently-formatted input for the same number (e.g. `(11) 98888-7777` vs `11988887777`) still recognizes the same client.
 - No offline mode in this phase — lançamento and booking require connectivity (spec: Tratamento de erros).
 - Automated tests focus on the two highest-risk areas per spec: multi-tenant RLS isolation and booking concurrency (no overbooking), plus unit tests for commission/availability/ociosidade calculations. Screens are verified manually in the browser, not via automated UI tests (spec: Testes).
 - Barbeiro role: can only `SELECT`/`INSERT` its own rows in `atendimentos`, `vendas_produtos`, `prospeccoes`, `bloqueios_agenda`; cannot `UPDATE`/`DELETE` lançamentos once created (only admin can) (spec: Modelo de dados, Perfis de acesso).
 - Migration filenames use plain sequential numbers (`0001_...`, `0005b_...`) rather than the Supabase CLI's default timestamp prefixes, purely so this plan's task order is easy to follow. The `b`-suffixed files (`0005b`, `0006b`, `0007b`) are separate migrations that must sort immediately after their non-suffixed counterpart — `_` (0x5F) sorts before any lowercase letter, so `0005_agenda.sql` < `0005b_agenda_rpcs.sql` < `0006_lancamentos.sql` holds lexicographically, which is how `supabase db reset` orders and applies them.
+- Admin and barbeiro areas live under real URL segments (`/admin`, `/painel`) rather than bare route groups, so they never collide with each other or with a public booking slug — see Task 3. Because of this, `admin`, `painel`, and `login` are reserved slugs: the super-admin must never create a barbearia with one of these as its `slug`, since that tenant's public booking page would be permanently shadowed by the matching static route.
+- The no-overbooking guarantee on `agendamentos` (Task 8) is a GiST exclusion constraint over the appointment's actual time range, not a same-start-time unique index — two appointments of different durations that merely overlap (not share an identical `hora_inicio`) must also be rejected.
 
 ---
 
@@ -52,9 +54,10 @@ supabase/
     0005_prospeccao_isolation.test.sql
 src/
   app/
+    page.tsx                              -- role-based redirect (admin -> /admin, barbeiro -> /painel)
     login/page.tsx
     [barbeariaSlug]/page.tsx              -- public booking page
-    (admin)/
+    admin/
       layout.tsx
       page.tsx                            -- admin overview dashboard
       barbeiros/page.tsx
@@ -62,7 +65,7 @@ src/
       produtos/page.tsx
       planos-carreira/page.tsx
       clientes/[id]/page.tsx              -- ficha do cliente (admin view)
-    (barbeiro)/
+    painel/
       layout.tsx
       page.tsx                            -- barbeiro dashboard
       lancamentos/page.tsx
@@ -331,6 +334,7 @@ git commit -m "feat: add barbearias/membros schema with tenant-isolating RLS"
 - Create: `src/lib/supabase/client.ts`
 - Create: `src/app/login/page.tsx`
 - Create: `src/middleware.ts`
+- Modify: `src/app/page.tsx` (replace the create-next-app default with a role-based redirect)
 
 **Interfaces:**
 - Consumes: Supabase project URL/anon key from `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
@@ -435,7 +439,9 @@ export default function LoginPage() {
 }
 ```
 
-- [ ] **Step 4: Write middleware to redirect unauthenticated users**
+- [ ] **Step 4: Write middleware that protects only the admin/painel prefixes**
+
+`admin/` and `painel/` are real URL segments (not route groups), so the middleware only needs to gate those two prefixes — it does not need to guess whether an arbitrary single-segment path is a public booking slug or a private page, which removes the ambiguity that a route-group-based scheme would have (see Task 5/Task 11 note on why `admin`/`painel`/`login` are reserved slugs).
 
 `src/middleware.ts`:
 
@@ -443,7 +449,13 @@ export default function LoginPage() {
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+const PROTECTED_PREFIXES = ['/admin', '/painel']
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (!isProtected) return NextResponse.next()
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -464,17 +476,8 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const isPublicRoute =
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname.startsWith('/_next') ||
-    /^\/[^/]+$/.test(request.nextUrl.pathname) === false ? false : true
-
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    // Allow public booking pages (single-segment slugs) and static assets through.
-    const isSlugRoute = /^\/[a-z0-9-]+\/?$/.test(request.nextUrl.pathname)
-    if (!isSlugRoute) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return response
@@ -485,18 +488,40 @@ export const config = {
 }
 ```
 
-- [ ] **Step 5: Manually verify**
+Role-specific access (admin-only vs. barbeiro-only) is still enforced by the `admin/layout.tsx` (Task 5) and `painel/layout.tsx` (Task 11) server components, which redirect based on `membros.papel` — the middleware here only guarantees a `user` session exists before those layouts run.
+
+- [ ] **Step 5: Replace the default root page with a role-based redirect**
+
+`src/app/page.tsx`:
+
+```tsx
+import { redirect } from 'next/navigation'
+import { getServerSupabaseClient } from '@/lib/supabase/server'
+
+export default async function HomePage() {
+  const supabase = await getServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membro } = await supabase.from('membros').select('papel').eq('user_id', user.id).single()
+  redirect(membro?.papel === 'admin' ? '/admin' : '/painel')
+}
+```
+
+This is why login's `router.push('/')` (Step 3 above) works correctly regardless of role — `/` always resolves onward to the right dashboard.
+
+- [ ] **Step 6: Manually verify**
 
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000/login`, confirm the form renders. Create a test user via `npx supabase status` Studio URL, sign in, confirm redirect to `/`.
+Visit `http://localhost:3000/login`, confirm the form renders. Create a test user via `npx supabase status` Studio URL, sign in, confirm redirect to `/` and then onward to `/admin` or `/painel` depending on the membro's `papel`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/lib/supabase src/app/login src/middleware.ts .env.local.example
+git add src/lib/supabase src/app/login src/app/page.tsx src/middleware.ts .env.local.example
 git commit -m "feat: add Supabase auth client helpers, login page, and route middleware"
 ```
 
@@ -640,16 +665,16 @@ git commit -m "feat: add servicos/produtos schema with public catalog read polic
 ### Task 5: Admin CRUD UI for serviços and produtos
 
 **Files:**
-- Create: `src/app/(admin)/layout.tsx`
-- Create: `src/app/(admin)/servicos/page.tsx`
-- Create: `src/app/(admin)/produtos/page.tsx`
+- Create: `src/app/admin/layout.tsx`
+- Create: `src/app/admin/servicos/page.tsx`
+- Create: `src/app/admin/produtos/page.tsx`
 
 **Interfaces:**
 - Consumes: `getServerSupabaseClient()` (Task 3), `servicos`/`produtos` tables (Task 4).
 
 - [ ] **Step 1: Write the admin layout with role guard**
 
-`src/app/(admin)/layout.tsx`:
+`src/app/admin/layout.tsx`:
 
 ```tsx
 import { redirect } from 'next/navigation'
@@ -674,7 +699,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
 - [ ] **Step 2: Write the serviços CRUD page**
 
-`src/app/(admin)/servicos/page.tsx`:
+`src/app/admin/servicos/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -725,7 +750,7 @@ export default async function ServicosPage() {
 
 - [ ] **Step 3: Write the produtos CRUD page (same pattern)**
 
-`src/app/(admin)/produtos/page.tsx`:
+`src/app/admin/produtos/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -791,7 +816,7 @@ Log in as an admin membro, visit `/servicos` and `/produtos`, add one of each, c
 - [ ] **Step 5: Commit**
 
 ```bash
-git add "src/app/(admin)"
+git add "src/app/admin"
 git commit -m "feat: add admin CRUD pages for servicos and produtos"
 ```
 
@@ -803,8 +828,8 @@ git commit -m "feat: add admin CRUD pages for servicos and produtos"
 
 **Files:**
 - Create: `supabase/migrations/0003_planos_carreira.sql`
-- Create: `src/app/(admin)/planos-carreira/page.tsx`
-- Create: `src/app/(admin)/barbeiros/page.tsx` (barbeiro list with plan/goal assignment)
+- Create: `src/app/admin/planos-carreira/page.tsx`
+- Create: `src/app/admin/barbeiros/page.tsx` (barbeiro list with plan/goal assignment)
 
 **Interfaces:**
 - Produces: `planos_carreira` table; `membros.plano_carreira_id`, `membros.meta_prospeccao_dia` columns.
@@ -843,7 +868,7 @@ npx supabase db reset
 
 - [ ] **Step 3: Write the admin planos de carreira page**
 
-`src/app/(admin)/planos-carreira/page.tsx`:
+`src/app/admin/planos-carreira/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -894,7 +919,7 @@ export default async function PlanosCarreiraPage() {
 
 - [ ] **Step 4: Write the barbeiros list page with plan assignment**
 
-`src/app/(admin)/barbeiros/page.tsx`:
+`src/app/admin/barbeiros/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -951,7 +976,7 @@ Create two planos de carreira, create a barbeiro membro row (via Supabase Studio
 - [ ] **Step 6: Commit**
 
 ```bash
-git add supabase/migrations/0003_planos_carreira.sql "src/app/(admin)/planos-carreira" "src/app/(admin)/barbeiros"
+git add supabase/migrations/0003_planos_carreira.sql "src/app/admin/planos-carreira" "src/app/admin/barbeiros"
 git commit -m "feat: add planos de carreira and barbeiro plan/goal assignment"
 ```
 
@@ -997,13 +1022,18 @@ create or replace function public.criar_ou_obter_cliente(
 language plpgsql security definer set search_path = public as $$
 declare
   v_cliente_id uuid;
+  v_telefone text;
 begin
   if not exists (select 1 from barbearias where id = p_barbearia_id) then
     raise exception 'Barbearia inválida';
   end if;
 
+  -- Normalize to digits-only so differently-formatted input for the same
+  -- number (e.g. "(11) 98888-7777" vs "11988887777") still matches.
+  v_telefone := regexp_replace(p_telefone, '\D', '', 'g');
+
   insert into clientes (barbearia_id, nome, telefone)
-  values (p_barbearia_id, p_nome, p_telefone)
+  values (p_barbearia_id, p_nome, v_telefone)
   on conflict (barbearia_id, telefone)
   do update set nome = excluded.nome
   returning id into v_cliente_id;
@@ -1013,23 +1043,9 @@ end;
 $$;
 
 grant execute on function public.criar_ou_obter_cliente(uuid, text, text) to anon, authenticated;
-
-create or replace function public.reconhecer_cliente(
-  p_barbearia_id uuid, p_telefone text
-) returns table(cliente_id uuid, nome text, total_cortes int)
-language sql security definer set search_path = public as $$
-  select
-    c.id,
-    c.nome,
-    (select count(*)::int from atendimentos a where a.cliente_id = c.id) as total_cortes
-  from clientes c
-  where c.barbearia_id = p_barbearia_id and c.telefone = p_telefone;
-$$;
-
-grant execute on function public.reconhecer_cliente(uuid, text) to anon, authenticated;
 ```
 
-Note: `reconhecer_cliente` references `atendimentos`, which does not exist until Task 12's migration. Order this migration file *after* `0006_lancamentos.sql` is impossible without breaking the numbering already used elsewhere in this plan — to avoid a forward reference, create the `atendimentos`/`vendas_produtos` tables first. **Apply Task 12's migration content before this function is created**, or, simpler for a linear migration history: this function is created here but only queries a table that will exist by the time `supabase db reset` re-runs all migrations in order after Task 12 is done. Since `db reset` always replays every migration from scratch in order, this file must physically load after `atendimentos` exists — so move this `reconhecer_cliente` function definition into `supabase/migrations/0006_lancamentos.sql` (Task 12) instead, and leave only `criar_ou_obter_cliente` and the `clientes` table here.
+Note: `reconhecer_cliente` (the recognition RPC used by the booking/lançamento UIs) is not defined here — it references `atendimentos`, which does not exist until Task 12's migration. Since `supabase db reset` always replays every migration from scratch in order, that function must physically live in a migration file that loads after `atendimentos` exists. Its definition is in `supabase/migrations/0006_lancamentos.sql` (Task 12) instead.
 
 - [ ] **Step 2: Apply migration**
 
@@ -1043,7 +1059,7 @@ npx supabase db reset
 
 ```sql
 begin;
-select plan(2);
+select plan(3);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -1064,6 +1080,16 @@ select is(
 
 select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva Jr', '11988887777');
 
+-- A differently-formatted phone for the same number must normalize to the
+-- same digits and recognize the existing client instead of creating a duplicate.
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva Jr', '(11) 98888-7777');
+
+select is(
+  (select count(*)::int from clientes where telefone = '11988887777'),
+  1,
+  'a formatted phone "(11) 98888-7777" normalizes to the same digits and does not create a duplicate'
+);
+
 select * from finish();
 rollback;
 ```
@@ -1074,7 +1100,7 @@ rollback;
 npx supabase test db
 ```
 
-Expected: both assertions pass, and a second call with the same phone does not raise a unique-violation (confirms the `on conflict` upsert works).
+Expected: all 3 assertions pass — the second and third calls with the same underlying phone number (unformatted, then formatted) do not raise a unique-violation and do not duplicate the row (confirms both the `on conflict` upsert and the phone normalization work).
 
 - [ ] **Step 5: Commit**
 
@@ -1093,7 +1119,7 @@ git commit -m "feat: add clientes schema and criar_ou_obter_cliente RPC"
 - Create: `supabase/migrations/0005_agenda.sql`
 
 **Interfaces:**
-- Produces: `horarios_trabalho`, `bloqueios_agenda`, `agendamentos` tables. Partial unique index `uq_agendamento_horario_ativo` — the DB-level no-overbooking guarantee later tasks rely on.
+- Produces: `horarios_trabalho`, `bloqueios_agenda`, `agendamentos` tables. GiST exclusion constraint `agendamento_sem_sobreposicao` — the DB-level no-overbooking guarantee later tasks rely on. Requires the `btree_gist` extension.
 
 - [ ] **Step 1: Write the migration**
 
@@ -1133,11 +1159,21 @@ create table agendamentos (
   criado_em timestamptz not null default now()
 );
 
--- The no-overbooking guarantee: only one non-cancelled appointment per
--- barbeiro/date/start-time can exist. A cancelled appointment frees the slot.
-create unique index uq_agendamento_horario_ativo
-  on agendamentos (membro_id, data, hora_inicio)
-  where status <> 'cancelado';
+-- The no-overbooking guarantee: no two non-cancelled appointments for the same
+-- membro can occupy overlapping time ranges, regardless of duration — a plain
+-- unique index on (membro_id, data, hora_inicio) would only catch collisions
+-- that share the exact same start time, letting different-duration bookings
+-- overlap (e.g. 09:00-09:40 and 09:20-10:20). A cancelled appointment frees
+-- the slot. btree_gist is required so the uuid `=` term can be combined with
+-- the range `&&` term inside a single GiST exclusion constraint.
+create extension if not exists btree_gist;
+
+alter table agendamentos add constraint agendamento_sem_sobreposicao
+  exclude using gist (
+    membro_id with =,
+    tsrange((data + hora_inicio)::timestamp, (data + hora_fim)::timestamp) with &&
+  )
+  where (status <> 'cancelado');
 
 alter table horarios_trabalho enable row level security;
 alter table bloqueios_agenda enable row level security;
@@ -1183,7 +1219,7 @@ npx supabase db reset
 
 - [ ] **Step 3: Manually verify constraint behavior**
 
-In Supabase Studio SQL editor, insert two `agendamentos` rows with the same `membro_id`, `data`, `hora_inicio` and `status = 'confirmado'`. Expected: second insert fails with `duplicate key value violates unique constraint "uq_agendamento_horario_ativo"`. Cancel the first (`status = 'cancelado'`), retry the second insert — expected: succeeds.
+In Supabase Studio SQL editor, insert two `agendamentos` rows with the same `membro_id`, `data`, `hora_inicio` and `status = 'confirmado'`. Expected: second insert fails with `conflicting key value violates exclusion constraint "agendamento_sem_sobreposicao"`. Cancel the first (`status = 'cancelado'`), retry the second insert — expected: succeeds. Then insert a third row for the same `membro_id`/`data` with a `hora_inicio` that merely overlaps the first (different start time, ranges intersect) — expected: also rejected by the same exclusion constraint.
 
 - [ ] **Step 4: Commit**
 
@@ -1200,17 +1236,19 @@ git commit -m "feat: add agenda schema with DB-enforced no-overbooking constrain
 
 **Interfaces:**
 - Produces:
-  - `public.horarios_disponiveis(p_membro_id uuid, p_servico_id uuid, p_data date) returns table(hora_inicio time, hora_fim time)`
+  - `public.horarios_disponiveis(p_barbearia_id uuid, p_membro_id uuid, p_servico_id uuid, p_data date) returns table(hora_inicio time, hora_fim time)`
   - `public.criar_agendamento_publico(p_barbearia_id uuid, p_membro_id uuid, p_servico_id uuid, p_data date, p_hora_inicio time, p_nome_cliente text, p_telefone_cliente text) returns uuid`
 - Consumes: `criar_ou_obter_cliente` (Task 7).
 
 - [ ] **Step 1: Write the migration**
 
+Both RPCs take `p_barbearia_id` and validate `p_membro_id` belongs to it (and is an active barbeiro) before doing anything else — otherwise an anonymous caller could pass a `membro_id` from a different tenant (reachable since `membros.id` is a bare uuid, guessable/enumerable) and either read another barbearia's calendar or write a booking into it, e.g. to spam-block a competitor's barbeiro's slots.
+
 `supabase/migrations/0005b_agenda_rpcs.sql`:
 
 ```sql
 create or replace function public.horarios_disponiveis(
-  p_membro_id uuid, p_servico_id uuid, p_data date
+  p_barbearia_id uuid, p_membro_id uuid, p_servico_id uuid, p_data date
 ) returns table(hora_inicio time, hora_fim time)
 language plpgsql security definer set search_path = public as $$
 declare
@@ -1219,7 +1257,18 @@ declare
   v_slot time;
   v_expediente record;
 begin
-  select duracao_minutos into v_duracao from servicos where id = p_servico_id;
+  if not exists (
+    select 1 from membros m
+    where m.id = p_membro_id and m.barbearia_id = p_barbearia_id and m.papel = 'barbeiro' and m.ativo
+  ) then
+    raise exception 'Barbeiro inválido para esta barbearia';
+  end if;
+
+  select duracao_minutos into v_duracao from servicos where id = p_servico_id and barbearia_id = p_barbearia_id;
+  if v_duracao is null then
+    raise exception 'Serviço inválido para esta barbearia';
+  end if;
+
   v_dia_semana := extract(dow from p_data);
 
   for v_expediente in
@@ -1248,7 +1297,7 @@ begin
 end;
 $$;
 
-grant execute on function public.horarios_disponiveis(uuid, uuid, date) to anon, authenticated;
+grant execute on function public.horarios_disponiveis(uuid, uuid, uuid, date) to anon, authenticated;
 
 create or replace function public.criar_agendamento_publico(
   p_barbearia_id uuid, p_membro_id uuid, p_servico_id uuid,
@@ -1260,6 +1309,13 @@ declare
   v_cliente_id uuid;
   v_agendamento_id uuid;
 begin
+  if not exists (
+    select 1 from membros m
+    where m.id = p_membro_id and m.barbearia_id = p_barbearia_id and m.papel = 'barbeiro' and m.ativo
+  ) then
+    raise exception 'Barbeiro inválido para esta barbearia';
+  end if;
+
   select duracao_minutos into v_duracao from servicos where id = p_servico_id and barbearia_id = p_barbearia_id;
   if v_duracao is null then
     raise exception 'Serviço inválido para esta barbearia';
@@ -1278,7 +1334,9 @@ begin
       p_hora_inicio + (v_duracao || ' minutes')::interval, 'confirmado', 'publico'
     )
     returning id into v_agendamento_id;
-  exception when unique_violation then
+  exception when exclusion_violation then
+    -- Raised by the agendamento_sem_sobreposicao GiST constraint (Task 8) —
+    -- covers both an identical start time and a merely-overlapping range.
     raise exception 'Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.';
   end;
 
@@ -1301,14 +1359,17 @@ npx supabase db reset
 
 ```sql
 begin;
-select plan(3);
+select plan(5);
 
-insert into barbearias (id, nome, slug) values ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
+insert into barbearias (id, nome, slug) values
+  ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a'),
+  ('22222222-2222-2222-2222-222222222222', 'Barbearia B', 'barbearia-b');
 insert into auth.users (id, email) values ('aaaaaaaa-0000-0000-0000-000000000001', 'joao@example.com');
 insert into membros (id, barbearia_id, user_id, papel, nome) values
   ('m0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'barbeiro', 'João');
 insert into servicos (id, barbearia_id, nome, duracao_minutos, preco) values
-  ('s0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Corte', 40, 60);
+  ('s0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Corte', 40, 60),
+  ('s0000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Corte + Barba', 60, 90);
 insert into horarios_trabalho (membro_id, dia_semana, hora_inicio, hora_fim) values
   ('m0000000-0000-0000-0000-000000000001', extract(dow from current_date + 1)::int, '09:00', '18:00');
 
@@ -1327,10 +1388,26 @@ select throws_ok(
   'second booking for the same slot is rejected'
 );
 
+-- A booking that starts at a different time but overlaps the first (09:00-09:40)
+-- must also be rejected — proves the guarantee is a real interval overlap check,
+-- not just a same-start-time unique index.
+select throws_ok(
+  $$ select criar_agendamento_publico('11111111-1111-1111-1111-111111111111', 'm0000000-0000-0000-0000-000000000001', 's0000000-0000-0000-0000-000000000002', current_date + 1, '09:20', 'Cliente 3', '11900000003') $$,
+  'Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.',
+  'an overlapping booking with a different start time and duration is also rejected'
+);
+
 select is(
   (select count(*)::int from agendamentos where membro_id = 'm0000000-0000-0000-0000-000000000001' and status <> 'cancelado'),
   1,
   'only one confirmed appointment exists for that slot'
+);
+
+-- Cross-tenant membro_id: passing Barbearia B's id with João's (Barbearia A) membro_id must be rejected.
+select throws_ok(
+  $$ select criar_agendamento_publico('22222222-2222-2222-2222-222222222222', 'm0000000-0000-0000-0000-000000000001', 's0000000-0000-0000-0000-000000000001', current_date + 1, '11:00', 'Cliente 4', '11900000004') $$,
+  'Barbeiro inválido para esta barbearia',
+  'a membro_id belonging to a different barbearia than p_barbearia_id is rejected'
 );
 
 select * from finish();
@@ -1343,7 +1420,7 @@ rollback;
 npx supabase test db
 ```
 
-Expected: all 3 assertions pass — this is the automated proof of the spec's "sem overbooking" requirement.
+Expected: all 5 assertions pass — this is the automated proof of the spec's "sem overbooking" requirement, including the overlapping-different-duration case and cross-tenant membro_id rejection.
 
 - [ ] **Step 5: Commit**
 
@@ -1418,7 +1495,7 @@ export function PublicBookingFlow({
     setBarbeiro(b)
     const supabase = getBrowserSupabaseClient()
     const { data: slots } = await supabase.rpc('horarios_disponiveis', {
-      p_membro_id: b.id, p_servico_id: s.id, p_data: data,
+      p_barbearia_id: barbearia.id, p_membro_id: b.id, p_servico_id: s.id, p_data: data,
     })
     setHorarios(slots ?? [])
   }
@@ -1520,18 +1597,18 @@ git commit -m "feat: add public booking page with realtime-safe slot selection"
 ### Task 11: Internal booking UI (admin/barbeiro) and bloqueio creation
 
 **Files:**
-- Create: `src/app/(barbeiro)/layout.tsx`
-- Create: `src/app/(barbeiro)/agenda/page.tsx`
+- Create: `src/app/painel/layout.tsx`
+- Create: `src/app/painel/agenda/page.tsx`
 - Create: `src/components/internal-booking-form.tsx`
 - Create: `src/components/bloqueio-form.tsx`
 
 **Interfaces:**
 - Consumes: `horarios_disponiveis` RPC (Task 9), `criar_ou_obter_cliente` RPC (Task 7).
-- Produces: the `(barbeiro)` route group guard — every later barbeiro-group page (Tasks 13, 15, 17, 20) relies on this layout already redirecting unauthenticated or non-barbeiro users before the page itself runs.
+- Produces: the `painel/` route guard — every later page under `src/app/painel/` (Tasks 13, 15, 17, 20) relies on this layout already redirecting unauthenticated or non-barbeiro users before the page itself runs.
 
 - [ ] **Step 1: Write the barbeiro layout with role guard (mirrors the admin layout from Task 5)**
 
-`src/app/(barbeiro)/layout.tsx`:
+`src/app/painel/layout.tsx`:
 
 ```tsx
 import { redirect } from 'next/navigation'
@@ -1548,13 +1625,13 @@ export default async function BarbeiroLayout({ children }: { children: React.Rea
     .eq('user_id', user.id)
     .single()
 
-  if (membro?.papel !== 'barbeiro') redirect('/login')
+  if (membro?.papel !== 'barbeiro') redirect('/')
 
   return <div className="p-6">{children}</div>
 }
 ```
 
-Note: every page created under `(barbeiro)/` in later tasks (Tasks 13, 15, 17, 20) already wraps its own content in a `<div className="p-6">`; since this layout now also applies `p-6`, remove the duplicate wrapper `<div className="p-6">` from those pages' own JSX when implementing them, keeping only the layout's.
+Note: every page created under `painel/` in later tasks (Tasks 13, 15, 17, 20) already wraps its own content in a `<div className="p-6">`; since this layout now also applies `p-6`, remove the duplicate wrapper `<div className="p-6">` from those pages' own JSX when implementing them, keeping only the layout's.
 
 - [ ] **Step 2: Write the internal booking form (reuses `horarios_disponiveis`, inserts directly since caller is authenticated and RLS on `agendamentos` already scopes writes)**
 
@@ -1581,7 +1658,7 @@ export function InternalBookingForm({
 
   async function buscarHorarios() {
     const supabase = getBrowserSupabaseClient()
-    const { data: slots } = await supabase.rpc('horarios_disponiveis', { p_membro_id: membroId, p_servico_id: servicoId, p_data: data })
+    const { data: slots } = await supabase.rpc('horarios_disponiveis', { p_barbearia_id: barbeariaId, p_membro_id: membroId, p_servico_id: servicoId, p_data: data })
     setHorarios(slots ?? [])
   }
 
@@ -1660,7 +1737,7 @@ export function BloqueioForm({ membroId }: { membroId: string }) {
 
 - [ ] **Step 4: Wire both into the barbeiro agenda page**
 
-`src/app/(barbeiro)/agenda/page.tsx`:
+`src/app/painel/agenda/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -1691,7 +1768,7 @@ Log in as a barbeiro, visit `/agenda`, create a bloqueio for lunch, confirm a su
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(barbeiro)" src/components/internal-booking-form.tsx src/components/bloqueio-form.tsx
+git add "src/app/painel" src/components/internal-booking-form.tsx src/components/bloqueio-form.tsx
 git commit -m "feat: add barbeiro route guard, internal booking, and agenda blocking UI"
 ```
 
@@ -1707,7 +1784,7 @@ git commit -m "feat: add barbeiro route guard, internal booking, and agenda bloc
 
 **Interfaces:**
 - Consumes: `planos_carreira` (Task 6), `membros.plano_carreira_id`.
-- Produces: `atendimentos`, `vendas_produtos` tables with `comissao_percentual_aplicado`/`comissao_valor` auto-populated on insert. `public.reconhecer_cliente(...)` (moved here from Task 7 to resolve the forward reference to `atendimentos`).
+- Produces: `atendimentos`, `vendas_produtos` tables with `preco`/`preco_unitario`, `comissao_percentual_aplicado`, and `comissao_valor` all auto-populated (and any client-supplied `preco`/`preco_unitario` overwritten) by the `BEFORE INSERT` triggers. `public.reconhecer_cliente(...)` (moved here from Task 7 to resolve the forward reference to `atendimentos`; also normalizes phone input).
 
 - [ ] **Step 1: Write the migration**
 
@@ -1746,7 +1823,18 @@ create or replace function public.aplicar_comissao_atendimento()
 returns trigger language plpgsql as $$
 declare
   v_percentual numeric;
+  v_preco numeric;
 begin
+  -- Price is looked up server-side and overwrites whatever the client sent —
+  -- an INSERT into this table only ever comes from an authenticated barbeiro
+  -- (RLS insert policy), and a client-supplied preco could otherwise be used
+  -- to inflate or deflate that barbeiro's own commission.
+  select preco into v_preco from servicos where id = new.servico_id and barbearia_id = new.barbearia_id;
+  if v_preco is null then
+    raise exception 'Serviço inválido para esta barbearia';
+  end if;
+  new.preco := v_preco;
+
   select pc.percentual_servico into v_percentual
   from membros m join planos_carreira pc on pc.id = m.plano_carreira_id
   where m.id = new.membro_id;
@@ -1766,16 +1854,22 @@ returns trigger language plpgsql as $$
 declare
   v_percentual numeric;
   v_estoque int;
+  v_preco numeric;
 begin
-  select quantidade_estoque into v_estoque from produtos where id = new.produto_id for update;
+  select quantidade_estoque, preco_venda into v_estoque, v_preco
+  from produtos where id = new.produto_id and barbearia_id = new.barbearia_id for update;
   if v_estoque is null then
-    raise exception 'Produto inválido';
+    raise exception 'Produto inválido para esta barbearia';
   end if;
   if v_estoque < new.quantidade then
     raise exception 'Estoque insuficiente para este produto';
   end if;
 
   update produtos set quantidade_estoque = quantidade_estoque - new.quantidade where id = new.produto_id;
+
+  -- Same reasoning as aplicar_comissao_atendimento(): preco_unitario is
+  -- looked up server-side, never trusted from the client insert.
+  new.preco_unitario := v_preco;
 
   select pc.percentual_produto into v_percentual
   from membros m join planos_carreira pc on pc.id = m.plano_carreira_id
@@ -1826,7 +1920,7 @@ language sql security definer set search_path = public as $$
     c.nome,
     (select count(*)::int from atendimentos a where a.cliente_id = c.id) as total_cortes
   from clientes c
-  where c.barbearia_id = p_barbearia_id and c.telefone = p_telefone;
+  where c.barbearia_id = p_barbearia_id and c.telefone = regexp_replace(p_telefone, '\D', '', 'g');
 $$;
 
 grant execute on function public.reconhecer_cliente(uuid, text) to anon, authenticated;
@@ -1840,7 +1934,7 @@ npx supabase db reset
 
 - [ ] **Step 3: Append trigger and RLS assertions to the pgTAP suite**
 
-Append to `supabase/tests/database/0003_lancamentos.test.sql` (bump `select plan(2)` to `select plan(5)` and add before `select * from finish();`):
+Append to `supabase/tests/database/0003_lancamentos.test.sql` (bump `select plan(2)` to `select plan(6)` and add before `select * from finish();`):
 
 ```sql
 insert into auth.users (id, email) values
@@ -1863,13 +1957,22 @@ insert into clientes (id, barbearia_id, nome, telefone) values
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', true);
 
+-- Deliberately send a bogus preco (999999) — the trigger must ignore it and
+-- overwrite with the real servico price, proving commission can't be
+-- inflated/deflated by a client sending a fabricated preco on insert.
 insert into atendimentos (barbearia_id, membro_id, cliente_id, servico_id, preco) values
-  ('11111111-1111-1111-1111-111111111111', 'm0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 's0000000-0000-0000-0000-000000000001', 60);
+  ('11111111-1111-1111-1111-111111111111', 'm0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 's0000000-0000-0000-0000-000000000001', 999999);
+
+select is(
+  (select preco from atendimentos order by criado_em desc limit 1),
+  60.00,
+  'client-supplied preco (999999) is ignored — trigger overwrites it with the real servico price'
+);
 
 select is(
   (select comissao_valor from atendimentos order by criado_em desc limit 1),
   18.00,
-  'commission is frozen at 30% of R$60 = R$18 for a Sênior plano'
+  'commission is frozen at 30% of the real R$60 price (not the bogus 999999) for a Sênior plano'
 );
 
 -- Admin can edit an existing atendimento.
@@ -1916,7 +2019,7 @@ git commit -m "feat: add atendimentos/vendas_produtos with commission and stock 
 ### Task 13: Barbeiro lançamento UI
 
 **Files:**
-- Create: `src/app/(barbeiro)/lancamentos/page.tsx`
+- Create: `src/app/painel/lancamentos/page.tsx`
 - Create: `src/components/cliente-autocomplete.tsx`
 - Create: `src/components/lancamento-servico-form.tsx`
 - Create: `src/components/lancamento-produto-form.tsx`
@@ -2070,7 +2173,7 @@ export function LancamentoProdutoForm({
 
 - [ ] **Step 4: Wire both forms into the lançamentos page**
 
-`src/app/(barbeiro)/lancamentos/page.tsx`:
+`src/app/painel/lancamentos/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -2100,7 +2203,7 @@ Log in as a barbeiro linked to a plano de carreira, lançar um corte and a venda
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(barbeiro)/lancamentos" src/components/cliente-autocomplete.tsx src/components/lancamento-servico-form.tsx src/components/lancamento-produto-form.tsx
+git add "src/app/painel/lancamentos" src/components/cliente-autocomplete.tsx src/components/lancamento-servico-form.tsx src/components/lancamento-produto-form.tsx
 git commit -m "feat: add barbeiro lancamento UI for servicos and produtos"
 ```
 
@@ -2240,14 +2343,14 @@ git commit -m "feat: add ociosidade aggregation RPC and pure calculation helper 
 ### Task 15: Barbeiro dashboard UI
 
 **Files:**
-- Create: `src/app/(barbeiro)/page.tsx`
+- Create: `src/app/painel/page.tsx`
 
 **Interfaces:**
 - Consumes: `public.ociosidade(...)` RPC (Task 14), `calcularOciosidade(...)` (Task 14), `atendimentos`/`vendas_produtos` tables (Task 12).
 
 - [ ] **Step 1: Write the dashboard page**
 
-`src/app/(barbeiro)/page.tsx`:
+`src/app/painel/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -2334,7 +2437,7 @@ Log in as a barbeiro with a few atendimentos/vendas lançadas this month, visit 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add "src/app/(barbeiro)/page.tsx"
+git add "src/app/painel/page.tsx"
 git commit -m "feat: add barbeiro dashboard with real-time commission and ociosidade"
 ```
 
@@ -2453,7 +2556,7 @@ git commit -m "feat: add prospeccoes schema with per-barbeiro isolation"
 ### Task 17: Prospecção UI
 
 **Files:**
-- Create: `src/app/(barbeiro)/prospeccao/page.tsx`
+- Create: `src/app/painel/prospeccao/page.tsx`
 - Create: `src/components/prospeccao-converter-form.tsx`
 
 **Interfaces:**
@@ -2498,7 +2601,7 @@ export function ProspeccaoConverterForm({ barbeariaId, prospeccaoId }: { barbear
 
 - [ ] **Step 2: Write the prospecção page**
 
-`src/app/(barbeiro)/prospeccao/page.tsx`:
+`src/app/painel/prospeccao/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -2590,7 +2693,7 @@ Set a `meta_prospeccao_dia` for a barbeiro via `/barbeiros`, log in as that barb
 - [ ] **Step 4: Commit**
 
 ```bash
-git add "src/app/(barbeiro)/prospeccao" src/components/prospeccao-converter-form.tsx
+git add "src/app/painel/prospeccao" src/components/prospeccao-converter-form.tsx
 git commit -m "feat: add prospeccao UI with daily goal and lagged conversion tracking"
 ```
 
@@ -2601,14 +2704,14 @@ git commit -m "feat: add prospeccao UI with daily goal and lagged conversion tra
 ### Task 18: Admin overview dashboard
 
 **Files:**
-- Create: `src/app/(admin)/page.tsx`
+- Create: `src/app/admin/page.tsx`
 
 **Interfaces:**
 - Consumes: `atendimentos`, `vendas_produtos`, `produtos`, `membros` tables (admin RLS grants full-barbearia visibility, already in place from Tasks 4, 6, 12).
 
 - [ ] **Step 1: Write the admin overview page**
 
-`src/app/(admin)/page.tsx`:
+`src/app/admin/page.tsx`:
 
 ```tsx
 import { getServerSupabaseClient } from '@/lib/supabase/server'
@@ -2691,7 +2794,7 @@ Log in as admin with lançamentos from more than one barbeiro this month, visit 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add "src/app/(admin)/page.tsx"
+git add "src/app/admin/page.tsx"
 git commit -m "feat: add admin overview dashboard with per-barbeiro comparison table"
 ```
 
@@ -2757,8 +2860,8 @@ git commit -m "feat: add ranking_cliente RPC that auto-scopes via caller RLS"
 ### Task 20: Ficha do cliente UI
 
 **Files:**
-- Create: `src/app/(admin)/clientes/[id]/page.tsx`
-- Create: `src/app/(barbeiro)/clientes/[id]/page.tsx`
+- Create: `src/app/admin/clientes/[id]/page.tsx`
+- Create: `src/app/painel/clientes/[id]/page.tsx`
 - Create: `src/components/ficha-cliente.tsx`
 
 **Interfaces:**
@@ -2818,7 +2921,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
 
 - [ ] **Step 2: Wire it into both admin and barbeiro routes**
 
-`src/app/(admin)/clientes/[id]/page.tsx`:
+`src/app/admin/clientes/[id]/page.tsx`:
 
 ```tsx
 import { FichaCliente } from '@/components/ficha-cliente'
@@ -2829,7 +2932,7 @@ export default async function ClienteAdminPage({ params }: { params: Promise<{ i
 }
 ```
 
-`src/app/(barbeiro)/clientes/[id]/page.tsx`:
+`src/app/painel/clientes/[id]/page.tsx`:
 
 ```tsx
 import { FichaCliente } from '@/components/ficha-cliente'
@@ -2847,7 +2950,7 @@ As a barbeiro, navigate to `/clientes/<id>` for a client you've served — confi
 - [ ] **Step 4: Commit**
 
 ```bash
-git add "src/app/(admin)/clientes" "src/app/(barbeiro)/clientes" src/components/ficha-cliente.tsx
+git add "src/app/admin/clientes" "src/app/painel/clientes" src/components/ficha-cliente.tsx
 git commit -m "feat: add ficha do cliente UI with role-scoped history and ranking"
 ```
 

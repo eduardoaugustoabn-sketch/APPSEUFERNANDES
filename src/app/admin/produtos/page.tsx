@@ -17,7 +17,7 @@ async function criarProduto(formData: FormData) {
     quantidade_estoque: Number(formData.get('quantidade_estoque')),
     estoque_minimo: Number(formData.get('estoque_minimo')),
   })
-  revalidatePath('/produtos')
+  revalidatePath('/admin/produtos')
 }
 
 export default async function ProdutosPage() {

@@ -15,7 +15,7 @@ async function criarServico(formData: FormData) {
     duracao_minutos: Number(formData.get('duracao_minutos')),
     preco: Number(formData.get('preco')),
   })
-  revalidatePath('/servicos')
+  revalidatePath('/admin/servicos')
 }
 
 export default async function ServicosPage() {

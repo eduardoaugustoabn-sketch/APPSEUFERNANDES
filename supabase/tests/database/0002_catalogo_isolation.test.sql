@@ -1,19 +1,26 @@
 begin;
-select plan(2);
+select plan(3);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a'),
   ('22222222-2222-2222-2222-222222222222', 'Barbearia B', 'barbearia-b');
 
-insert into servicos (id, barbearia_id, nome, duracao_minutos, preco) values
-  ('a1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Corte A', 40, 60),
-  ('a2222222-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Corte B', 40, 60);
+insert into servicos (id, barbearia_id, nome, duracao_minutos, preco, ativo) values
+  ('a1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Corte A', 40, 60, true),
+  ('a2222222-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Corte B', 40, 60, true),
+  ('a3333333-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Corte Descontinuado', 30, 50, false);
 
 insert into produtos (id, barbearia_id, nome, preco_venda) values
   ('b1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Pomada A', 40),
   ('b2222222-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Pomada B', 40);
 
 set local role anon;
+
+select is(
+  (select count(*)::int from servicos where ativo = true),
+  2,
+  'anon sees only active services (ativo=true), not inactive ones'
+);
 
 select is(
   (select count(*)::int from servicos),

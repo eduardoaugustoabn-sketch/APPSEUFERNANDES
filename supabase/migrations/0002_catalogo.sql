@@ -44,8 +44,16 @@ create policy "publico le servicos ativos" on servicos for select
 create policy "membros leem servico_barbeiros" on servico_barbeiros for select
   using (exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id()));
 create policy "admin gerencia servico_barbeiros" on servico_barbeiros for all
-  using (exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id() and auth_papel() = 'admin'))
-  with check (exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id() and auth_papel() = 'admin'));
+  using (
+    exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from membros m where m.id = membro_id and m.barbearia_id = auth_barbearia_id())
+    and auth_papel() = 'admin'
+  )
+  with check (
+    exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from membros m where m.id = membro_id and m.barbearia_id = auth_barbearia_id())
+    and auth_papel() = 'admin'
+  );
 create policy "publico le servico_barbeiros" on servico_barbeiros for select
   to anon using (true);
 

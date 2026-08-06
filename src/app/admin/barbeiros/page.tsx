@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache'
 async function vincularPlano(formData: FormData) {
   'use server'
   const supabase = await getServerSupabaseClient()
+  const metaRaw = formData.get('meta_prospeccao_dia') as string
+  const meta = metaRaw === '' ? null : Number(metaRaw)
+
   await supabase
     .from('membros')
     .update({
       plano_carreira_id: (formData.get('plano_carreira_id') as string) || null,
-      meta_prospeccao_dia: Number(formData.get('meta_prospeccao_dia')) || null,
+      meta_prospeccao_dia: meta,
     })
     .eq('id', formData.get('membro_id') as string)
   revalidatePath('/admin/barbeiros')

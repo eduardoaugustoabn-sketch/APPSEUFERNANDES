@@ -17,3 +17,16 @@ create policy "membros leem planos_carreira" on planos_carreira for select
 create policy "admin gerencia planos_carreira" on planos_carreira for all
   using (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin')
   with check (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin');
+
+-- Harden membros update policy to validate plano_carreira_id belongs to same tenant
+drop policy "admin atualiza membros" on membros;
+create policy "admin atualiza membros"
+  on membros for update
+  using (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin')
+  with check (
+    barbearia_id = auth_barbearia_id()
+    and auth_papel() = 'admin'
+    and (plano_carreira_id is null or exists (
+      select 1 from planos_carreira pc where pc.id = plano_carreira_id and pc.barbearia_id = auth_barbearia_id()
+    ))
+  );

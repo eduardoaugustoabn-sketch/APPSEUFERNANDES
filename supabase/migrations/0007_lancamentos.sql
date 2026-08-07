@@ -56,8 +56,18 @@ create trigger trg_comissao_atendimento
   before insert on atendimentos
   for each row execute function public.aplicar_comissao_atendimento();
 
+-- security definer is required here: barbeiro has no UPDATE policy on
+-- produtos (only admin does, via "admin gerencia produtos" for all) — stock
+-- deduction is a system-level side effect of the sale, not something a
+-- barbeiro is meant to directly edit. Without security definer this
+-- function runs as the caller, and Postgres RLS requires SELECT ... FOR
+-- UPDATE (and the subsequent UPDATE) to satisfy an UPDATE policy's USING
+-- clause, not just a SELECT policy's — so the trigger would silently see
+-- zero rows and always raise "Produto inválido para esta barbearia" for a
+-- barbeiro, even though the plain "membros leem produtos" SELECT policy
+-- lets them read the same row fine.
 create or replace function public.processar_venda_produto()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 declare
   v_percentual numeric;
   v_estoque int;

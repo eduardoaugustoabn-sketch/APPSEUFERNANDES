@@ -24,7 +24,7 @@
 - No offline mode in this phase — lançamento and booking require connectivity (spec: Tratamento de erros).
 - Automated tests focus on the two highest-risk areas per spec: multi-tenant RLS isolation and booking concurrency (no overbooking), plus unit tests for commission/availability/ociosidade calculations. Screens are verified manually in the browser, not via automated UI tests (spec: Testes).
 - Barbeiro role: can only `SELECT`/`INSERT` its own rows in `atendimentos`, `vendas_produtos`, `prospeccoes`, `bloqueios_agenda`; cannot `UPDATE`/`DELETE` lançamentos once created (only admin can) (spec: Modelo de dados, Perfis de acesso).
-- Migration filenames use plain sequential numbers (`0001_...`, `0005b_...`) rather than the Supabase CLI's default timestamp prefixes, purely so this plan's task order is easy to follow. The `b`-suffixed files (`0005b`, `0006b`, `0007b`) are separate migrations that must sort immediately after their non-suffixed counterpart — `_` (0x5F) sorts before any lowercase letter, so `0005_agenda.sql` < `0005b_agenda_rpcs.sql` < `0006_lancamentos.sql` holds lexicographically, which is how `supabase db reset` orders and applies them.
+- Migration filenames use plain sequential numbers (`0001_...`, `0002_...`) rather than the Supabase CLI's default timestamp prefixes, purely so this plan's task order is easy to follow. **Amendment (discovered during Task 9 implementation):** the plan originally used letter-suffixed filenames (`0005b_...`, `0006b_...`, `0007b_...`) to slot an extra migration in right after its non-suffixed counterpart. The installed Supabase CLI (v2.111.0) rejects any migration filename whose leading run isn't pure digits — `0006_agenda_rpcs.sql` is silently skipped (never applied) rather than erroring loudly, which is a dangerous silent failure. There is also no purely-numeric filename that sorts strictly between `0005_...` and `0006_...`, because `_` (0x5F) sorts after every digit — so `00051_...` sorts *before* `0005_agenda.sql`, not after. The fix is to never reuse a base number: every migration gets the next unused sequential integer. This renumbers every migration from Task 9 onward: the original `0005b_agenda_rpcs.sql` is now `0006_agenda_rpcs.sql`, `0006_lancamentos.sql` is now `0007_lancamentos.sql`, `0006b_ociosidade.sql` is now `0008_ociosidade.sql`, `0007_prospeccao.sql` is now `0009_prospeccao.sql`, and `0007b_ficha_cliente.sql` is now `0010_ficha_cliente.sql`. All filenames below and in each task's file list reflect the renumbered scheme.
 - Admin and barbeiro areas live under real URL segments (`/admin`, `/painel`) rather than bare route groups, so they never collide with each other or with a public booking slug — see Task 3. Because of this, `admin`, `painel`, and `login` are reserved slugs: the super-admin must never create a barbearia with one of these as its `slug`, since that tenant's public booking page would be permanently shadowed by the matching static route.
 - The no-overbooking guarantee on `agendamentos` (Task 8) is a GiST exclusion constraint over the appointment's actual time range, not a same-start-time unique index — two appointments of different durations that merely overlap (not share an identical `hora_inicio`) must also be rejected.
 - `supabase/config.toml` sets `api.auto_expose_new_tables = true` (Amendment, Task 2, human-approved — see note below). No migration in this plan issues explicit `GRANT` statements to `anon`/`authenticated`/`service_role`; every table's reachability through the Data API depends on this flag, with RLS policies (or their absence) remaining the sole access-control boundary, exactly as stated in Architecture above.
@@ -44,11 +44,11 @@ supabase/
     0003_planos_carreira.sql
     0004_clientes.sql
     0005_agenda.sql
-    0005b_agenda_rpcs.sql
-    0006_lancamentos.sql
-    0006b_ociosidade.sql
-    0007_prospeccao.sql
-    0007b_ficha_cliente.sql
+    0006_agenda_rpcs.sql
+    0007_lancamentos.sql
+    0008_ociosidade.sql
+    0009_prospeccao.sql
+    0010_ficha_cliente.sql
   tests/database/
     0001_tenant_isolation.test.sql
     0002_catalogo_isolation.test.sql
@@ -1048,7 +1048,7 @@ $$;
 grant execute on function public.criar_ou_obter_cliente(uuid, text, text) to anon, authenticated;
 ```
 
-Note: `reconhecer_cliente` (the recognition RPC used by the booking/lançamento UIs) is not defined here — it references `atendimentos`, which does not exist until Task 12's migration. Since `supabase db reset` always replays every migration from scratch in order, that function must physically live in a migration file that loads after `atendimentos` exists. Its definition is in `supabase/migrations/0006_lancamentos.sql` (Task 12) instead.
+Note: `reconhecer_cliente` (the recognition RPC used by the booking/lançamento UIs) is not defined here — it references `atendimentos`, which does not exist until Task 12's migration. Since `supabase db reset` always replays every migration from scratch in order, that function must physically live in a migration file that loads after `atendimentos` exists. Its definition is in `supabase/migrations/0007_lancamentos.sql` (Task 12) instead.
 
 - [ ] **Step 2: Apply migration**
 
@@ -1234,7 +1234,7 @@ git commit -m "feat: add agenda schema with DB-enforced no-overbooking constrain
 ### Task 9: Availability and public-booking RPCs, with concurrency test
 
 **Files:**
-- Create: `supabase/migrations/0005b_agenda_rpcs.sql`
+- Create: `supabase/migrations/0006_agenda_rpcs.sql`
 - Create: `supabase/tests/database/0004_booking_concurrency.test.sql`
 
 **Interfaces:**
@@ -1247,7 +1247,7 @@ git commit -m "feat: add agenda schema with DB-enforced no-overbooking constrain
 
 Both RPCs take `p_barbearia_id` and validate `p_membro_id` belongs to it (and is an active barbeiro) before doing anything else — otherwise an anonymous caller could pass a `membro_id` from a different tenant (reachable since `membros.id` is a bare uuid, guessable/enumerable) and either read another barbearia's calendar or write a booking into it, e.g. to spam-block a competitor's barbeiro's slots.
 
-`supabase/migrations/0005b_agenda_rpcs.sql`:
+`supabase/migrations/0006_agenda_rpcs.sql`:
 
 ```sql
 create or replace function public.horarios_disponiveis(
@@ -1428,7 +1428,7 @@ Expected: all 5 assertions pass — this is the automated proof of the spec's "s
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/0005b_agenda_rpcs.sql supabase/tests/database/0004_booking_concurrency.test.sql
+git add supabase/migrations/0006_agenda_rpcs.sql supabase/tests/database/0004_booking_concurrency.test.sql
 git commit -m "feat: add booking availability and public booking RPCs with concurrency test"
 ```
 
@@ -1782,7 +1782,7 @@ git commit -m "feat: add barbeiro route guard, internal booking, and agenda bloc
 ### Task 12: `atendimentos` / `vendas_produtos` schema, commission + stock triggers, RLS
 
 **Files:**
-- Create: `supabase/migrations/0006_lancamentos.sql`
+- Create: `supabase/migrations/0007_lancamentos.sql`
 - Modify: `supabase/tests/database/0003_lancamentos.test.sql` (append trigger assertions)
 
 **Interfaces:**
@@ -1791,7 +1791,7 @@ git commit -m "feat: add barbeiro route guard, internal booking, and agenda bloc
 
 - [ ] **Step 1: Write the migration**
 
-`supabase/migrations/0006_lancamentos.sql`:
+`supabase/migrations/0007_lancamentos.sql`:
 
 ```sql
 create table atendimentos (
@@ -2015,7 +2015,7 @@ Expected: all assertions pass, confirming (a) commission is computed and frozen 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/0006_lancamentos.sql supabase/tests/database/0003_lancamentos.test.sql
+git add supabase/migrations/0007_lancamentos.sql supabase/tests/database/0003_lancamentos.test.sql
 git commit -m "feat: add atendimentos/vendas_produtos with commission and stock triggers"
 ```
 
@@ -2217,7 +2217,7 @@ git commit -m "feat: add barbeiro lancamento UI for servicos and produtos"
 ### Task 14: Ociosidade calculation RPC and unit test
 
 **Files:**
-- Create: `supabase/migrations/0006b_ociosidade.sql`
+- Create: `supabase/migrations/0008_ociosidade.sql`
 - Create: `tests/unit/ociosidade.test.ts`
 - Create: `src/lib/ociosidade.ts`
 
@@ -2228,7 +2228,7 @@ git commit -m "feat: add barbeiro lancamento UI for servicos and produtos"
 
 - [ ] **Step 1: Write the SQL aggregation function**
 
-`supabase/migrations/0006b_ociosidade.sql`:
+`supabase/migrations/0008_ociosidade.sql`:
 
 ```sql
 create or replace function public.ociosidade(
@@ -2339,7 +2339,7 @@ Expected: both assertions pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add supabase/migrations/0006b_ociosidade.sql src/lib/ociosidade.ts tests/unit/ociosidade.test.ts
+git add supabase/migrations/0008_ociosidade.sql src/lib/ociosidade.ts tests/unit/ociosidade.test.ts
 git commit -m "feat: add ociosidade aggregation RPC and pure calculation helper with unit tests"
 ```
 
@@ -2451,7 +2451,7 @@ git commit -m "feat: add barbeiro dashboard with real-time commission and ociosi
 ### Task 16: `prospeccoes` schema and RLS
 
 **Files:**
-- Create: `supabase/migrations/0007_prospeccao.sql`
+- Create: `supabase/migrations/0009_prospeccao.sql`
 - Create: `supabase/tests/database/0005_prospeccao_isolation.test.sql`
 
 **Interfaces:**
@@ -2460,7 +2460,7 @@ git commit -m "feat: add barbeiro dashboard with real-time commission and ociosi
 
 - [ ] **Step 1: Write the migration**
 
-`supabase/migrations/0007_prospeccao.sql`:
+`supabase/migrations/0009_prospeccao.sql`:
 
 ```sql
 create table prospeccoes (
@@ -2552,7 +2552,7 @@ Expected: both assertions pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/0007_prospeccao.sql supabase/tests/database/0005_prospeccao_isolation.test.sql
+git add supabase/migrations/0009_prospeccao.sql supabase/tests/database/0005_prospeccao_isolation.test.sql
 git commit -m "feat: add prospeccoes schema with per-barbeiro isolation"
 ```
 
@@ -2808,14 +2808,14 @@ git commit -m "feat: add admin overview dashboard with per-barbeiro comparison t
 ### Task 19: Ficha do cliente ranking RPC
 
 **Files:**
-- Create: `supabase/migrations/0007b_ficha_cliente.sql`
+- Create: `supabase/migrations/0010_ficha_cliente.sql`
 
 **Interfaces:**
 - Produces: `public.ranking_cliente(p_cliente_id uuid) returns table(item text, tipo text, quantidade int, valor_total numeric)`. **Deliberately `SECURITY INVOKER` (the default)** — it relies on the caller's existing RLS on `atendimentos`/`vendas_produtos` to auto-scope results (barbeiro sees only their own interactions with the client; admin sees all), so no extra access-control logic is needed here.
 
 - [ ] **Step 1: Write the migration**
 
-`supabase/migrations/0007b_ficha_cliente.sql`:
+`supabase/migrations/0010_ficha_cliente.sql`:
 
 ```sql
 create or replace function public.ranking_cliente(p_cliente_id uuid)
@@ -2856,7 +2856,7 @@ In Supabase Studio, seed one cliente with atendimentos from two different barbei
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/0007b_ficha_cliente.sql
+git add supabase/migrations/0010_ficha_cliente.sql
 git commit -m "feat: add ranking_cliente RPC that auto-scopes via caller RLS"
 ```
 

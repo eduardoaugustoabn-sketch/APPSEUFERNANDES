@@ -44,6 +44,29 @@ create policy "membros leem a propria barbearia"
   on barbearias for select
   using (id = auth_barbearia_id());
 
+-- Public (anon) read: the public booking page (/[barbeariaSlug], Task 10)
+-- resolves a barbearia by slug with no login, so it needs its own policy —
+-- the "membros leem a propria barbearia" policy above only matches an
+-- authenticated member's own tenant. barbearias holds no sensitive data
+-- (just nome/slug/criado_em), so exposing every row is safe, mirroring the
+-- "publico le servicos ativos" pattern used on servicos (Task 4).
+create policy "publico le barbearias"
+  on barbearias for select
+  to anon using (true);
+
+-- Public (anon) read: the public booking page (/[barbeariaSlug], Task 10)
+-- needs to list active barbeiros by name with no login, but must not expose
+-- telefone/foto_url. RLS is row-level only, so it can't hide a column by
+-- itself — with auto_expose_new_tables=true, anon already holds a
+-- full-column SELECT grant by default, so that grant is narrowed explicitly
+-- to just the columns the public flow needs.
+revoke select on membros from anon;
+grant select (id, barbearia_id, papel, nome, ativo) on membros to anon;
+
+create policy "publico le barbeiros ativos"
+  on membros for select
+  to anon using (papel = 'barbeiro' and ativo = true);
+
 -- membros: admin manages all members of the barbearia; barbeiro reads own row.
 create policy "admin le membros da barbearia"
   on membros for select

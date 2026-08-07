@@ -67,15 +67,46 @@ create policy "barbeiro gerencia proprio bloqueio" on bloqueios_agenda for all
   with check (membro_id = auth_membro_id());
 
 create policy "admin le agendamentos da barbearia" on agendamentos for select
-  using (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin');
+  using (
+    barbearia_id = auth_barbearia_id()
+    and auth_papel() = 'admin'
+    and exists (select 1 from membros m where m.id = membro_id and m.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  );
 create policy "barbeiro le proprios agendamentos" on agendamentos for select
-  using (membro_id = auth_membro_id());
+  using (
+    barbearia_id = auth_barbearia_id()
+    and membro_id = auth_membro_id()
+  );
 create policy "admin gerencia agendamentos" on agendamentos for all
-  using (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin')
-  with check (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin');
+  using (
+    barbearia_id = auth_barbearia_id()
+    and auth_papel() = 'admin'
+    and exists (select 1 from membros m where m.id = membro_id and m.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  )
+  with check (
+    barbearia_id = auth_barbearia_id()
+    and auth_papel() = 'admin'
+    and exists (select 1 from membros m where m.id = membro_id and m.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  );
 create policy "barbeiro atualiza proprio agendamento" on agendamentos for update
-  using (membro_id = auth_membro_id())
-  with check (membro_id = auth_membro_id());
+  using (
+    barbearia_id = auth_barbearia_id()
+    and membro_id = auth_membro_id()
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  )
+  with check (
+    barbearia_id = auth_barbearia_id()
+    and membro_id = auth_membro_id()
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  );
 -- No anon policy on agendamentos: public writes go exclusively through the
 -- criar_agendamento_publico() RPC (Task 9), and availability is read
 -- exclusively through the horarios_disponiveis() RPC (Task 9) — anon never

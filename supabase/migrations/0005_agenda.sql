@@ -107,6 +107,19 @@ create policy "barbeiro atualiza proprio agendamento" on agendamentos for update
     and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
     and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
   );
+-- Task 8 originally omitted a barbeiro INSERT policy, which would block the
+-- internal booking flow (Task 11) entirely for a logged-in barbeiro — the
+-- public flow inserts via the security-definer criar_agendamento_publico()
+-- RPC instead, so this gap only surfaces once an authenticated caller
+-- inserts directly. Same tenant-FK-validation shape as the update policy
+-- above (Task 8's fix pattern).
+create policy "barbeiro insere proprio agendamento" on agendamentos for insert
+  with check (
+    barbearia_id = auth_barbearia_id()
+    and membro_id = auth_membro_id()
+    and exists (select 1 from clientes c where c.id = cliente_id and c.barbearia_id = auth_barbearia_id())
+    and exists (select 1 from servicos s where s.id = servico_id and s.barbearia_id = auth_barbearia_id())
+  );
 -- No anon policy on agendamentos: public writes go exclusively through the
 -- criar_agendamento_publico() RPC (Task 9), and availability is read
 -- exclusively through the horarios_disponiveis() RPC (Task 9) — anon never

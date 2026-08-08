@@ -24,9 +24,9 @@ export function LancamentoForm({
   const [salvando, setSalvando] = useState(false)
   const [clienteAutocompleteKey, setClienteAutocompleteKey] = useState(0)
 
-  const servicosDisponiveis = servicos.filter((s) => !servicosSelecionados.some((sel) => sel.id === s.id))
-  const produtosDisponiveis = produtos.filter((p) => !produtosSelecionados.some((sel) => sel.id === p.id))
-
+  // Every catalog item stays selectable (not filtered down as items get
+  // added) — a visit can need the same serviço twice (e.g. corte + corte
+  // infantil for two kids under one cliente) or another round of a produto.
   function adicionarServico() {
     const servico = servicos.find((s) => s.id === servicoParaAdicionar)
     if (!servico) return
@@ -37,13 +37,22 @@ export function LancamentoForm({
   function adicionarProduto() {
     const produto = produtos.find((p) => p.id === produtoParaAdicionar)
     if (!produto) return
-    setProdutosSelecionados((atual) => [...atual, { ...produto, quantidade: quantidadeParaAdicionar }])
+    setProdutosSelecionados((atual) => {
+      const existente = atual.find((p) => p.id === produto.id)
+      if (existente) {
+        return atual.map((p) => (p.id === produto.id ? { ...p, quantidade: p.quantidade + quantidadeParaAdicionar } : p))
+      }
+      return [...atual, { ...produto, quantidade: quantidadeParaAdicionar }]
+    })
     setProdutoParaAdicionar('')
     setQuantidadeParaAdicionar(1)
   }
 
-  function removerServico(id: string) {
-    setServicosSelecionados((atual) => atual.filter((s) => s.id !== id))
+  // By index, not id — the same serviço can appear more than once in the
+  // list (see adicionarServico above), so removing "by id" would drop every
+  // instance of it instead of just the one the user clicked "remover" on.
+  function removerServico(index: number) {
+    setServicosSelecionados((atual) => atual.filter((_, i) => i !== index))
   }
 
   function removerProduto(id: string) {
@@ -95,21 +104,19 @@ export function LancamentoForm({
 
       <div>
         <p className="text-sm font-medium mb-1">Serviços (corte, serviço extra...)</p>
-        {servicosSelecionados.map((s) => (
-          <div key={s.id} className="flex justify-between items-center text-sm border-b py-1">
+        {servicosSelecionados.map((s, index) => (
+          <div key={`${s.id}-${index}`} className="flex justify-between items-center text-sm border-b py-1">
             <span>{s.nome} (R${s.preco})</span>
-            <button type="button" onClick={() => removerServico(s.id)} className="text-red-600 text-xs">remover</button>
+            <button type="button" onClick={() => removerServico(index)} className="text-red-600 text-xs">remover</button>
           </div>
         ))}
-        {servicosDisponiveis.length > 0 && (
-          <div className="flex gap-2 mt-2">
-            <select value={servicoParaAdicionar} onChange={(e) => setServicoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
-              <option value="">Serviço</option>
-              {servicosDisponiveis.map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
-            </select>
-            <Button type="button" variant="outline" onClick={adicionarServico}>+ Adicionar</Button>
-          </div>
-        )}
+        <div className="flex gap-2 mt-2">
+          <select value={servicoParaAdicionar} onChange={(e) => setServicoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
+            <option value="">Serviço</option>
+            {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
+          </select>
+          <Button type="button" variant="outline" onClick={adicionarServico} disabled={!servicoParaAdicionar}>+ Adicionar</Button>
+        </div>
       </div>
 
       <div>
@@ -120,16 +127,14 @@ export function LancamentoForm({
             <button type="button" onClick={() => removerProduto(p.id)} className="text-red-600 text-xs">remover</button>
           </div>
         ))}
-        {produtosDisponiveis.length > 0 && (
-          <div className="flex gap-2 mt-2">
-            <select value={produtoParaAdicionar} onChange={(e) => setProdutoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
-              <option value="">Produto</option>
-              {produtosDisponiveis.map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
-            </select>
-            <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
-            <Button type="button" variant="outline" onClick={adicionarProduto}>+ Adicionar</Button>
-          </div>
-        )}
+        <div className="flex gap-2 mt-2">
+          <select value={produtoParaAdicionar} onChange={(e) => setProdutoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
+            <option value="">Produto</option>
+            {produtos.map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
+          </select>
+          <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
+          <Button type="button" variant="outline" onClick={adicionarProduto} disabled={!produtoParaAdicionar}>+ Adicionar</Button>
+        </div>
       </div>
 
       <Button type="button" onClick={salvar} disabled={salvando}>Salvar lançamento</Button>

@@ -63,7 +63,12 @@ export function LancamentoForm({
 
   async function salvar() {
     if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
-    if (servicosSelecionados.length === 0) { setMensagem('Adicione ao menos um serviço (ex: corte).'); return }
+    // A produto-only sale (client just buys a pomada, no corte) is valid —
+    // only require that at least one of the two lists isn't empty.
+    if (servicosSelecionados.length === 0 && produtosSelecionados.length === 0) {
+      setMensagem('Adicione ao menos um serviço ou produto.')
+      return
+    }
 
     setSalvando(true)
     setMensagem(null)

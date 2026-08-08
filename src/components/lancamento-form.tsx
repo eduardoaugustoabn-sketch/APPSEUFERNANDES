@@ -7,7 +7,7 @@ import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-type Servico = { id: string; nome: string; preco: number }
+type Servico = { id: string; nome: string; preco: number; duracao_minutos: number }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number }
 type ServicoSelecionado = Servico
 type ProdutoSelecionado = Produto & { quantidade: number }
@@ -25,6 +25,26 @@ export function LancamentoForm({
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [clienteAutocompleteKey, setClienteAutocompleteKey] = useState(0)
+
+  // Agendar a próxima visita do cliente sem sair da tela de lançamento.
+  const [agendarRetorno, setAgendarRetorno] = useState(false)
+  const [retornoServicoId, setRetornoServicoId] = useState('')
+  const [retornoData, setRetornoData] = useState(() => new Date().toISOString().slice(0, 10))
+  const [retornoHorarios, setRetornoHorarios] = useState<{ hora_inicio: string; hora_fim: string }[]>([])
+  const [retornoHorario, setRetornoHorario] = useState('')
+  const [buscandoHorarios, setBuscandoHorarios] = useState(false)
+
+  async function buscarHorariosRetorno() {
+    if (!retornoServicoId) return
+    setBuscandoHorarios(true)
+    setRetornoHorario('')
+    const supabase = getBrowserSupabaseClient()
+    const { data: slots } = await supabase.rpc('horarios_disponiveis', {
+      p_barbearia_id: barbeariaId, p_membro_id: membroId, p_servico_id: retornoServicoId, p_data: retornoData,
+    })
+    setRetornoHorarios(slots ?? [])
+    setBuscandoHorarios(false)
+  }
 
   // Every catalog item stays selectable (not filtered down as items get
   // added) — a visit can need the same serviço twice (e.g. corte + corte
@@ -69,6 +89,7 @@ export function LancamentoForm({
       setMensagem('Adicione ao menos um serviço ou produto.')
       return
     }
+    if (agendarRetorno && !retornoHorario) { setMensagem('Escolha um horário para o retorno, ou desmarque "Agendar próxima visita".'); return }
 
     setSalvando(true)
     setMensagem(null)
@@ -95,11 +116,27 @@ export function LancamentoForm({
       if (error) { setMensagem(error.message); setSalvando(false); return }
     }
 
-    setMensagem('Lançado com sucesso!')
+    if (agendarRetorno && retornoHorario) {
+      const servicoRetorno = servicos.find((s) => s.id === retornoServicoId)!
+      const horaFim = new Date(`1970-01-01T${retornoHorario}`)
+      horaFim.setMinutes(horaFim.getMinutes() + servicoRetorno.duracao_minutos)
+      const { error } = await supabase.from('agendamentos').insert({
+        barbearia_id: barbeariaId, membro_id: membroId, cliente_id: clienteId.data,
+        servico_id: retornoServicoId, data: retornoData, hora_inicio: retornoHorario,
+        hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
+      })
+      if (error) { setMensagem(`Lançamento salvo, mas o agendamento de retorno falhou: ${error.message}`); setSalvando(false); return }
+    }
+
+    setMensagem(agendarRetorno && retornoHorario ? 'Lançado e retorno agendado com sucesso!' : 'Lançado com sucesso!')
     setServicosSelecionados([])
     setProdutosSelecionados([])
     setCliente(null)
     setClienteAutocompleteKey((atual) => atual + 1)
+    setAgendarRetorno(false)
+    setRetornoServicoId('')
+    setRetornoHorarios([])
+    setRetornoHorario('')
     setSalvando(false)
     // The insert above went through the browser Supabase client, not a
     // server action — the page's own `produtos` prop (fetched once on
@@ -149,6 +186,32 @@ export function LancamentoForm({
           <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
           <Button type="button" variant="outline" onClick={adicionarProduto} disabled={!produtoParaAdicionar}>+ Adicionar</Button>
         </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium flex items-center gap-2">
+          <input type="checkbox" checked={agendarRetorno} onChange={(e) => setAgendarRetorno(e.target.checked)} />
+          Agendar próxima visita deste cliente
+        </label>
+        {agendarRetorno && (
+          <div className="flex flex-col gap-2 mt-2">
+            <select value={retornoServicoId} onChange={(e) => { setRetornoServicoId(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} className="border rounded px-2 py-1">
+              <option value="">Serviço do retorno</option>
+              {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+            </select>
+            <Input type="date" value={retornoData} onChange={(e) => { setRetornoData(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} />
+            <Button type="button" variant="outline" onClick={buscarHorariosRetorno} disabled={!retornoServicoId || buscandoHorarios}>Ver horários</Button>
+            {retornoHorarios.length > 0 && (
+              <select value={retornoHorario} onChange={(e) => setRetornoHorario(e.target.value)} className="border rounded px-2 py-1">
+                <option value="">Horário</option>
+                {retornoHorarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
+              </select>
+            )}
+            {retornoHorarios.length === 0 && !buscandoHorarios && retornoServicoId && (
+              <p className="text-xs text-muted-foreground">Clique em &quot;Ver horários&quot; para escolher.</p>
+            )}
+          </div>
+        )}
       </div>
 
       <Button type="button" onClick={salvar} disabled={salvando}>Salvar lançamento</Button>

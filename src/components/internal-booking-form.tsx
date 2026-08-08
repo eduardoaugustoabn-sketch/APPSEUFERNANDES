@@ -36,7 +36,11 @@ export function InternalBookingForm({
       servico_id: servicoId, data, hora_inicio: horario,
       hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
     })
-    setMensagem(error ? error.message : 'Agendado com sucesso!')
+    if (error) {
+      setMensagem(error.code === '23P01' ? 'Esse horário acabou de ser ocupado por outro agendamento. Escolha outro horário.' : error.message)
+      return
+    }
+    setMensagem('Agendado com sucesso!')
   }
 
   return (

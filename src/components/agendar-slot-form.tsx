@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
@@ -25,10 +25,40 @@ export function AgendarSlotForm({
   const [servicoId, setServicoId] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
+  // O grid marca um horário como "livre" olhando só se ELE MESMO cai dentro
+  // de outro agendamento — mas não sabe, até o serviço ser escolhido aqui,
+  // se a duração desse serviço vai esbarrar no PRÓXIMO agendamento (ex:
+  // clicar às 09:30 livre, mas um corte de 40min começando aí vai até
+  // 10:10, e já tem alguém marcado às 10:00). Por isso, ao escolher o
+  // serviço, confere de verdade contra horarios_disponiveis antes de deixar
+  // confirmar — em vez de deixar o insert estourar a constraint do banco
+  // com um erro cru na tela.
+  const [conflito, setConflito] = useState(false)
+  const [verificando, setVerificando] = useState(false)
+
+  useEffect(() => {
+    if (!servicoId) { setConflito(false); return }
+    let cancelado = false
+    async function verificar() {
+      setVerificando(true)
+      const supabase = getBrowserSupabaseClient()
+      const { data: slots } = await supabase.rpc('horarios_disponiveis', {
+        p_barbearia_id: barbeariaId, p_membro_id: membroId, p_servico_id: servicoId, p_data: data,
+      })
+      if (!cancelado) {
+        const disponivel = (slots ?? []).some((s: { hora_inicio: string }) => s.hora_inicio === horaInicio)
+        setConflito(!disponivel)
+        setVerificando(false)
+      }
+    }
+    verificar()
+    return () => { cancelado = true }
+  }, [servicoId, barbeariaId, membroId, data, horaInicio])
 
   async function confirmar() {
     if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
     if (!servicoId) { setMensagem('Escolha o serviço.'); return }
+    if (conflito) { setMensagem('Esse horário não cabe esse serviço (esbarra em outro agendamento). Escolha outro horário ou outro serviço.'); return }
 
     setSalvando(true)
     setMensagem(null)
@@ -49,7 +79,17 @@ export function AgendarSlotForm({
       hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
     })
     setSalvando(false)
-    if (error) { setMensagem(error.message); return }
+    if (error) {
+      // exclusion_violation (SQLSTATE 23P01) — a checagem acima já cobre o
+      // caso comum, isso aqui é só rede de segurança pra uma corrida rara
+      // (outra pessoa marcou esse mesmo horário entre a checagem e o clique).
+      setMensagem(
+        error.code === '23P01'
+          ? 'Esse horário acabou de ser ocupado por outro agendamento. Escolha outro horário.'
+          : error.message
+      )
+      return
+    }
     onAgendado?.()
   }
 
@@ -61,7 +101,10 @@ export function AgendarSlotForm({
         <option value="">Serviço</option>
         {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
       </select>
-      <Button type="button" onClick={confirmar} disabled={salvando}>Confirmar agendamento</Button>
+      {servicoId && !verificando && conflito && (
+        <p className="text-xs text-red-600">Esse horário não cabe esse serviço (esbarra em outro agendamento). Escolha outro horário ou outro serviço.</p>
+      )}
+      <Button type="button" onClick={confirmar} disabled={salvando || verificando || conflito}>Confirmar agendamento</Button>
       {mensagem && <p className="text-sm">{mensagem}</p>}
     </div>
   )

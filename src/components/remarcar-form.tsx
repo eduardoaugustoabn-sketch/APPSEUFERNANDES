@@ -43,7 +43,14 @@ export function RemarcarForm({
       data, hora_inicio: slot.hora_inicio, hora_fim: slot.hora_fim,
     }).eq('id', agendamentoId)
     setSalvando(false)
-    if (error) { setMensagem(error.message); return }
+    if (error) {
+      setMensagem(
+        error.code === '23P01'
+          ? 'Esse horário acabou de ser ocupado por outro agendamento. Escolha outro horário.'
+          : error.message
+      )
+      return
+    }
     onRemarcado?.()
   }
 

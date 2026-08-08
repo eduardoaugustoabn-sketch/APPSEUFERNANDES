@@ -165,7 +165,12 @@ export function LancamentoForm({
         servico_id: retornoServicoId, data: retornoData, hora_inicio: retornoHorario,
         hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
       })
-      if (error) { setMensagem(`Lançamento salvo, mas o agendamento de retorno falhou: ${error.message}`); setSalvando(false); return }
+      if (error) {
+        const motivo = error.code === '23P01' ? 'esse horário acabou de ser ocupado por outro agendamento' : error.message
+        setMensagem(`Lançamento salvo, mas o agendamento de retorno falhou: ${motivo}.`)
+        setSalvando(false)
+        return
+      }
     }
 
     setMensagem(agendarRetorno && retornoHorario ? 'Concluído e retorno agendado com sucesso!' : 'Concluído com sucesso!')

@@ -17,8 +17,20 @@ create policy "admin le prospeccoes da barbearia" on prospeccoes for select
   using (barbearia_id = auth_barbearia_id() and auth_papel() = 'admin');
 create policy "barbeiro le proprias prospeccoes" on prospeccoes for select
   using (membro_id = auth_membro_id());
+-- A fresh contact is always 'contactado' with no cliente_id — conversion
+-- happens later via UPDATE (below). Without pinning that shape here, the
+-- insert policy would let a barbeiro submit a row already marked
+-- 'convertido' with an arbitrary cliente_id (any UUID that exists in
+-- clientes, tenant unchecked), bypassing criar_ou_obter_cliente() entirely
+-- and forging a conversion metric or cross-tenant client reference — same
+-- FK/state gap already closed on agendamentos/atendimentos/vendas_produtos.
 create policy "barbeiro insere proprias prospeccoes" on prospeccoes for insert
-  with check (membro_id = auth_membro_id() and barbearia_id = auth_barbearia_id());
+  with check (
+    membro_id = auth_membro_id()
+    and barbearia_id = auth_barbearia_id()
+    and status = 'contactado'
+    and cliente_id is null
+  );
 -- cliente_id is nullable and only ever set on conversion (via UPDATE, not
 -- INSERT — see ProspeccaoConverterForm, Task 17), so the tenant-FK check
 -- for it belongs here, following the same pattern as Tasks 8/11/12.

@@ -28,7 +28,8 @@ create table agendamentos (
   hora_fim time not null,
   status text not null default 'confirmado' check (status in ('confirmado', 'cancelado', 'concluido')),
   origem text not null check (origem in ('publico', 'interno')),
-  criado_em timestamptz not null default now()
+  criado_em timestamptz not null default now(),
+  check (hora_fim > hora_inicio)
 );
 
 -- The no-overbooking guarantee: no two non-cancelled appointments for the same

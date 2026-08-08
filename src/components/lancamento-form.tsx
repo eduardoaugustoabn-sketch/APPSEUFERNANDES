@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Input } from '@/components/ui/input'
@@ -14,6 +15,7 @@ type ProdutoSelecionado = Produto & { quantidade: number }
 export function LancamentoForm({
   barbeariaId, membroId, servicos, produtos,
 }: { barbeariaId: string; membroId: string; servicos: Servico[]; produtos: Produto[] }) {
+  const router = useRouter()
   const [cliente, setCliente] = useState<{ nome: string; telefone: string } | null>(null)
   const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>([])
   const [produtosSelecionados, setProdutosSelecionados] = useState<ProdutoSelecionado[]>([])
@@ -94,6 +96,13 @@ export function LancamentoForm({
     setCliente(null)
     setClienteAutocompleteKey((atual) => atual + 1)
     setSalvando(false)
+    // The insert above went through the browser Supabase client, not a
+    // server action — the page's own `produtos` prop (fetched once on
+    // load, via getServerSupabaseClient in painel/lancamentos/page.tsx)
+    // never re-runs on its own, so the "estoque: N" shown in the produto
+    // dropdown would keep reading the pre-sale count until a manual reload.
+    // router.refresh() re-runs that server fetch to pick up the real value.
+    router.refresh()
   }
 
   return (

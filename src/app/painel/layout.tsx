@@ -1,5 +1,14 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { SignOutButton } from '@/components/sign-out-button'
+
+const NAV_ITEMS = [
+  { href: '/painel', label: 'Dashboard' },
+  { href: '/painel/lancamentos', label: 'Lançamentos' },
+  { href: '/painel/agenda', label: 'Agenda' },
+  { href: '/painel/prospeccao', label: 'Prospecção' },
+]
 
 export default async function BarbeiroLayout({ children }: { children: React.ReactNode }) {
   const supabase = await getServerSupabaseClient()
@@ -14,5 +23,19 @@ export default async function BarbeiroLayout({ children }: { children: React.Rea
 
   if (membro?.papel !== 'barbeiro') redirect('/')
 
-  return <div className="p-6">{children}</div>
+  return (
+    <div>
+      <nav className="flex items-center justify-between border-b px-6 py-3">
+        <div className="flex gap-4">
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href} className="text-sm hover:underline">
+              {item.label}
+            </Link>
+          ))}
+        </div>
+        <SignOutButton />
+      </nav>
+      <div className="p-6">{children}</div>
+    </div>
+  )
 }

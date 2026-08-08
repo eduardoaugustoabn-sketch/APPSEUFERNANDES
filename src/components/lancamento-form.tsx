@@ -12,12 +12,40 @@ type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoq
 type ServicoSelecionado = Servico
 type ProdutoSelecionado = Produto & { quantidade: number }
 
+// Opened straight from a slot in AgendaDia (Agenda page) instead of the
+// free-form Lançamentos page:
+// - 'completar': the slot already had an agendamento (público ou interno) —
+//   pré-preenche o cliente/serviço, e ao salvar linka os atendimentos a esse
+//   agendamento e marca ele como concluído.
+// - 'novo': the slot was free — o barbeiro está atendendo alguém sem
+//   agendamento prévio; ao salvar, cria um agendamento (status concluído,
+//   nesse horário) além do(s) atendimento(s)/venda(s), pra não sumir da
+//   agenda e não deixar ninguém marcar em cima.
+export type ModoAgenda =
+  | { tipo: 'completar'; agendamentoId: string; clienteNome: string; clienteTelefone: string; servicoId: string; data: string; horaInicio: string }
+  | { tipo: 'novo'; data: string; horaInicio: string }
+
 export function LancamentoForm({
-  barbeariaId, membroId, servicos, produtos,
-}: { barbeariaId: string; membroId: string; servicos: Servico[]; produtos: Produto[] }) {
+  barbeariaId, membroId, servicos, produtos, modoAgenda, onSalvo,
+}: {
+  barbeariaId: string
+  membroId: string
+  servicos: Servico[]
+  produtos: Produto[]
+  modoAgenda?: ModoAgenda
+  onSalvo?: () => void
+}) {
   const router = useRouter()
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string } | null>(null)
-  const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>([])
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string } | null>(
+    modoAgenda?.tipo === 'completar' ? { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone } : null
+  )
+  const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>(() => {
+    if (modoAgenda?.tipo === 'completar') {
+      const servico = servicos.find((s) => s.id === modoAgenda.servicoId)
+      return servico ? [servico] : []
+    }
+    return []
+  })
   const [produtosSelecionados, setProdutosSelecionados] = useState<ProdutoSelecionado[]>([])
   const [servicoParaAdicionar, setServicoParaAdicionar] = useState('')
   const [produtoParaAdicionar, setProdutoParaAdicionar] = useState('')
@@ -100,10 +128,27 @@ export function LancamentoForm({
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
+    // Aberto a partir de um horário livre na Agenda: cria o agendamento
+    // (já concluído) neste horário primeiro, pra linkar os atendimentos a
+    // ele e pra que o horário pare de aparecer como livre pra outra pessoa.
+    let agendamentoId: string | null = modoAgenda?.tipo === 'completar' ? modoAgenda.agendamentoId : null
+    if (modoAgenda?.tipo === 'novo' && servicosSelecionados.length > 0) {
+      const servicoPrincipal = servicosSelecionados[0]
+      const horaFim = new Date(`1970-01-01T${modoAgenda.horaInicio}`)
+      horaFim.setMinutes(horaFim.getMinutes() + servicoPrincipal.duracao_minutos)
+      const novoAgendamento = await supabase.from('agendamentos').insert({
+        barbearia_id: barbeariaId, membro_id: membroId, cliente_id: clienteId.data,
+        servico_id: servicoPrincipal.id, data: modoAgenda.data, hora_inicio: modoAgenda.horaInicio,
+        hora_fim: horaFim.toTimeString().slice(0, 8), status: 'concluido', origem: 'interno',
+      }).select('id').single()
+      if (novoAgendamento.error) { setMensagem(novoAgendamento.error.message); setSalvando(false); return }
+      agendamentoId = novoAgendamento.data.id
+    }
+
     for (const servico of servicosSelecionados) {
       const { error } = await supabase.from('atendimentos').insert({
         barbearia_id: barbeariaId, membro_id: membroId, cliente_id: clienteId.data,
-        servico_id: servico.id, preco: servico.preco,
+        servico_id: servico.id, preco: servico.preco, agendamento_id: agendamentoId,
       })
       if (error) { setMensagem(error.message); setSalvando(false); return }
     }
@@ -114,6 +159,11 @@ export function LancamentoForm({
         produto_id: produto.id, quantidade: produto.quantidade, preco_unitario: produto.preco_venda,
       })
       if (error) { setMensagem(error.message); setSalvando(false); return }
+    }
+
+    if (modoAgenda?.tipo === 'completar') {
+      const { error } = await supabase.from('agendamentos').update({ status: 'concluido' }).eq('id', modoAgenda.agendamentoId)
+      if (error) { setMensagem(`Lançamento salvo, mas não deu pra marcar o agendamento como concluído: ${error.message}`); setSalvando(false); return }
     }
 
     if (agendarRetorno && retornoHorario) {
@@ -139,19 +189,30 @@ export function LancamentoForm({
     setRetornoHorario('')
     setSalvando(false)
     // The insert above went through the browser Supabase client, not a
-    // server action — the page's own `produtos` prop (fetched once on
-    // load, via getServerSupabaseClient in painel/lancamentos/page.tsx)
-    // never re-runs on its own, so the "estoque: N" shown in the produto
-    // dropdown would keep reading the pre-sale count until a manual reload.
-    // router.refresh() re-runs that server fetch to pick up the real value.
+    // server action — the page's own `produtos`/`servicos` props (fetched
+    // once on load, server-side) never re-run on their own, so "estoque: N"
+    // and the AgendaDia grid would keep showing stale data until a manual
+    // reload. router.refresh() re-runs the page's own server fetch;
+    // onSalvo (from AgendaDia) additionally refetches its own client-side
+    // agendamentos list.
     router.refresh()
+    onSalvo?.()
   }
 
   return (
     <div className="flex flex-col gap-4 max-w-md border rounded p-4">
-      <h3 className="font-medium">Novo lançamento</h3>
+      <h3 className="font-medium">
+        {modoAgenda?.tipo === 'completar' && `Atender agendamento — ${modoAgenda.horaInicio.slice(0, 5)}`}
+        {modoAgenda?.tipo === 'novo' && `Novo atendimento — ${modoAgenda.horaInicio.slice(0, 5)}`}
+        {!modoAgenda && 'Novo lançamento'}
+      </h3>
 
-      <ClienteAutocomplete key={clienteAutocompleteKey} barbeariaId={barbeariaId} onResolved={setCliente} />
+      <ClienteAutocomplete
+        key={clienteAutocompleteKey}
+        barbeariaId={barbeariaId}
+        onResolved={setCliente}
+        valorInicial={modoAgenda?.tipo === 'completar' ? { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone } : undefined}
+      />
 
       <div>
         <p className="text-sm font-medium mb-1">Serviços (corte, serviço extra...)</p>

@@ -1,19 +1,31 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 
 export function ClienteAutocomplete({
-  barbeariaId, onResolved,
-}: { barbeariaId: string; onResolved: (info: { nome: string; telefone: string; totalCortes: number }) => void }) {
-  const [nome, setNome] = useState('')
-  const [telefone, setTelefone] = useState('')
+  barbeariaId, onResolved, valorInicial,
+}: {
+  barbeariaId: string
+  onResolved: (info: { nome: string; telefone: string; totalCortes: number }) => void
+  valorInicial?: { nome: string; telefone: string }
+}) {
+  const [nome, setNome] = useState(valorInicial?.nome ?? '')
+  const [telefone, setTelefone] = useState(valorInicial?.telefone ?? '')
   const [info, setInfo] = useState<string | null>(null)
   // Refs (not just state) so onResolved always reads the latest value
   // regardless of render timing.
-  const nomeRef = useRef('')
-  const telefoneRef = useRef('')
+  const nomeRef = useRef(valorInicial?.nome ?? '')
+  const telefoneRef = useRef(valorInicial?.telefone ?? '')
+
+  // Report the pre-filled value once on mount, so the parent (e.g.
+  // LancamentoForm opened from an existing agendamento) has it immediately
+  // instead of only after the user types something.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (valorInicial) onResolved({ nome: valorInicial.nome, telefone: valorInicial.telefone, totalCortes: 0 })
+  }, [])
 
   function handleNomeChange(value: string) {
     nomeRef.current = value

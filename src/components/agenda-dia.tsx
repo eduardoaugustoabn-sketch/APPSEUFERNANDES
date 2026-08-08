@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { LancamentoForm, type ModoAgenda } from './lancamento-form'
+import { AgendarSlotForm } from './agendar-slot-form'
+import { RemarcarForm } from './remarcar-form'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number }
@@ -45,6 +47,8 @@ export function AgendaDia({
   const [agendamentos, setAgendamentos] = useState<AgendamentoDia[]>([])
   const [carregando, setCarregando] = useState(false)
   const [modoAgenda, setModoAgenda] = useState<ModoAgenda | null>(null)
+  const [slotParaAgendar, setSlotParaAgendar] = useState<string | null>(null)
+  const [remarcando, setRemarcando] = useState<{ id: string; servicoId: string; clienteNome: string } | null>(null)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -82,23 +86,29 @@ export function AgendaDia({
     return { tipo: 'livre' as const }
   }
 
+  function fecharPaineis() {
+    setModoAgenda(null)
+    setSlotParaAgendar(null)
+    setRemarcando(null)
+  }
+
   function clicarSlot(slot: string) {
     if (!ehHoje) return
     const info = statusDoSlot(slot)
     if (info.tipo === 'bloqueado') return
     if (info.tipo === 'ocupado') {
-      if (info.agendamento.status === 'concluido' || !info.agendamento.servicos) return
+      if (info.agendamento.status !== 'confirmado' || !info.agendamento.servicos) return
+      fecharPaineis()
       setModoAgenda({
-        tipo: 'completar',
         agendamentoId: info.agendamento.id,
         clienteNome: info.agendamento.clientes?.nome ?? '',
         clienteTelefone: info.agendamento.clientes?.telefone ?? '',
         servicoId: info.agendamento.servicos.id,
-        data,
         horaInicio: info.agendamento.hora_inicio,
       })
     } else {
-      setModoAgenda({ tipo: 'novo', data, horaInicio: slot })
+      fecharPaineis()
+      setSlotParaAgendar(slot)
     }
   }
 
@@ -108,10 +118,12 @@ export function AgendaDia({
     if (!error) carregar()
   }
 
+  const painelAberto = modoAgenda || slotParaAgendar || remarcando
+
   return (
     <div className="flex gap-6 flex-wrap items-start">
       <div className="max-w-md flex-1 min-w-[280px]">
-        <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-auto mb-3" />
+        <Input type="date" value={data} onChange={(e) => { setData(e.target.value); fecharPaineis() }} className="w-auto mb-3" />
 
         {carregando && <p className="text-sm text-muted-foreground">Carregando...</p>}
         {!carregando && slotsUnicos.length === 0 && <p className="text-sm text-muted-foreground">Sem expediente cadastrado para este dia.</p>}
@@ -143,7 +155,16 @@ export function AgendaDia({
                     : `${rotulo} — ↳`}
                 </button>
                 {info.primeiroSlot && !concluido && (
-                  <button type="button" onClick={() => cancelar(info.agendamento.id)} className="text-red-600 text-xs ml-2">cancelar</button>
+                  <span className="flex gap-2 ml-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { fecharPaineis(); setRemarcando({ id: info.agendamento.id, servicoId: info.agendamento.servicos?.id ?? '', clienteNome: info.agendamento.clientes?.nome ?? '' }) }}
+                      className="text-xs underline"
+                    >
+                      remarcar
+                    </button>
+                    <button type="button" onClick={() => cancelar(info.agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                  </span>
                 )}
               </div>
             )
@@ -167,15 +188,40 @@ export function AgendaDia({
         )}
       </div>
 
-      {modoAgenda && (
-        <LancamentoForm
-          barbeariaId={barbeariaId}
-          membroId={membroId}
-          servicos={servicos}
-          produtos={produtos}
-          modoAgenda={modoAgenda}
-          onSalvo={() => { setModoAgenda(null); carregar() }}
-        />
+      {painelAberto && (
+        <div className="flex flex-col gap-2">
+          {modoAgenda && (
+            <LancamentoForm
+              barbeariaId={barbeariaId}
+              membroId={membroId}
+              servicos={servicos}
+              produtos={produtos}
+              modoAgenda={modoAgenda}
+              onSalvo={() => { fecharPaineis(); carregar() }}
+            />
+          )}
+          {slotParaAgendar && (
+            <AgendarSlotForm
+              barbeariaId={barbeariaId}
+              membroId={membroId}
+              servicos={servicos}
+              data={data}
+              horaInicio={slotParaAgendar}
+              onAgendado={() => { fecharPaineis(); carregar() }}
+            />
+          )}
+          {remarcando && (
+            <RemarcarForm
+              barbeariaId={barbeariaId}
+              membroId={membroId}
+              servicoId={remarcando.servicoId}
+              agendamentoId={remarcando.id}
+              clienteNome={remarcando.clienteNome}
+              onRemarcado={() => { fecharPaineis(); carregar() }}
+              onCancelar={fecharPaineis}
+            />
+          )}
+        </div>
       )}
     </div>
   )

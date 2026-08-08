@@ -25,8 +25,8 @@ export function ClienteAutocomplete({
     telefoneRef.current = tel
     setTelefone(tel)
     // Resolve synchronously with the raw typed value first — the caller
-    // (LancamentoServicoForm/LancamentoProdutoForm's lancar()) reads
-    // whatever onResolved last reported, and reconhecer_cliente() below is
+    // (LancamentoForm's salvar()) reads whatever onResolved last reported,
+    // and reconhecer_cliente() below is
     // an async network round-trip. Without this synchronous resolve, a
     // click on "Salvar" landing before that round-trip completes would
     // submit with an empty/stale telefone, since the only onResolved call

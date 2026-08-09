@@ -1,4 +1,5 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 import { ProspeccaoConverterForm } from '@/components/prospeccao-converter-form'
 
 async function novoContato(formData: FormData) {
@@ -13,6 +14,7 @@ async function novoContato(formData: FormData) {
     canal: (formData.get('canal') as string) || null,
     oferta_corte_gratis: formData.get('oferta_corte_gratis') === 'on',
   })
+  revalidatePath('/painel/prospeccao')
 }
 
 export default async function ProspeccaoPage() {

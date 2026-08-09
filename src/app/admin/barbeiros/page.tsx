@@ -26,7 +26,11 @@ export default async function BarbeirosPage() {
     <div>
       <h1 className="text-xl font-semibold mb-4">Barbeiros</h1>
       {barbeiros?.map((b) => (
-        <form key={b.id} action={vincularPlano} className="flex gap-2 items-center mb-2">
+        <form
+          key={`${b.id}-${b.plano_carreira_id ?? 'none'}-${b.meta_prospeccao_dia ?? 'none'}`}
+          action={vincularPlano}
+          className="flex gap-2 items-center mb-2"
+        >
           <input type="hidden" name="membro_id" value={b.id} />
           <span className="w-32">{b.nome}</span>
           <select name="plano_carreira_id" defaultValue={b.plano_carreira_id ?? ''} className="border rounded px-2 py-1">

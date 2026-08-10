@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { LancamentoForm, type ModoAgenda } from './lancamento-form'
 import { AgendarSlotForm } from './agendar-slot-form'
 import { RemarcarForm } from './remarcar-form'
+import { AtenderAgoraForm } from './atender-agora-form'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number }
@@ -49,6 +50,7 @@ export function AgendaDia({
   const [modoAgenda, setModoAgenda] = useState<ModoAgenda | null>(null)
   const [slotParaAgendar, setSlotParaAgendar] = useState<string | null>(null)
   const [remarcando, setRemarcando] = useState<{ id: string; servicoId: string; clienteNome: string } | null>(null)
+  const [atendendoAgora, setAtendendoAgora] = useState(false)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -90,6 +92,7 @@ export function AgendaDia({
     setModoAgenda(null)
     setSlotParaAgendar(null)
     setRemarcando(null)
+    setAtendendoAgora(false)
   }
 
   function clicarSlot(slot: string) {
@@ -129,12 +132,15 @@ export function AgendaDia({
     if (!error) carregar()
   }
 
-  const painelAberto = modoAgenda || slotParaAgendar || remarcando
+  const painelAberto = modoAgenda || slotParaAgendar || remarcando || atendendoAgora
 
   return (
     <div className="flex gap-6 flex-wrap items-start">
       <div className="max-w-md flex-1 min-w-[280px]">
-        <Input type="date" value={data} onChange={(e) => { setData(e.target.value); fecharPaineis() }} className="w-auto mb-3" />
+        <div className="flex items-center gap-3 mb-3">
+          <Input type="date" value={data} onChange={(e) => { setData(e.target.value); fecharPaineis() }} className="w-auto" />
+          <button type="button" onClick={() => { fecharPaineis(); setAtendendoAgora(true) }} className="text-sm underline">Atender agora</button>
+        </div>
 
         {carregando && <p className="text-sm text-muted-foreground">Carregando...</p>}
         {!carregando && slotsUnicos.length === 0 && <p className="text-sm text-muted-foreground">Sem expediente cadastrado para este dia.</p>}
@@ -244,6 +250,15 @@ export function AgendaDia({
               agendamentoId={remarcando.id}
               clienteNome={remarcando.clienteNome}
               onRemarcado={() => { fecharPaineis(); carregar() }}
+              onCancelar={fecharPaineis}
+            />
+          )}
+          {atendendoAgora && (
+            <AtenderAgoraForm
+              barbeariaId={barbeariaId}
+              membroId={membroId}
+              servicos={servicos}
+              onCriado={(modo) => { fecharPaineis(); setModoAgenda(modo) }}
               onCancelar={fecharPaineis}
             />
           )}

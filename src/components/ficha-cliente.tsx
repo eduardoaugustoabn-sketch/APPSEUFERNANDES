@@ -12,6 +12,18 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const { data: atendimentos } = await supabase.from('atendimentos').select('data, preco, servicos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: AtendimentoHistorico[] | null }
   const { data: vendas } = await supabase.from('vendas_produtos').select('data, preco_unitario, quantidade, produtos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: VendaHistorico[] | null }
 
+  const { data: agendamentosHistorico } = await supabase
+    .from('agendamentos')
+    .select('data, hora_inicio, status, servicos(nome)')
+    .eq('cliente_id', clienteId)
+    .order('data', { ascending: false }) as { data: { data: string; hora_inicio: string; status: string; servicos: { nome: string } | null }[] | null }
+
+  const { data: prospeccaoHistorico } = await supabase
+    .from('prospeccoes')
+    .select('data, canal, status, convertido_em')
+    .eq('cliente_id', clienteId)
+    .order('criado_em', { ascending: false }) as { data: { data: string; canal: string | null; status: string; convertido_em: string | null }[] | null }
+
   const maiorQuantidade = Math.max(1, ...(ranking ?? []).map((r) => r.quantidade))
 
   const historico = [
@@ -44,6 +56,26 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
           <span>R$ {Number(h.valor).toFixed(2)}</span>
         </div>
       ))}
+
+      <h3 className="font-medium mt-4 mb-2">Agendamentos</h3>
+      {(agendamentosHistorico ?? []).map((a, i) => (
+        <div key={i} className="flex justify-between text-sm border-b py-1">
+          <span>{new Date(a.data).toLocaleDateString()} {a.hora_inicio.slice(0, 5)} — {a.servicos?.nome ?? '—'}</span>
+          <span className="text-muted-foreground">{a.status}</span>
+        </div>
+      ))}
+
+      {(prospeccaoHistorico ?? []).length > 0 && (
+        <>
+          <h3 className="font-medium mt-4 mb-2">Prospecção</h3>
+          {prospeccaoHistorico!.map((p, i) => (
+            <div key={i} className="flex justify-between text-sm border-b py-1">
+              <span>{new Date(p.data).toLocaleDateString()} — {p.canal ?? 'sem canal'}</span>
+              <span className="text-muted-foreground">{p.status}{p.convertido_em ? ` (${new Date(p.convertido_em).toLocaleDateString()})` : ''}</span>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   )
 }

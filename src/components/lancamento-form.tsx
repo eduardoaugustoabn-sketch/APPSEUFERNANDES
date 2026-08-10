@@ -140,6 +140,7 @@ export function LancamentoForm({
       const { error } = await supabase.from('vendas_produtos').insert({
         barbearia_id: barbeariaId, membro_id: membroId, cliente_id: clienteId.data,
         produto_id: produto.id, quantidade: produto.quantidade, preco_unitario: produto.preco_venda,
+        agendamento_id: modoAgenda.agendamentoId,
       })
       if (error) { setMensagem(error.message); setSalvando(false); return }
     }

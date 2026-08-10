@@ -239,6 +239,7 @@ export function AgendaDia({
               servicos={servicos}
               data={data}
               horaInicio={slotParaAgendar}
+              agendamentosExistentes={agendamentos}
               onAgendado={() => { fecharPaineis(); carregar() }}
             />
           )}

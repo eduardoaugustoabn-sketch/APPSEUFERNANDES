@@ -156,7 +156,7 @@ export function AgendaDia({
               <div key={slot} className="rounded bg-muted px-2 py-1.5">
                 <span className="block text-sm font-medium mb-1">{rotulo}</span>
                 {info.agendamentos.map((agendamento) => {
-                  const jaPassou = `${data}T${agendamento.hora_inicio}` < new Date().toISOString()
+                  const jaPassou = new Date(`${data}T${agendamento.hora_inicio}`) < new Date()
                   const concluido = agendamento.status === 'realizado' || agendamento.status === 'nao_compareceu'
                   const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
                   return (

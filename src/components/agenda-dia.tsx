@@ -81,8 +81,8 @@ export function AgendaDia({
   function statusDoSlot(slot: string) {
     const bloqueio = bloqueios.find((b) => b.hora_inicio.slice(0, 5) <= slot.slice(0, 5) && slot.slice(0, 5) < b.hora_fim.slice(0, 5))
     if (bloqueio) return { tipo: 'bloqueado' as const, bloqueio }
-    const agendamento = agendamentos.find((a) => a.hora_inicio.slice(0, 5) <= slot.slice(0, 5) && slot.slice(0, 5) < a.hora_fim.slice(0, 5))
-    if (agendamento) return { tipo: 'ocupado' as const, agendamento, primeiroSlot: agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5) }
+    const doSlot = agendamentos.filter((a) => a.hora_inicio.slice(0, 5) <= slot.slice(0, 5) && slot.slice(0, 5) < a.hora_fim.slice(0, 5))
+    if (doSlot.length > 0) return { tipo: 'ocupado' as const, agendamentos: doSlot }
     return { tipo: 'livre' as const }
   }
 
@@ -95,20 +95,20 @@ export function AgendaDia({
   function clicarSlot(slot: string) {
     const info = statusDoSlot(slot)
     if (info.tipo === 'bloqueado') return
-    if (info.tipo === 'ocupado') {
-      if (info.agendamento.status !== 'confirmado' || !info.agendamento.servicos) return
-      fecharPaineis()
-      setModoAgenda({
-        agendamentoId: info.agendamento.id,
-        clienteNome: info.agendamento.clientes?.nome ?? '',
-        clienteTelefone: info.agendamento.clientes?.telefone ?? '',
-        servicoId: info.agendamento.servicos.id,
-        horaInicio: info.agendamento.hora_inicio,
-      })
-    } else {
-      fecharPaineis()
-      setSlotParaAgendar(slot)
-    }
+    fecharPaineis()
+    setSlotParaAgendar(slot)
+  }
+
+  function atenderAgendamento(agendamento: AgendamentoDia) {
+    if (agendamento.status !== 'confirmado' || !agendamento.servicos) return
+    fecharPaineis()
+    setModoAgenda({
+      agendamentoId: agendamento.id,
+      clienteNome: agendamento.clientes?.nome ?? '',
+      clienteTelefone: agendamento.clientes?.telefone ?? '',
+      servicoId: agendamento.servicos.id,
+      horaInicio: agendamento.hora_inicio,
+    })
   }
 
   async function cancelar(id: string) {
@@ -140,31 +140,40 @@ export function AgendaDia({
           }
 
           if (info.tipo === 'ocupado') {
-            const concluido = info.agendamento.status === 'realizado'
             return (
-              <div key={slot} className={`flex justify-between items-center text-sm py-1.5 px-2 rounded ${concluido ? 'opacity-60' : 'bg-muted'}`}>
-                <button
-                  type="button"
-                  onClick={() => clicarSlot(slot)}
-                  disabled={concluido}
-                  className="text-left flex-1 disabled:cursor-default"
-                >
-                  {info.primeiroSlot
-                    ? `${rotulo} — ${info.agendamento.clientes?.nome ?? 'cliente'} · ${info.agendamento.servicos?.nome ?? ''}${concluido ? ' · concluído' : ''}`
-                    : `${rotulo} — ↳`}
-                </button>
-                {info.primeiroSlot && !concluido && (
-                  <span className="flex gap-2 ml-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => { fecharPaineis(); setRemarcando({ id: info.agendamento.id, servicoId: info.agendamento.servicos?.id ?? '', clienteNome: info.agendamento.clientes?.nome ?? '' }) }}
-                      className="text-xs underline"
-                    >
-                      remarcar
-                    </button>
-                    <button type="button" onClick={() => cancelar(info.agendamento.id)} className="text-red-600 text-xs">cancelar</button>
-                  </span>
-                )}
+              <div key={slot} className="rounded bg-muted px-2 py-1.5">
+                <span className="block text-sm font-medium mb-1">{rotulo}</span>
+                {info.agendamentos.map((agendamento) => {
+                  const concluido = agendamento.status === 'realizado'
+                  const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
+                  return (
+                    <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 ${concluido ? 'opacity-60' : ''}`}>
+                      <button
+                        type="button"
+                        onClick={() => atenderAgendamento(agendamento)}
+                        disabled={concluido}
+                        className="text-left flex-1 disabled:cursor-default"
+                      >
+                        {eDesteSlot
+                          ? `${agendamento.clientes?.nome ?? 'cliente'} · ${agendamento.servicos?.nome ?? ''}${concluido ? ' · concluído' : ''}`
+                          : '↳ continua'}
+                      </button>
+                      {eDesteSlot && !concluido && (
+                        <span className="flex gap-2 ml-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => { fecharPaineis(); setRemarcando({ id: agendamento.id, servicoId: agendamento.servicos?.id ?? '', clienteNome: agendamento.clientes?.nome ?? '' }) }}
+                            className="text-xs underline"
+                          >
+                            remarcar
+                          </button>
+                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+                <button type="button" onClick={() => clicarSlot(slot)} className="text-xs underline mt-1">+ agendar outro aqui</button>
               </div>
             )
           }

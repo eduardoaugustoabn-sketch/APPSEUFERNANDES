@@ -7,7 +7,7 @@ type VendaHistorico = { data: string; preco_unitario: number; quantidade: number
 export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const supabase = await getServerSupabaseClient()
 
-  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em').eq('id', clienteId).single()
+  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, data_nascimento').eq('id', clienteId).single()
   const { data: ranking } = await supabase.rpc('ranking_cliente', { p_cliente_id: clienteId }) as { data: Ranking[] | null }
   const { data: atendimentos } = await supabase.from('atendimentos').select('data, preco, servicos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: AtendimentoHistorico[] | null }
   const { data: vendas } = await supabase.from('vendas_produtos').select('data, preco_unitario, quantidade, produtos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: VendaHistorico[] | null }
@@ -21,7 +21,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
 
   return (
     <div>
-      <p className="font-medium">{cliente?.nome} · {cliente?.telefone}</p>
+      <p className="font-medium">{cliente?.nome} · {cliente?.telefone}{cliente?.data_nascimento ? ` · nasc. ${new Date(cliente.data_nascimento).toLocaleDateString()}` : ''}</p>
       <p className="text-xs text-muted-foreground mb-4">Cliente desde {cliente?.criado_em ? new Date(cliente.criado_em).toLocaleDateString() : ''}</p>
 
       <h3 className="font-medium mt-4 mb-2">Mais usados por ele</h3>

@@ -117,6 +117,18 @@ export function AgendaDia({
     if (!error) carregar()
   }
 
+  async function confirmarAgendamento(id: string) {
+    const supabase = getBrowserSupabaseClient()
+    const { error } = await supabase.from('agendamentos').update({ status: 'confirmado' }).eq('id', id)
+    if (!error) carregar()
+  }
+
+  async function marcarNaoCompareceu(id: string) {
+    const supabase = getBrowserSupabaseClient()
+    const { error } = await supabase.from('agendamentos').update({ status: 'nao_compareceu' }).eq('id', id)
+    if (!error) carregar()
+  }
+
   const painelAberto = modoAgenda || slotParaAgendar || remarcando
 
   return (
@@ -144,7 +156,8 @@ export function AgendaDia({
               <div key={slot} className="rounded bg-muted px-2 py-1.5">
                 <span className="block text-sm font-medium mb-1">{rotulo}</span>
                 {info.agendamentos.map((agendamento) => {
-                  const concluido = agendamento.status === 'realizado'
+                  const jaPassou = `${data}T${agendamento.hora_inicio}` < new Date().toISOString()
+                  const concluido = agendamento.status === 'realizado' || agendamento.status === 'nao_compareceu'
                   const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
                   return (
                     <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 ${concluido ? 'opacity-60' : ''}`}>
@@ -155,10 +168,16 @@ export function AgendaDia({
                         className="text-left flex-1 disabled:cursor-default"
                       >
                         {eDesteSlot
-                          ? `${agendamento.clientes?.nome ?? 'cliente'} · ${agendamento.servicos?.nome ?? ''}${concluido ? ' · concluído' : ''}`
+                          ? `${agendamento.clientes?.nome ?? 'cliente'} · ${agendamento.servicos?.nome ?? ''}${agendamento.status === 'realizado' ? ' · realizado' : ''}${agendamento.status === 'nao_compareceu' ? ' · não compareceu' : ''}`
                           : '↳ continua'}
                       </button>
-                      {eDesteSlot && !concluido && (
+                      {eDesteSlot && agendamento.status === 'agendado' && (
+                        <span className="flex gap-2 ml-2 shrink-0">
+                          <button type="button" onClick={() => confirmarAgendamento(agendamento.id)} className="text-xs underline">confirmar</button>
+                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                        </span>
+                      )}
+                      {eDesteSlot && agendamento.status === 'confirmado' && (
                         <span className="flex gap-2 ml-2 shrink-0">
                           <button
                             type="button"
@@ -168,6 +187,9 @@ export function AgendaDia({
                             remarcar
                           </button>
                           <button type="button" onClick={() => cancelar(agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                          {jaPassou && (
+                            <button type="button" onClick={() => marcarNaoCompareceu(agendamento.id)} className="text-amber-700 text-xs">não compareceu</button>
+                          )}
                         </span>
                       )}
                     </div>

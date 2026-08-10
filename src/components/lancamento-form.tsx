@@ -12,14 +12,14 @@ type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoq
 type ServicoSelecionado = Servico
 type ProdutoSelecionado = Produto & { quantidade: number }
 
-// Opened from an existing agendamento (AgendaDia, Agenda page) to record
-// what actually happened when the cliente showed up: pré-preenche o
-// cliente/serviço já marcado, deixa adicionar produto/serviço extra, e ao
-// salvar linka os atendimentos ao agendamento e marca ele como concluído.
-// Um agendamento só vira concluído aqui — nunca automaticamente ao ser
-// criado — porque as métricas do dashboard (faturamento, comissão,
-// ociosidade) só devem contar quem de fato foi atendido e pagou, não quem
-// apenas marcou um horário e pode nem aparecer.
+// Opened from an agendamento (AgendaDia, "Atender agora") to record what
+// actually happened when the cliente showed up: pré-preenche o cliente/
+// serviço já marcado, deixa adicionar produto/serviço extra, e ao salvar
+// linka os atendimentos ao agendamento e marca ele como realizado. Um
+// agendamento só vira realizado aqui — nunca automaticamente ao ser criado
+// — porque as métricas do dashboard (faturamento, comissão, ociosidade) só
+// devem contar quem de fato foi atendido e pagou, não quem apenas marcou um
+// horário e pode nem aparecer.
 export type ModoAgenda = {
   agendamentoId: string
   clienteNome: string
@@ -35,19 +35,16 @@ export function LancamentoForm({
   membroId: string
   servicos: Servico[]
   produtos: Produto[]
-  modoAgenda?: ModoAgenda
+  modoAgenda: ModoAgenda
   onSalvo?: () => void
 }) {
   const router = useRouter()
   const [cliente, setCliente] = useState<{ nome: string; telefone: string } | null>(
-    modoAgenda ? { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone } : null
+    { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }
   )
   const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>(() => {
-    if (modoAgenda) {
-      const servico = servicos.find((s) => s.id === modoAgenda.servicoId)
-      return servico ? [servico] : []
-    }
-    return []
+    const servico = servicos.find((s) => s.id === modoAgenda.servicoId)
+    return servico ? [servico] : []
   })
   const [produtosSelecionados, setProdutosSelecionados] = useState<ProdutoSelecionado[]>([])
   const [servicoParaAdicionar, setServicoParaAdicionar] = useState('')
@@ -134,7 +131,7 @@ export function LancamentoForm({
     for (const servico of servicosSelecionados) {
       const { error } = await supabase.from('atendimentos').insert({
         barbearia_id: barbeariaId, membro_id: membroId, cliente_id: clienteId.data,
-        servico_id: servico.id, preco: servico.preco, agendamento_id: modoAgenda?.agendamentoId ?? null,
+        servico_id: servico.id, preco: servico.preco, agendamento_id: modoAgenda.agendamentoId,
       })
       if (error) { setMensagem(error.message); setSalvando(false); return }
     }
@@ -147,14 +144,12 @@ export function LancamentoForm({
       if (error) { setMensagem(error.message); setSalvando(false); return }
     }
 
-    // Um agendamento só vira concluído aqui, quando o cliente de fato foi
+    // Um agendamento só vira realizado aqui, quando o cliente de fato foi
     // atendido e o lançamento foi salvo — nunca no momento de marcar o
     // horário. É esse status que separa "quem agendou" de "quem realmente
     // foi e pagou" nos números do dashboard (que só somam atendimentos).
-    if (modoAgenda) {
-      const { error } = await supabase.from('agendamentos').update({ status: 'realizado' }).eq('id', modoAgenda.agendamentoId)
-      if (error) { setMensagem(`Lançamento salvo, mas não deu pra marcar o agendamento como concluído: ${error.message}`); setSalvando(false); return }
-    }
+    const { error } = await supabase.from('agendamentos').update({ status: 'realizado' }).eq('id', modoAgenda.agendamentoId)
+    if (error) { setMensagem(`Lançamento salvo, mas não deu pra marcar o agendamento como realizado: ${error.message}`); setSalvando(false); return }
 
     if (agendarRetorno && retornoHorario) {
       const servicoRetorno = servicos.find((s) => s.id === retornoServicoId)!
@@ -166,8 +161,7 @@ export function LancamentoForm({
         hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
       })
       if (error) {
-        const motivo = error.code === '23P01' ? 'esse horário acabou de ser ocupado por outro agendamento' : error.message
-        setMensagem(`Lançamento salvo, mas o agendamento de retorno falhou: ${motivo}.`)
+        setMensagem(`Lançamento salvo, mas o agendamento de retorno falhou: ${error.message}.`)
         setSalvando(false)
         return
       }
@@ -196,15 +190,13 @@ export function LancamentoForm({
 
   return (
     <div className="flex flex-col gap-4 max-w-md border rounded p-4">
-      <h3 className="font-medium">
-        {modoAgenda ? `Atender agendamento — ${modoAgenda.horaInicio.slice(0, 5)}` : 'Novo lançamento'}
-      </h3>
+      <h3 className="font-medium">Atender agendamento — {modoAgenda.horaInicio.slice(0, 5)}</h3>
 
       <ClienteAutocomplete
         key={clienteAutocompleteKey}
         barbeariaId={barbeariaId}
         onResolved={setCliente}
-        valorInicial={modoAgenda ? { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone } : undefined}
+        valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
       />
 
       <div>
@@ -268,7 +260,7 @@ export function LancamentoForm({
         )}
       </div>
 
-      <Button type="button" onClick={salvar} disabled={salvando}>{modoAgenda ? 'Concluir atendimento' : 'Salvar lançamento'}</Button>
+      <Button type="button" onClick={salvar} disabled={salvando}>Concluir atendimento</Button>
       {mensagem && <p className="text-sm">{mensagem}</p>}
     </div>
   )

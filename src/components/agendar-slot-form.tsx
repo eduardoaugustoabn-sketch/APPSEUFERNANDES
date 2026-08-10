@@ -28,15 +28,16 @@ export function AgendarSlotForm({
   // O grid marca um horário como "livre" olhando só se ELE MESMO cai dentro
   // de outro agendamento — mas não sabe, até o serviço ser escolhido aqui,
   // se a duração desse serviço vai esbarrar no PRÓXIMO agendamento (ex:
-  // clicar às 09:30 livre, mas um corte de 40min começando aí vai até
-  // 10:10, e já tem alguém marcado às 10:00). Por isso, ao escolher o
-  // serviço, confere de verdade contra horarios_disponiveis antes de deixar
-  // confirmar — em vez de deixar o insert estourar a constraint do banco
-  // com um erro cru na tela.
+  // clicar às 09:00 livre, mas um corte de 40min vai até 09:40, e já tem
+  // alguém marcado às 09:30). Isso não trava mais o agendamento (overbooking
+  // interno é permitido de propósito) — só avisa, e pede uma segunda
+  // confirmação antes de gravar.
   const [conflito, setConflito] = useState(false)
   const [verificando, setVerificando] = useState(false)
+  const [pedindoConfirmacao, setPedindoConfirmacao] = useState(false)
 
   useEffect(() => {
+    setPedindoConfirmacao(false)
     if (!servicoId) { setConflito(false); return }
     let cancelado = false
     async function verificar() {
@@ -55,17 +56,13 @@ export function AgendarSlotForm({
     return () => { cancelado = true }
   }, [servicoId, barbeariaId, membroId, data, horaInicio])
 
-  async function confirmar() {
-    if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
-    if (!servicoId) { setMensagem('Escolha o serviço.'); return }
-    if (conflito) { setMensagem('Esse horário não cabe esse serviço (esbarra em outro agendamento). Escolha outro horário ou outro serviço.'); return }
-
+  async function gravar() {
     setSalvando(true)
     setMensagem(null)
     const supabase = getBrowserSupabaseClient()
 
     const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
-      p_barbearia_id: barbeariaId, p_nome: cliente.nome, p_telefone: cliente.telefone,
+      p_barbearia_id: barbeariaId, p_nome: cliente!.nome, p_telefone: cliente!.telefone,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
@@ -79,32 +76,39 @@ export function AgendarSlotForm({
       hora_fim: horaFim.toTimeString().slice(0, 8), status: 'confirmado', origem: 'interno',
     })
     setSalvando(false)
-    if (error) {
-      // exclusion_violation (SQLSTATE 23P01) — a checagem acima já cobre o
-      // caso comum, isso aqui é só rede de segurança pra uma corrida rara
-      // (outra pessoa marcou esse mesmo horário entre a checagem e o clique).
-      setMensagem(
-        error.code === '23P01'
-          ? 'Esse horário acabou de ser ocupado por outro agendamento. Escolha outro horário.'
-          : error.message
-      )
-      return
-    }
+    if (error) { setMensagem(error.message); return }
     onAgendado?.()
+  }
+
+  function confirmar() {
+    if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
+    if (!servicoId) { setMensagem('Escolha o serviço.'); return }
+    if (conflito && !pedindoConfirmacao) { setPedindoConfirmacao(true); return }
+    gravar()
   }
 
   return (
     <div className="flex flex-col gap-3 max-w-md border rounded p-4">
       <h3 className="font-medium">Agendar horário — {horaInicio.slice(0, 5)}</h3>
       <ClienteAutocomplete barbeariaId={barbeariaId} onResolved={setCliente} />
-      <select value={servicoId} onChange={(e) => setServicoId(e.target.value)} className="border rounded px-2 py-1">
+      <select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }} className="border rounded px-2 py-1">
         <option value="">Serviço</option>
         {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
       </select>
-      {servicoId && !verificando && conflito && (
-        <p className="text-xs text-red-600">Esse horário não cabe esse serviço (esbarra em outro agendamento). Escolha outro horário ou outro serviço.</p>
+
+      {pedindoConfirmacao && (
+        <div className="border border-amber-400 bg-amber-50 rounded p-3 flex flex-col gap-2">
+          <p className="text-sm">Este horário já possui um serviço agendado. Tem certeza de que deseja confirmar este agendamento?</p>
+          <div className="flex gap-2">
+            <Button type="button" onClick={gravar} disabled={salvando}>Confirmar mesmo assim</Button>
+            <Button type="button" variant="outline" onClick={() => setPedindoConfirmacao(false)}>Cancelar</Button>
+          </div>
+        </div>
       )}
-      <Button type="button" onClick={confirmar} disabled={salvando || verificando || conflito}>Confirmar agendamento</Button>
+
+      {!pedindoConfirmacao && (
+        <Button type="button" onClick={confirmar} disabled={salvando || verificando}>Confirmar agendamento</Button>
+      )}
       {mensagem && <p className="text-sm">{mensagem}</p>}
     </div>
   )

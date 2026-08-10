@@ -1,6 +1,6 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { ProspeccaoConverterForm } from '@/components/prospeccao-converter-form'
+import { ProspeccaoStatusForm } from '@/components/prospeccao-status-form'
 
 async function novoContato(formData: FormData) {
   'use server'
@@ -8,9 +8,20 @@ async function novoContato(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('id, barbearia_id').eq('user_id', user!.id).single()
 
+  const nome = formData.get('nome') as string
+  const telefone = formData.get('telefone') as string
+
+  const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
+    p_barbearia_id: membro!.barbearia_id, p_nome: nome, p_telefone: telefone,
+  })
+  if (clienteId.error) return
+
   await supabase.from('prospeccoes').insert({
     barbearia_id: membro!.barbearia_id,
     membro_id: membro!.id,
+    nome,
+    telefone,
+    cliente_id: clienteId.data,
     canal: (formData.get('canal') as string) || null,
     oferta_corte_gratis: formData.get('oferta_corte_gratis') === 'on',
   })
@@ -27,14 +38,16 @@ export default async function ProspeccaoPage() {
 
   const { data: contatosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).eq('data', hoje)
   const { data: convertidosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('convertido_em', `${hoje}T00:00:00`)
-  const { data: pendentes } = await supabase.from('prospeccoes').select('*').eq('membro_id', membro!.id).eq('status', 'contactado').order('criado_em')
+  const { data: pendentes } = await supabase.from('prospeccoes').select('*').eq('membro_id', membro!.id).in('status', ['novo_lead', 'em_contato', 'interessado']).order('criado_em')
   const { data: contatosMes } = await supabase.from('prospeccoes').select('status').eq('membro_id', membro!.id).gte('data', inicioMes)
 
   const totalContatosHoje = contatosHoje?.length ?? 0
   const meta = membro!.meta_prospeccao_dia ?? 0
   const totalMes = contatosMes?.length ?? 0
   const convertidosMes = contatosMes?.filter((c) => c.status === 'convertido').length ?? 0
-  const taxaMes = totalMes > 0 ? Math.round((convertidosMes / totalMes) * 100) : 0
+  const naoConvertidosMes = contatosMes?.filter((c) => c.status === 'nao_convertido').length ?? 0
+  const finalizadosMes = convertidosMes + naoConvertidosMes
+  const taxaMes = finalizadosMes > 0 ? Math.round((convertidosMes / finalizadosMes) * 100) : 0
 
   return (
     <div>
@@ -51,7 +64,9 @@ export default async function ProspeccaoPage() {
         </>
       )}
 
-      <form action={novoContato} className="flex gap-2 items-center mt-4">
+      <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">
+        <input name="nome" placeholder="Nome" required className="border rounded px-2 py-1" />
+        <input name="telefone" placeholder="Telefone" required className="border rounded px-2 py-1" />
         <select name="canal" className="border rounded px-2 py-1">
           <option value="">Canal (opcional)</option>
           <option value="whatsapp">WhatsApp</option>
@@ -69,14 +84,14 @@ export default async function ProspeccaoPage() {
       <h2 className="font-medium mt-6 mb-2">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
       {pendentes?.map((p) => (
         <div key={p.id} className="flex justify-between items-center border-b py-2">
-          <span>{p.canal ?? 'sem canal'} {p.oferta_corte_gratis && '· corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
-          <ProspeccaoConverterForm barbeariaId={membro!.barbearia_id} prospeccaoId={p.id} />
+          <span>{p.nome} · {p.telefone} · {p.canal ?? 'sem canal'}{p.oferta_corte_gratis && ' · corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
+          <ProspeccaoStatusForm prospeccaoId={p.id} statusAtual={p.status} />
         </div>
       ))}
 
       <h2 className="font-medium mt-6 mb-2">Conversão</h2>
       <p>Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
-      <p>Taxa dos contatos deste mês: {taxaMes}% (contatos recentes ainda podem converter)</p>
+      <p>Taxa de conversão deste mês: {taxaMes}% ({finalizadosMes} finalizados de {totalMes} prospectados — os que ainda não agendaram/compareceram não entram nessa conta)</p>
     </div>
   )
 }

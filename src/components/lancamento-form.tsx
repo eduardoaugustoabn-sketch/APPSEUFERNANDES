@@ -152,7 +152,7 @@ export function LancamentoForm({
     // horário. É esse status que separa "quem agendou" de "quem realmente
     // foi e pagou" nos números do dashboard (que só somam atendimentos).
     if (modoAgenda) {
-      const { error } = await supabase.from('agendamentos').update({ status: 'concluido' }).eq('id', modoAgenda.agendamentoId)
+      const { error } = await supabase.from('agendamentos').update({ status: 'realizado' }).eq('id', modoAgenda.agendamentoId)
       if (error) { setMensagem(`Lançamento salvo, mas não deu pra marcar o agendamento como concluído: ${error.message}`); setSalvando(false); return }
     }
 

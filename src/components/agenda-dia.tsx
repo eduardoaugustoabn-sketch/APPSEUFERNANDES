@@ -141,7 +141,7 @@ export function AgendaDia({
           }
 
           if (info.tipo === 'ocupado') {
-            const concluido = info.agendamento.status === 'concluido'
+            const concluido = info.agendamento.status === 'realizado'
             return (
               <div key={slot} className={`flex justify-between items-center text-sm py-1.5 px-2 rounded ${concluido ? 'opacity-60' : 'bg-muted'}`}>
                 <button

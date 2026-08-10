@@ -1,5 +1,5 @@
 begin;
-select plan(3);
+select plan(4);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -39,6 +39,26 @@ select is(
   (select data_nascimento from clientes where telefone = '11977776666'),
   null,
   'data_nascimento stays null when never provided'
+);
+
+set local role anon;
+
+-- Create a client without birthday first, then backfill the birthday on a later call.
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555');
+
+reset role;
+
+set local role anon;
+
+-- Call again with a birthday for the same telefone.
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555', '1985-03-15');
+
+reset role;
+
+select is(
+  (select data_nascimento from clientes where telefone = '11966665555'),
+  '1985-03-15'::date,
+  'data_nascimento is backfilled when providing it on a later call to an existing null'
 );
 
 select * from finish();

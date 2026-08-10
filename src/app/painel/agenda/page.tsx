@@ -1,5 +1,4 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
-import { InternalBookingForm } from '@/components/internal-booking-form'
 import { BloqueioForm } from '@/components/bloqueio-form'
 import { AgendaDia } from '@/components/agenda-dia'
 
@@ -20,9 +19,6 @@ export default async function AgendaPage() {
         servicos={servicos ?? []}
         produtos={produtos ?? []}
       />
-
-      <h2 className="text-lg font-medium mt-8 mb-2">Novo agendamento (outra data)</h2>
-      <InternalBookingForm barbeariaId={membro!.barbearia_id} membroId={membro!.id} servicos={servicos ?? []} />
 
       <h2 className="text-lg font-medium mt-8 mb-2">Bloquear horário</h2>
       <BloqueioForm membroId={membro!.id} />

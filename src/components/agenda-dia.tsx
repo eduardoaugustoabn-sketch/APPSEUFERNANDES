@@ -23,7 +23,7 @@ type AgendamentoDia = {
 type Bloqueio = { hora_inicio: string; hora_fim: string; motivo: string | null }
 type Expediente = { hora_inicio: string; hora_fim: string }
 
-const PASSO_MINUTOS = 30
+const PASSO_MINUTOS = 60
 
 function gerarSlots(horaInicio: string, horaFim: string): string[] {
   const slots: string[] = []
@@ -93,7 +93,6 @@ export function AgendaDia({
   }
 
   function clicarSlot(slot: string) {
-    if (!ehHoje) return
     const info = statusDoSlot(slot)
     if (info.tipo === 'bloqueado') return
     if (info.tipo === 'ocupado') {
@@ -147,7 +146,7 @@ export function AgendaDia({
                 <button
                   type="button"
                   onClick={() => clicarSlot(slot)}
-                  disabled={!ehHoje || concluido}
+                  disabled={concluido}
                   className="text-left flex-1 disabled:cursor-default"
                 >
                   {info.primeiroSlot
@@ -175,7 +174,6 @@ export function AgendaDia({
               key={slot}
               type="button"
               onClick={() => clicarSlot(slot)}
-              disabled={!ehHoje}
               className="w-full text-left text-sm py-1.5 px-2 rounded border-b hover:bg-muted disabled:hover:bg-transparent disabled:cursor-default"
             >
               {rotulo} — livre
@@ -183,9 +181,6 @@ export function AgendaDia({
           )
         })}
 
-        {!ehHoje && slotsUnicos.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-2">Clique nos horários só funciona para o dia de hoje — use &quot;Novo agendamento&quot; abaixo para marcar em outra data.</p>
-        )}
       </div>
 
       {painelAberto && (

@@ -20,6 +20,44 @@ export default async function AdminOverviewPage() {
   const produtosBaixos = (produtos ?? []).filter((p) => p.quantidade_estoque <= p.estoque_minimo)
   const { data: barbeiros } = await supabase.from('membros').select('id, nome, plano_carreira_id').eq('barbearia_id', membro!.barbearia_id).eq('papel', 'barbeiro')
 
+  const { data: agendamentosMes } = await supabase
+    .from('agendamentos')
+    .select('status, vezes_remarcado')
+    .eq('barbearia_id', membro!.barbearia_id)
+    .gte('data', inicioMes)
+
+  const totalAgendamentos = agendamentosMes?.length ?? 0
+  const realizadosCount = agendamentosMes?.filter((a) => a.status === 'realizado').length ?? 0
+  const naoCompareceram = agendamentosMes?.filter((a) => a.status === 'nao_compareceu').length ?? 0
+  const canceladosCount = agendamentosMes?.filter((a) => a.status === 'cancelado').length ?? 0
+  const remarcados = (agendamentosMes ?? []).reduce((s, a) => s + a.vezes_remarcado, 0)
+
+  const { data: prospeccoesMes } = await supabase
+    .from('prospeccoes')
+    .select('status, agendamento_id')
+    .eq('barbearia_id', membro!.barbearia_id)
+    .gte('data', inicioMes)
+
+  const prospectados = prospeccoesMes?.length ?? 0
+  const convertidosProspeccao = prospeccoesMes?.filter((p) => p.status === 'convertido').length ?? 0
+  const naoConvertidosProspeccao = prospeccoesMes?.filter((p) => p.status === 'nao_convertido').length ?? 0
+  const agendamentoIdsConvertidos = (prospeccoesMes ?? [])
+    .filter((p) => p.status === 'convertido' && p.agendamento_id)
+    .map((p) => p.agendamento_id as string)
+
+  const { data: atendimentosProspeccao } = await supabase
+    .from('atendimentos')
+    .select('preco')
+    .in('agendamento_id', agendamentoIdsConvertidos.length > 0 ? agendamentoIdsConvertidos : ['00000000-0000-0000-0000-000000000000'])
+  const { data: vendasProspeccao } = await supabase
+    .from('vendas_produtos')
+    .select('preco_unitario, quantidade')
+    .in('agendamento_id', agendamentoIdsConvertidos.length > 0 ? agendamentoIdsConvertidos : ['00000000-0000-0000-0000-000000000000'])
+
+  const faturamentoProspeccao =
+    (atendimentosProspeccao ?? []).reduce((s, a) => s + Number(a.preco), 0) +
+    (vendasProspeccao ?? []).reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
+
   const faturamentoTotal =
     (atendimentos ?? []).reduce((sum, a) => sum + Number(a.preco), 0) +
     (vendas ?? []).reduce((sum, v) => sum + Number(v.preco_unitario) * v.quantidade, 0)
@@ -76,6 +114,23 @@ export default async function AdminOverviewPage() {
           ))}
         </tbody>
       </table>
+
+      <h2 className="font-medium mt-6 mb-2">Indicadores de agendamento (mês, toda a barbearia) — não somado ao financeiro acima</h2>
+      <div className="flex gap-4 flex-wrap">
+        <p>Total: <strong>{totalAgendamentos}</strong></p>
+        <p>Realizados: <strong>{realizadosCount}</strong></p>
+        <p>Não compareceram: <strong>{naoCompareceram}</strong></p>
+        <p>Cancelados: <strong>{canceladosCount}</strong></p>
+        <p>Remarcados: <strong>{remarcados}</strong></p>
+      </div>
+
+      <h2 className="font-medium mt-6 mb-2">Prospecção (mês, toda a barbearia)</h2>
+      <div className="flex gap-4 flex-wrap">
+        <p>Prospectados: <strong>{prospectados}</strong></p>
+        <p>Convertidos: <strong>{convertidosProspeccao}</strong></p>
+        <p>Não convertidos: <strong>{naoConvertidosProspeccao}</strong></p>
+        <p>Faturamento gerado: <strong>R$ {faturamentoProspeccao.toFixed(2)}</strong></p>
+      </div>
     </div>
   )
 }

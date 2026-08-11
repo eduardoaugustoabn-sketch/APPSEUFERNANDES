@@ -75,9 +75,9 @@ export function PublicBookingFlow({
 
   return (
     <div className="max-w-md mx-auto p-6">
-      <h1 className="text-xl font-semibold mb-4">{barbearia.nome}</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">{barbearia.nome}</h1>
 
-      <p className="font-medium mt-4">1. Escolha o serviço</p>
+      <p className="font-heading text-base font-semibold mt-4">1. Escolha o serviço</p>
       <div className="flex gap-2 flex-wrap">
         {servicos.map((s) => (
           <button
@@ -90,7 +90,7 @@ export function PublicBookingFlow({
         ))}
       </div>
 
-      <p className="font-medium mt-4">2. Escolha o barbeiro</p>
+      <p className="font-heading text-base font-semibold mt-4">2. Escolha o barbeiro</p>
       <div className="flex gap-2 flex-wrap">
         {barbeiros.map((b) => (
           <button
@@ -105,7 +105,7 @@ export function PublicBookingFlow({
 
       {horarios.length > 0 && (
         <>
-          <p className="font-medium mt-4">3. Escolha o horário</p>
+          <p className="font-heading text-base font-semibold mt-4">3. Escolha o horário</p>
           <div className="flex gap-2 flex-wrap">
             {horarios.map((h) => (
               <button key={h.hora_inicio} onClick={() => setHorario(h.hora_inicio)} className="border rounded px-3 py-1">
@@ -118,11 +118,11 @@ export function PublicBookingFlow({
 
       {horario && (
         <>
-          <p className="font-medium mt-4">4. Seus dados</p>
+          <p className="font-heading text-base font-semibold mt-4">4. Seus dados</p>
           <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mb-2" />
           <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} />
-          {reconhecimento && <p className="text-sm text-green-700 mt-2">{reconhecimento}</p>}
-          {erro && <p className="text-sm text-red-600 mt-2">{erro}</p>}
+          {reconhecimento && <p className="text-sm text-primary mt-2">{reconhecimento}</p>}
+          {erro && <p className="text-sm text-destructive mt-2">{erro}</p>}
           <Button onClick={confirmar} className="w-full mt-4">Confirmar agendamento</Button>
         </>
       )}

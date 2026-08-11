@@ -33,10 +33,10 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
 
   return (
     <div>
-      <p className="font-medium">{cliente?.nome} · {cliente?.telefone}{cliente?.data_nascimento ? ` · nasc. ${new Date(cliente.data_nascimento).toLocaleDateString()}` : ''}</p>
+      <p className="font-heading text-lg font-semibold">{cliente?.nome} · {cliente?.telefone}{cliente?.data_nascimento ? ` · nasc. ${new Date(cliente.data_nascimento).toLocaleDateString()}` : ''}</p>
       <p className="text-xs text-muted-foreground mb-4">Cliente desde {cliente?.criado_em ? new Date(cliente.criado_em).toLocaleDateString() : ''}</p>
 
-      <h3 className="font-medium mt-4 mb-2">Mais usados por ele</h3>
+      <h3 className="font-heading text-base font-semibold mt-4 mb-2">Mais usados por ele</h3>
       {ranking?.map((r) => (
         <div key={`${r.tipo}-${r.item}`} className="mb-2">
           <div className="flex justify-between text-sm">
@@ -44,12 +44,12 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
             <span>{r.quantidade}x · <strong>R$ {Number(r.valor_total).toFixed(2)}</strong></span>
           </div>
           <div className="w-full bg-muted rounded h-2 overflow-hidden">
-            <div className="bg-green-600 h-full" style={{ width: `${(r.quantidade / maiorQuantidade) * 100}%` }} />
+            <div className="bg-primary h-full" style={{ width: `${(r.quantidade / maiorQuantidade) * 100}%` }} />
           </div>
         </div>
       ))}
 
-      <h3 className="font-medium mt-4 mb-2">Histórico completo</h3>
+      <h3 className="font-heading text-base font-semibold mt-4 mb-2">Histórico completo</h3>
       {historico.map((h, i) => (
         <div key={i} className="flex justify-between text-sm border-b py-1">
           <span>{new Date(h.data).toLocaleDateString()} — {h.texto}</span>
@@ -57,7 +57,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
         </div>
       ))}
 
-      <h3 className="font-medium mt-4 mb-2">Agendamentos</h3>
+      <h3 className="font-heading text-base font-semibold mt-4 mb-2">Agendamentos</h3>
       {(agendamentosHistorico ?? []).map((a, i) => (
         <div key={i} className="flex justify-between text-sm border-b py-1">
           <span>{new Date(a.data).toLocaleDateString()} {a.hora_inicio.slice(0, 5)} — {a.servicos?.nome ?? '—'}</span>
@@ -67,7 +67,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
 
       {(prospeccaoHistorico ?? []).length > 0 && (
         <>
-          <h3 className="font-medium mt-4 mb-2">Prospecção</h3>
+          <h3 className="font-heading text-base font-semibold mt-4 mb-2">Prospecção</h3>
           {prospeccaoHistorico!.map((p, i) => (
             <div key={i} className="flex justify-between text-sm border-b py-1">
               <span>{new Date(p.data).toLocaleDateString()} — {p.canal ?? 'sem canal'}</span>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { TableRow, TableCell } from '@/components/ui/table'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number; ativo: boolean }
 
@@ -40,27 +41,27 @@ export function ServicoRow({ servico }: { servico: Servico }) {
 
   if (editando) {
     return (
-      <tr>
-        <td><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></td>
-        <td><Input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} className="w-20" /></td>
-        <td><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(Number(e.target.value))} className="w-24" /></td>
-        <td className="flex gap-2">
+      <TableRow>
+        <TableCell><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></TableCell>
+        <TableCell><Input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} className="w-20" /></TableCell>
+        <TableCell><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(Number(e.target.value))} className="w-24" /></TableCell>
+        <TableCell className="flex gap-2">
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
           <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     )
   }
 
   return (
-    <tr className={servico.ativo ? '' : 'opacity-60'}>
-      <td>{servico.nome}</td>
-      <td>{servico.duracao_minutos}min</td>
-      <td>R$ {servico.preco}</td>
-      <td className="flex gap-2">
-        <button type="button" onClick={() => setEditando(true)} className="text-xs underline">Editar</button>
-        <button type="button" onClick={alternarAtivo} className="text-xs underline">{servico.ativo ? 'Desativar' : 'Reativar'}</button>
-      </td>
-    </tr>
+    <TableRow className={servico.ativo ? '' : 'opacity-50'}>
+      <TableCell>{servico.nome}</TableCell>
+      <TableCell>{servico.duracao_minutos}min</TableCell>
+      <TableCell>R$ {servico.preco}</TableCell>
+      <TableCell className="flex gap-2">
+        <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
+        <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{servico.ativo ? 'Desativar' : 'Reativar'}</button>
+      </TableCell>
+    </TableRow>
   )
 }

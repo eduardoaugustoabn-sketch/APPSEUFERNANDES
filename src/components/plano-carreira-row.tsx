@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { TableRow, TableCell } from '@/components/ui/table'
 
 type Plano = { id: string; nome: string; percentual_produto: number; percentual_servico: number; ativo: boolean }
 
@@ -42,27 +43,27 @@ export function PlanoCarreiraRow({ plano }: { plano: Plano }) {
 
   if (editando) {
     return (
-      <tr>
-        <td><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></td>
-        <td><Input type="number" step="0.01" value={percentualProduto} onChange={(e) => setPercentualProduto(Number(e.target.value))} className="w-24" /></td>
-        <td><Input type="number" step="0.01" value={percentualServico} onChange={(e) => setPercentualServico(Number(e.target.value))} className="w-24" /></td>
-        <td className="flex gap-2">
+      <TableRow>
+        <TableCell><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></TableCell>
+        <TableCell><Input type="number" step="0.01" value={percentualProduto} onChange={(e) => setPercentualProduto(Number(e.target.value))} className="w-24" /></TableCell>
+        <TableCell><Input type="number" step="0.01" value={percentualServico} onChange={(e) => setPercentualServico(Number(e.target.value))} className="w-24" /></TableCell>
+        <TableCell className="flex gap-2">
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
           <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     )
   }
 
   return (
-    <tr className={plano.ativo ? '' : 'opacity-60'}>
-      <td>{plano.nome}</td>
-      <td>{plano.percentual_produto}%</td>
-      <td>{plano.percentual_servico}%</td>
-      <td className="flex gap-2">
-        <button type="button" onClick={() => setEditando(true)} className="text-xs underline">Editar</button>
-        <button type="button" onClick={alternarAtivo} className="text-xs underline">{plano.ativo ? 'Desativar' : 'Reativar'}</button>
-      </td>
-    </tr>
+    <TableRow className={plano.ativo ? '' : 'opacity-50'}>
+      <TableCell>{plano.nome}</TableCell>
+      <TableCell>{plano.percentual_produto}%</TableCell>
+      <TableCell>{plano.percentual_servico}%</TableCell>
+      <TableCell className="flex gap-2">
+        <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
+        <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{plano.ativo ? 'Desativar' : 'Reativar'}</button>
+      </TableCell>
+    </TableRow>
   )
 }

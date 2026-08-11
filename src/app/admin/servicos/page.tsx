@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ServicoRow } from '@/components/servico-row'
+import { Table, TableHeader, TableBody, TableRow, TableHead } from '@/components/ui/table'
 
 async function criarServico(formData: FormData) {
   'use server'
@@ -25,19 +26,19 @@ export default async function ServicosPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Serviços</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Serviços</h1>
       <form action={criarServico} className="flex gap-2 mb-6">
         <Input name="nome" placeholder="Nome" required />
         <Input name="duracao_minutos" type="number" placeholder="Duração (min)" required />
         <Input name="preco" type="number" step="0.01" placeholder="Preço" required />
         <Button type="submit">Adicionar</Button>
       </form>
-      <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>Duração</th><th>Preço</th><th>Ações</th></tr></thead>
-        <tbody>
+      <Table>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Duração</TableHead><TableHead>Preço</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+        <TableBody>
           {servicos?.map((s) => <ServicoRow key={s.id} servico={s} />)}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

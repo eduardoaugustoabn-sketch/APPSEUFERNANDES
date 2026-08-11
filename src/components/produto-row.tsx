@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { TableRow, TableCell } from '@/components/ui/table'
 
 type Produto = {
   id: string
@@ -55,32 +56,32 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
 
   if (editando) {
     return (
-      <tr>
-        <td><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></td>
-        <td><Input value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-28" /></td>
-        <td><Input type="number" step="0.01" value={precoVenda} onChange={(e) => setPrecoVenda(Number(e.target.value))} className="w-24" /></td>
-        <td>
+      <TableRow>
+        <TableCell><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></TableCell>
+        <TableCell><Input value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-28" /></TableCell>
+        <TableCell><Input type="number" step="0.01" value={precoVenda} onChange={(e) => setPrecoVenda(Number(e.target.value))} className="w-24" /></TableCell>
+        <TableCell>
           <Input type="number" value={quantidadeEstoque} onChange={(e) => setQuantidadeEstoque(Number(e.target.value))} className="w-20" />
-        </td>
-        <td className="flex gap-2">
+        </TableCell>
+        <TableCell className="flex gap-2">
           <Input type="number" value={estoqueMinimo} onChange={(e) => setEstoqueMinimo(Number(e.target.value))} className="w-20" />
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
           <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     )
   }
 
   return (
-    <tr className={`${produto.ativo ? '' : 'opacity-60'} ${produto.quantidade_estoque <= produto.estoque_minimo ? 'text-red-600' : ''}`}>
-      <td>{produto.nome}</td>
-      <td>{produto.categoria}</td>
-      <td>R$ {produto.preco_venda}</td>
-      <td>{produto.quantidade_estoque}</td>
-      <td className="flex gap-2">
-        <button type="button" onClick={() => setEditando(true)} className="text-xs underline">Editar</button>
-        <button type="button" onClick={alternarAtivo} className="text-xs underline">{produto.ativo ? 'Desativar' : 'Reativar'}</button>
-      </td>
-    </tr>
+    <TableRow className={`${produto.ativo ? '' : 'opacity-50'} ${produto.quantidade_estoque <= produto.estoque_minimo ? 'text-destructive' : ''}`}>
+      <TableCell>{produto.nome}</TableCell>
+      <TableCell>{produto.categoria}</TableCell>
+      <TableCell>R$ {produto.preco_venda}</TableCell>
+      <TableCell>{produto.quantidade_estoque}</TableCell>
+      <TableCell className="flex gap-2">
+        <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
+        <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{produto.ativo ? 'Desativar' : 'Reativar'}</button>
+      </TableCell>
+    </TableRow>
   )
 }

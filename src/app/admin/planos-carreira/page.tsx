@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PlanoCarreiraRow } from '@/components/plano-carreira-row'
+import { Table, TableHeader, TableBody, TableRow, TableHead } from '@/components/ui/table'
 
 async function criarPlano(formData: FormData) {
   'use server'
@@ -25,19 +26,19 @@ export default async function PlanosCarreiraPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Planos de carreira</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Planos de carreira</h1>
       <form action={criarPlano} className="flex gap-2 mb-6">
         <Input name="nome" placeholder="Nome (ex: Sênior)" required />
         <Input name="percentual_produto" type="number" step="0.01" placeholder="% produto" required />
         <Input name="percentual_servico" type="number" step="0.01" placeholder="% serviço" required />
         <Button type="submit">Adicionar</Button>
       </form>
-      <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>% produto</th><th>% serviço</th><th>Ações</th></tr></thead>
-        <tbody>
+      <Table>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>% produto</TableHead><TableHead>% serviço</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+        <TableBody>
           {planos?.map((p) => <PlanoCarreiraRow key={p.id} plano={p} />)}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProdutoRow } from '@/components/produto-row'
+import { Table, TableHeader, TableBody, TableRow, TableHead } from '@/components/ui/table'
 
 async function criarProduto(formData: FormData) {
   'use server'
@@ -27,7 +28,7 @@ export default async function ProdutosPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Produtos</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Produtos</h1>
       <form action={criarProduto} className="flex gap-2 mb-6 flex-wrap">
         <Input name="nome" placeholder="Nome" required />
         <Input name="categoria" placeholder="Categoria" />
@@ -36,12 +37,12 @@ export default async function ProdutosPage() {
         <Input name="estoque_minimo" type="number" placeholder="Estoque mínimo" required />
         <Button type="submit">Adicionar</Button>
       </form>
-      <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
-        <tbody>
+      <Table>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Preço</TableHead><TableHead>Estoque</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+        <TableBody>
           {produtos?.map((p) => <ProdutoRow key={p.id} produto={p} />)}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

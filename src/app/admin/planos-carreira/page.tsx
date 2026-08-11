@@ -2,6 +2,7 @@ import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { PlanoCarreiraRow } from '@/components/plano-carreira-row'
 
 async function criarPlano(formData: FormData) {
   'use server'
@@ -32,11 +33,9 @@ export default async function PlanosCarreiraPage() {
         <Button type="submit">Adicionar</Button>
       </form>
       <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>% produto</th><th>% serviço</th></tr></thead>
+        <thead><tr><th>Nome</th><th>% produto</th><th>% serviço</th><th>Ações</th></tr></thead>
         <tbody>
-          {planos?.map((p) => (
-            <tr key={p.id}><td>{p.nome}</td><td>{p.percentual_produto}%</td><td>{p.percentual_servico}%</td></tr>
-          ))}
+          {planos?.map((p) => <PlanoCarreiraRow key={p.id} plano={p} />)}
         </tbody>
       </table>
     </div>

@@ -2,6 +2,7 @@ import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ServicoRow } from '@/components/servico-row'
 
 async function criarServico(formData: FormData) {
   'use server'
@@ -32,11 +33,9 @@ export default async function ServicosPage() {
         <Button type="submit">Adicionar</Button>
       </form>
       <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>Duração</th><th>Preço</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Duração</th><th>Preço</th><th>Ações</th></tr></thead>
         <tbody>
-          {servicos?.map((s) => (
-            <tr key={s.id}><td>{s.nome}</td><td>{s.duracao_minutos}min</td><td>R$ {s.preco}</td></tr>
-          ))}
+          {servicos?.map((s) => <ServicoRow key={s.id} servico={s} />)}
         </tbody>
       </table>
     </div>

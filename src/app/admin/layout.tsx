@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { SignOutButton } from '@/components/sign-out-button'
+import { NavLinks } from '@/components/nav-links'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Visão geral' },
@@ -28,12 +28,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div>
       <nav className="flex items-center justify-between border-b px-6 py-3">
-        <div className="flex gap-4">
-          {NAV_ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} className="text-sm hover:underline">
-              {item.label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-8">
+          <span className="font-heading text-lg font-bold tracking-wide">SEU FERNANDES</span>
+          <NavLinks items={NAV_ITEMS} />
         </div>
         <SignOutButton />
       </nav>

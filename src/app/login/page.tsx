@@ -25,12 +25,14 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-20 flex flex-col gap-3">
-      <h1 className="text-xl font-semibold">Entrar</h1>
-      <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button type="submit">Entrar</Button>
-    </form>
+    <div className="min-h-screen flex items-center justify-center">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4 border rounded-xl bg-card p-8">
+        <h1 className="font-heading text-2xl font-bold text-center mb-2">SEU FERNANDES</h1>
+        <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit">Entrar</Button>
+      </form>
+    </div>
   )
 }

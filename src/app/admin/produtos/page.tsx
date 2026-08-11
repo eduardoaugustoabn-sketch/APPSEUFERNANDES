@@ -2,6 +2,7 @@ import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ProdutoRow } from '@/components/produto-row'
 
 async function criarProduto(formData: FormData) {
   'use server'
@@ -36,13 +37,9 @@ export default async function ProdutosPage() {
         <Button type="submit">Adicionar</Button>
       </form>
       <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
         <tbody>
-          {produtos?.map((p) => (
-            <tr key={p.id} className={p.quantidade_estoque <= p.estoque_minimo ? 'text-red-600' : ''}>
-              <td>{p.nome}</td><td>{p.categoria}</td><td>R$ {p.preco_venda}</td><td>{p.quantidade_estoque}</td>
-            </tr>
-          ))}
+          {produtos?.map((p) => <ProdutoRow key={p.id} produto={p} />)}
         </tbody>
       </table>
     </div>

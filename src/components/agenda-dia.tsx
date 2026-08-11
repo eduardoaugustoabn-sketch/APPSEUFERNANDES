@@ -8,8 +8,8 @@ import { AgendarSlotForm } from './agendar-slot-form'
 import { RemarcarForm } from './remarcar-form'
 import { AtenderAgoraForm } from './atender-agora-form'
 
-type Servico = { id: string; nome: string; preco: number; duracao_minutos: number }
-type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number }
+type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
+type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
 
 type AgendamentoDia = {
   id: string

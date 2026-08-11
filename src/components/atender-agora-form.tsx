@@ -6,7 +6,7 @@ import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
 import type { ModoAgenda } from './lancamento-form'
 
-type Servico = { id: string; nome: string; duracao_minutos: number }
+type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boolean }
 
 // Walk-in: cliente chegou sem hora marcada. Em vez de uma tela de
 // "lançamento avulso" separada, isso cria um agendamento normal pro
@@ -71,7 +71,7 @@ export function AtenderAgoraForm({
       <ClienteAutocomplete barbeariaId={barbeariaId} onResolved={setCliente} />
       <select value={servicoId} onChange={(e) => setServicoId(e.target.value)} className="border rounded px-2 py-1">
         <option value="">Serviço</option>
-        {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+        {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
       </select>
       <div className="flex gap-2">
         <Button type="button" onClick={criar} disabled={salvando}>Iniciar atendimento</Button>

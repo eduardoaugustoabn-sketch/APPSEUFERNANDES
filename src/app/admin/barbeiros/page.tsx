@@ -35,7 +35,7 @@ export default async function BarbeirosPage() {
           <span className="w-32">{b.nome}</span>
           <select name="plano_carreira_id" defaultValue={b.plano_carreira_id ?? ''} className="border rounded px-2 py-1">
             <option value="">Sem plano</option>
-            {planos?.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            {planos?.filter((p) => p.ativo || p.id === b.plano_carreira_id).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
           <input
             name="meta_prospeccao_dia"

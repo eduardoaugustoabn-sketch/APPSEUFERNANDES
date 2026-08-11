@@ -7,8 +7,8 @@ import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-type Servico = { id: string; nome: string; preco: number; duracao_minutos: number }
-type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number }
+type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
+type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
 type ServicoSelecionado = Servico
 type ProdutoSelecionado = Produto & { quantidade: number }
 
@@ -211,7 +211,7 @@ export function LancamentoForm({
         <div className="flex gap-2 mt-2">
           <select value={servicoParaAdicionar} onChange={(e) => setServicoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
             <option value="">Serviço</option>
-            {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
+            {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
           </select>
           <Button type="button" variant="outline" onClick={adicionarServico} disabled={!servicoParaAdicionar}>+ Adicionar</Button>
         </div>
@@ -228,7 +228,7 @@ export function LancamentoForm({
         <div className="flex gap-2 mt-2">
           <select value={produtoParaAdicionar} onChange={(e) => setProdutoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
             <option value="">Produto</option>
-            {produtos.map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
+            {produtos.filter((p) => p.ativo).map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
           </select>
           <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
           <Button type="button" variant="outline" onClick={adicionarProduto} disabled={!produtoParaAdicionar}>+ Adicionar</Button>
@@ -244,7 +244,7 @@ export function LancamentoForm({
           <div className="flex flex-col gap-2 mt-2">
             <select value={retornoServicoId} onChange={(e) => { setRetornoServicoId(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} className="border rounded px-2 py-1">
               <option value="">Serviço do retorno</option>
-              {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+              {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
             <Input type="date" value={retornoData} onChange={(e) => { setRetornoData(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} />
             <Button type="button" variant="outline" onClick={buscarHorariosRetorno} disabled={!retornoServicoId || buscandoHorarios}>Ver horários</Button>

@@ -5,7 +5,7 @@ import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
 
-type Servico = { id: string; nome: string; duracao_minutos: number }
+type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boolean }
 type AgendamentoExistente = { hora_inicio: string; hora_fim: string }
 
 // Só reserva o horário (agendamento status confirmado) — nenhum
@@ -87,7 +87,7 @@ export function AgendarSlotForm({
       <ClienteAutocomplete barbeariaId={barbeariaId} onResolved={setCliente} />
       <select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }} className="border rounded px-2 py-1">
         <option value="">Serviço</option>
-        {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+        {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
       </select>
 
       {pedindoConfirmacao && (

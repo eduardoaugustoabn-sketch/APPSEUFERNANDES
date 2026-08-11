@@ -191,7 +191,7 @@ export function LancamentoForm({
 
   return (
     <div className="flex flex-col gap-4 max-w-md border rounded p-4">
-      <h3 className="font-medium">Atender agendamento — {modoAgenda.horaInicio.slice(0, 5)}</h3>
+      <h3 className="font-heading text-base font-semibold">Atender agendamento — {modoAgenda.horaInicio.slice(0, 5)}</h3>
 
       <ClienteAutocomplete
         key={clienteAutocompleteKey}
@@ -205,7 +205,7 @@ export function LancamentoForm({
         {servicosSelecionados.map((s, index) => (
           <div key={`${s.id}-${index}`} className="flex justify-between items-center text-sm border-b py-1">
             <span>{s.nome} (R${s.preco})</span>
-            <button type="button" onClick={() => removerServico(index)} className="text-red-600 text-xs">remover</button>
+            <button type="button" onClick={() => removerServico(index)} className="text-destructive text-xs">remover</button>
           </div>
         ))}
         <div className="flex gap-2 mt-2">
@@ -222,7 +222,7 @@ export function LancamentoForm({
         {produtosSelecionados.map((p) => (
           <div key={p.id} className="flex justify-between items-center text-sm border-b py-1">
             <span>{p.quantidade}x {p.nome} (R${p.preco_venda})</span>
-            <button type="button" onClick={() => removerProduto(p.id)} className="text-red-600 text-xs">remover</button>
+            <button type="button" onClick={() => removerProduto(p.id)} className="text-destructive text-xs">remover</button>
           </div>
         ))}
         <div className="flex gap-2 mt-2">

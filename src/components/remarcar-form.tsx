@@ -56,7 +56,7 @@ export function RemarcarForm({
 
   return (
     <div className="flex flex-col gap-2 max-w-sm border rounded p-4">
-      <h3 className="font-medium">Remarcar — {clienteNome}</h3>
+      <h3 className="font-heading text-base font-semibold">Remarcar — {clienteNome}</h3>
       <Input type="date" value={data} onChange={(e) => { setData(e.target.value); setHorarios([]); setHorario('') }} />
       <Button type="button" variant="outline" onClick={buscarHorarios} disabled={buscando}>Ver horários</Button>
       {horarios.length > 0 && (

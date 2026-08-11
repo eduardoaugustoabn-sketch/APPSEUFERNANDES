@@ -91,7 +91,7 @@ export function AgendarSlotForm({
       </select>
 
       {pedindoConfirmacao && (
-        <div className="border border-amber-400 bg-amber-50 rounded p-3 flex flex-col gap-2">
+        <div className="border border-primary/40 bg-primary/10 rounded p-3 flex flex-col gap-2">
           <p className="text-sm">Este horário já possui um serviço agendado. Tem certeza de que deseja confirmar este agendamento?</p>
           <div className="flex gap-2">
             <Button type="button" onClick={gravar} disabled={salvando}>Confirmar mesmo assim</Button>

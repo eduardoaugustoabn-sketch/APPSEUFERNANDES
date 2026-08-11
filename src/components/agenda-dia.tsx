@@ -180,7 +180,7 @@ export function AgendaDia({
                       {eDesteSlot && agendamento.status === 'agendado' && (
                         <span className="flex gap-2 ml-2 shrink-0">
                           <button type="button" onClick={() => confirmarAgendamento(agendamento.id)} className="text-xs underline">confirmar</button>
-                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-destructive text-xs">cancelar</button>
                         </span>
                       )}
                       {eDesteSlot && agendamento.status === 'confirmado' && (
@@ -192,9 +192,9 @@ export function AgendaDia({
                           >
                             remarcar
                           </button>
-                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-red-600 text-xs">cancelar</button>
+                          <button type="button" onClick={() => cancelar(agendamento.id)} className="text-destructive text-xs">cancelar</button>
                           {jaPassou && (
-                            <button type="button" onClick={() => marcarNaoCompareceu(agendamento.id)} className="text-amber-700 text-xs">não compareceu</button>
+                            <button type="button" onClick={() => marcarNaoCompareceu(agendamento.id)} className="text-primary text-xs">não compareceu</button>
                           )}
                         </span>
                       )}

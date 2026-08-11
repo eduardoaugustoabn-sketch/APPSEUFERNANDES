@@ -11,7 +11,7 @@ export default async function AgendaPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Agenda</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Agenda</h1>
 
       <AgendaDia
         barbeariaId={membro!.barbearia_id}
@@ -20,7 +20,7 @@ export default async function AgendaPage() {
         produtos={produtos ?? []}
       />
 
-      <h2 className="text-lg font-medium mt-8 mb-2">Bloquear horário</h2>
+      <h2 className="font-heading text-lg font-semibold mt-8 mb-2">Bloquear horário</h2>
       <BloqueioForm membroId={membro!.id} />
     </div>
   )

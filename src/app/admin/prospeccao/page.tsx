@@ -1,4 +1,5 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type Linha = {
   nome: string
@@ -51,29 +52,29 @@ export default async function AdminProspeccaoPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Conversão de prospecção</h1>
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th>Nome</th><th>Telefone</th><th>Prospecção</th><th>Atendimento</th>
-            <th>Serviços</th><th>Produtos</th><th>Total</th><th>Profissional</th>
-          </tr>
-        </thead>
-        <tbody>
+      <h1 className="font-heading text-2xl font-bold mb-4">Conversão de prospecção</h1>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead><TableHead>Telefone</TableHead><TableHead>Prospecção</TableHead><TableHead>Atendimento</TableHead>
+            <TableHead>Serviços</TableHead><TableHead>Produtos</TableHead><TableHead>Total</TableHead><TableHead>Profissional</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {linhas.map((l, i) => (
-            <tr key={i} className="border-t">
-              <td>{l.nome}</td>
-              <td>{l.telefone}</td>
-              <td>{new Date(l.data).toLocaleDateString()}</td>
-              <td>{l.convertido_em ? new Date(l.convertido_em).toLocaleDateString() : '—'}</td>
-              <td>{l.servicosTexto}</td>
-              <td>{l.produtosTexto}</td>
-              <td>R$ {l.valorTotal.toFixed(2)}</td>
-              <td>{l.membros?.nome ?? '—'}</td>
-            </tr>
+            <TableRow key={i}>
+              <TableCell>{l.nome}</TableCell>
+              <TableCell>{l.telefone}</TableCell>
+              <TableCell>{new Date(l.data).toLocaleDateString()}</TableCell>
+              <TableCell>{l.convertido_em ? new Date(l.convertido_em).toLocaleDateString() : '—'}</TableCell>
+              <TableCell>{l.servicosTexto}</TableCell>
+              <TableCell>{l.produtosTexto}</TableCell>
+              <TableCell>R$ {l.valorTotal.toFixed(2)}</TableCell>
+              <TableCell>{l.membros?.nome ?? '—'}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

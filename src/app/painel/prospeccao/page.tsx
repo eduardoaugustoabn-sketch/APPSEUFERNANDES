@@ -1,6 +1,8 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ProspeccaoStatusForm } from '@/components/prospeccao-status-form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 async function novoContato(formData: FormData) {
   'use server'
@@ -51,13 +53,13 @@ export default async function ProspeccaoPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Prospecção</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Prospecção</h1>
 
       {meta > 0 && (
         <>
           <p className="text-sm mb-1">Meta diária de contatos</p>
           <div className="w-full bg-muted rounded h-6 overflow-hidden">
-            <div className="bg-green-600 h-full text-white text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / meta) * 100, 100)}%` }}>
+            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / meta) * 100, 100)}%` }}>
               {totalContatosHoje} / {meta}
             </div>
           </div>
@@ -65,9 +67,9 @@ export default async function ProspeccaoPage() {
       )}
 
       <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">
-        <input name="nome" placeholder="Nome" required className="border rounded px-2 py-1" />
-        <input name="telefone" placeholder="Telefone" required className="border rounded px-2 py-1" />
-        <select name="canal" className="border rounded px-2 py-1">
+        <Input name="nome" placeholder="Nome" required />
+        <Input name="telefone" placeholder="Telefone" required />
+        <select name="canal" className="border rounded px-2 py-1 bg-input">
           <option value="">Canal (opcional)</option>
           <option value="whatsapp">WhatsApp</option>
           <option value="indicacao">Indicação</option>
@@ -78,10 +80,10 @@ export default async function ProspeccaoPage() {
         <label className="text-sm flex items-center gap-1">
           <input type="checkbox" name="oferta_corte_gratis" /> Ofereci corte grátis + consultoria
         </label>
-        <button type="submit" className="border rounded px-3 py-1">+ Novo contato prospectado</button>
+        <Button type="submit">+ Novo contato prospectado</Button>
       </form>
 
-      <h2 className="font-medium mt-6 mb-2">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
       {pendentes?.map((p) => (
         <div key={p.id} className="flex justify-between items-center border-b py-2">
           <span>{p.nome} · {p.telefone} · {p.canal ?? 'sem canal'}{p.oferta_corte_gratis && ' · corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
@@ -89,7 +91,7 @@ export default async function ProspeccaoPage() {
         </div>
       ))}
 
-      <h2 className="font-medium mt-6 mb-2">Conversão</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Conversão</h2>
       <p>Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
       <p>Taxa de conversão deste mês: {taxaMes}% ({finalizadosMes} finalizados de {totalMes} prospectados — os que ainda não agendaram/compareceram não entram nessa conta)</p>
     </div>

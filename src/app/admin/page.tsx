@@ -1,5 +1,7 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 export default async function AdminOverviewPage() {
   const supabase = await getServerSupabaseClient()
@@ -89,33 +91,41 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Visão geral</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Visão geral</h1>
       <div className="flex gap-4 flex-wrap mb-6">
-        <div className="border rounded p-4 flex-1 min-w-[160px]">
-          <p className="text-xs uppercase text-muted-foreground">Faturamento do mês (todos)</p>
-          <p className="text-2xl font-bold">R$ {faturamentoTotal.toFixed(2)}</p>
-        </div>
-        <div className="border rounded p-4 flex-1 min-w-[160px]">
-          <p className="text-xs uppercase text-muted-foreground">Comissões acumuladas no mês</p>
-          <p className="text-2xl font-bold">R$ {comissaoTotal.toFixed(2)}</p>
-        </div>
-        <div className="border rounded p-4 flex-1 min-w-[160px] border-red-300">
-          <p className="text-xs uppercase text-muted-foreground">Produtos com estoque baixo</p>
-          <p className="text-2xl font-bold text-red-600">{produtosBaixos?.length ?? 0} itens</p>
-        </div>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Faturamento do mês (todos)</p>
+            <p className="text-2xl font-bold text-primary">R$ {faturamentoTotal.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Comissões acumuladas no mês</p>
+            <p className="text-2xl font-bold text-primary">R$ {comissaoTotal.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Produtos com estoque baixo</p>
+            <p className="text-2xl font-bold text-destructive">{produtosBaixos?.length ?? 0} itens</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <h2 className="font-medium mb-2">Barbeiros</h2>
-      <table className="w-full text-left">
-        <thead><tr><th>Nome</th><th>Faturamento mês</th><th>Comissão mês</th><th>Ocupação</th></tr></thead>
-        <tbody>
+      <h2 className="font-heading text-lg font-semibold mb-2">Barbeiros</h2>
+      <Table>
+        <TableHeader>
+          <TableRow><TableHead>Nome</TableHead><TableHead>Faturamento mês</TableHead><TableHead>Comissão mês</TableHead><TableHead>Ocupação</TableHead></TableRow>
+        </TableHeader>
+        <TableBody>
           {linhas.map((l) => (
-            <tr key={l.nome}><td>{l.nome}</td><td>R$ {l.faturamentoB.toFixed(2)}</td><td>R$ {l.comissaoB.toFixed(2)}</td><td>{l.ocupacao}%</td></tr>
+            <TableRow key={l.nome}><TableCell>{l.nome}</TableCell><TableCell>R$ {l.faturamentoB.toFixed(2)}</TableCell><TableCell>R$ {l.comissaoB.toFixed(2)}</TableCell><TableCell>{l.ocupacao}%</TableCell></TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      <h2 className="font-medium mt-6 mb-2">Indicadores de agendamento (mês, toda a barbearia) — não somado ao financeiro acima</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Indicadores de agendamento (mês, toda a barbearia) — não somado ao financeiro acima</h2>
       <div className="flex gap-4 flex-wrap">
         <p>Total: <strong>{totalAgendamentos}</strong></p>
         <p>Realizados: <strong>{realizadosCount}</strong></p>
@@ -124,7 +134,7 @@ export default async function AdminOverviewPage() {
         <p>Remarcados: <strong>{remarcados}</strong></p>
       </div>
 
-      <h2 className="font-medium mt-6 mb-2">Prospecção (mês, toda a barbearia)</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Prospecção (mês, toda a barbearia)</h2>
       <div className="flex gap-4 flex-wrap">
         <p>Prospectados: <strong>{prospectados}</strong></p>
         <p>Convertidos: <strong>{convertidosProspeccao}</strong></p>

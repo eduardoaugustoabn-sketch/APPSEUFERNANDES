@@ -1,5 +1,6 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default async function BarbeiroDashboardPage() {
   const supabase = await getServerSupabaseClient()
@@ -80,39 +81,45 @@ export default async function BarbeiroDashboardPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Olá, {membro!.nome}</h1>
+      <h1 className="font-heading text-2xl font-bold mb-4">Olá, {membro!.nome}</h1>
 
       <div className="flex gap-4 flex-wrap mb-6">
-        <div className="border rounded p-4 flex-1 min-w-[160px]">
-          <p className="text-xs uppercase text-muted-foreground">Faturamento do mês</p>
-          <p className="text-2xl font-bold">R$ {(faturamentoServicos + faturamentoProdutos).toFixed(2)}</p>
-        </div>
-        <div className="border rounded p-4 flex-1 min-w-[160px]">
-          <p className="text-xs uppercase text-muted-foreground">Comissão do mês</p>
-          <p className="text-2xl font-bold">R$ {(comissaoServicos + comissaoProdutos).toFixed(2)}</p>
-        </div>
-        <div className="border rounded p-4 flex-1 min-w-[160px]">
-          <p className="text-xs uppercase text-muted-foreground">Ocupação da agenda</p>
-          <p className="text-2xl font-bold">{ociosidade.percentualOcupacao}%</p>
-        </div>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Faturamento do mês</p>
+            <p className="text-2xl font-bold text-primary">R$ {(faturamentoServicos + faturamentoProdutos).toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Comissão do mês</p>
+            <p className="text-2xl font-bold text-primary">R$ {(comissaoServicos + comissaoProdutos).toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Ocupação da agenda</p>
+            <p className="text-2xl font-bold text-primary">{ociosidade.percentualOcupacao}%</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <h2 className="font-medium mb-2">Ganhos por categoria</h2>
+      <h2 className="font-heading text-lg font-semibold mb-2">Ganhos por categoria</h2>
       <p>Cortes e serviços: R$ {faturamentoServicos.toFixed(2)} → comissão R$ {comissaoServicos.toFixed(2)}</p>
       <p>Produtos: R$ {faturamentoProdutos.toFixed(2)} → comissão R$ {comissaoProdutos.toFixed(2)}</p>
 
-      <h2 className="font-medium mt-6 mb-2">Tempo de cadeira (mês)</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Tempo de cadeira (mês)</h2>
       <div className="w-full bg-muted rounded h-6 overflow-hidden flex">
-        <div className="bg-green-600 flex items-center justify-center text-white text-xs" style={{ width: `${ociosidade.percentualOcupacao}%` }}>
+        <div className="bg-primary flex items-center justify-center text-primary-foreground text-xs" style={{ width: `${ociosidade.percentualOcupacao}%` }}>
           Ocupado {ociosidade.percentualOcupacao}%
         </div>
       </div>
       <div className="flex gap-4 mt-2">
         <p>Ganho médio por hora ocupada: <strong>R$ {ociosidade.ganhoPorHoraOcupada.toFixed(2)}</strong></p>
-        <p className="text-red-600">Estimativa perdida no mês: <strong>R$ {ociosidade.valorPerdidoEstimado.toFixed(2)}</strong></p>
+        <p className="text-destructive">Estimativa perdida no mês: <strong>R$ {ociosidade.valorPerdidoEstimado.toFixed(2)}</strong></p>
       </div>
 
-      <h2 className="font-medium mt-6 mb-2">Indicadores de agendamento (mês) — não somado ao financeiro acima</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Indicadores de agendamento (mês) — não somado ao financeiro acima</h2>
       <div className="flex gap-4 flex-wrap">
         <p>Total: <strong>{totalAgendamentos}</strong></p>
         <p>Realizados: <strong>{realizados}</strong></p>
@@ -121,7 +128,7 @@ export default async function BarbeiroDashboardPage() {
         <p>Remarcados: <strong>{remarcados}</strong></p>
       </div>
 
-      <h2 className="font-medium mt-6 mb-2">Prospecção (mês)</h2>
+      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Prospecção (mês)</h2>
       <div className="flex gap-4 flex-wrap">
         <p>Prospectados: <strong>{prospectados}</strong></p>
         <p>Convertidos: <strong>{convertidosProspeccao}</strong></p>

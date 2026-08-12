@@ -65,6 +65,10 @@ async function criarBarbeiro(formData: FormData) {
     telefone,
   })
   if (erroMembro) {
+    // Sem isso, um usuário de autenticação órfão fica pra trás — consegue
+    // logar, mas sem linha em `membros` fica preso num loop de redirect
+    // entre / e /painel, e o e-mail passa a estar "usado" para sempre.
+    await admin.auth.admin.deleteUser(novoUsuario.user.id)
     throw new Error(erroMembro.message)
   }
 

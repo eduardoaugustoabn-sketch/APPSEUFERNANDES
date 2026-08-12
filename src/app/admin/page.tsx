@@ -83,6 +83,7 @@ export default async function AdminOverviewPage() {
         minutosDisponiveis: ociosidadeRaw?.minutos_disponiveis ?? 0,
         minutosOcupados: ociosidadeRaw?.minutos_ocupados ?? 0,
         faturamentoServicos: Number(ociosidadeRaw?.faturamento_servicos ?? 0),
+        quantidadeAtendimentos: atendimentosB.length,
       }).percentualOcupacao
 
       return { nome: b.nome, faturamentoB, comissaoB, ocupacao }

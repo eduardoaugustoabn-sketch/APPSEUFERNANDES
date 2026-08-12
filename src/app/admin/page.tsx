@@ -126,22 +126,30 @@ export default async function AdminOverviewPage() {
         </TableBody>
       </Table>
 
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Indicadores de agendamento (mês, toda a barbearia) — não somado ao financeiro acima</h2>
-      <div className="flex gap-4 flex-wrap">
-        <p>Total: <strong>{totalAgendamentos}</strong></p>
-        <p>Realizados: <strong>{realizadosCount}</strong></p>
-        <p>Não compareceram: <strong>{naoCompareceram}</strong></p>
-        <p>Cancelados: <strong>{canceladosCount}</strong></p>
-        <p>Remarcados: <strong>{remarcados}</strong></p>
-      </div>
+      <Card className="mt-6 mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Indicadores de agendamento (mês, toda a barbearia) <span className="font-normal text-muted-foreground text-sm">— não somado ao financeiro acima</span></p>
+          <div className="grid grid-cols-5 gap-5 text-center">
+            <div><p className="text-2xl font-bold">{totalAgendamentos}</p><p className="text-xs text-muted-foreground mt-1">Total</p></div>
+            <div><p className="text-2xl font-bold text-primary">{realizadosCount}</p><p className="text-xs text-muted-foreground mt-1">Realizados</p></div>
+            <div><p className="text-2xl font-bold">{naoCompareceram}</p><p className="text-xs text-muted-foreground mt-1">Não compareceram</p></div>
+            <div><p className="text-2xl font-bold">{canceladosCount}</p><p className="text-xs text-muted-foreground mt-1">Cancelados</p></div>
+            <div><p className="text-2xl font-bold">{remarcados}</p><p className="text-xs text-muted-foreground mt-1">Remarcados</p></div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Prospecção (mês, toda a barbearia)</h2>
-      <div className="flex gap-4 flex-wrap">
-        <p>Prospectados: <strong>{prospectados}</strong></p>
-        <p>Convertidos: <strong>{convertidosProspeccao}</strong></p>
-        <p>Não convertidos: <strong>{naoConvertidosProspeccao}</strong></p>
-        <p>Faturamento gerado: <strong>R$ {faturamentoProspeccao.toFixed(2)}</strong></p>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Prospecção (mês, toda a barbearia)</p>
+          <div className="grid grid-cols-4 gap-5 text-center">
+            <div><p className="text-2xl font-bold">{prospectados}</p><p className="text-xs text-muted-foreground mt-1">Prospectados</p></div>
+            <div><p className="text-2xl font-bold text-primary">{convertidosProspeccao}</p><p className="text-xs text-muted-foreground mt-1">Convertidos</p></div>
+            <div><p className="text-2xl font-bold">{naoConvertidosProspeccao}</p><p className="text-xs text-muted-foreground mt-1">Não convertidos</p></div>
+            <div><p className="text-2xl font-bold">R$ {faturamentoProspeccao.toFixed(2)}</p><p className="text-xs text-muted-foreground mt-1">Faturamento gerado</p></div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

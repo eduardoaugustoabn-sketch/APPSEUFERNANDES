@@ -4,10 +4,6 @@ import { createServerClient } from '@supabase/ssr'
 const PROTECTED_PREFIXES = ['/admin', '/painel']
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
-  if (!isProtected) return NextResponse.next()
-
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -27,8 +23,15 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+  // Runs on every request, not just protected prefixes — otherwise pages
+  // like `/`, which also call getUser() but aren't under /admin or /painel,
+  // keep an unrefreshed token and crash mid-render once it goes stale
+  // ("Cookies can only be modified in a Server Action or Route Handler").
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+
+  const { pathname } = request.nextUrl
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (isProtected && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

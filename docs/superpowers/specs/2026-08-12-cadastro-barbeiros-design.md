@@ -26,11 +26,11 @@ Três peças novas, todas em cima de tabelas e políticas de RLS que já existem
 [Formulário "Adicionar barbeiro": Nome | Telefone | E-mail | Senha | botão "Adicionar"]
 
 Table:
-Nome | Telefone | Plano de carreira | Meta diária | Ações
+Nome | Telefone | Plano de carreira | Ações
 ```
 
 - Coluna "Nome"/"Telefone": texto normal, ou `Input` quando a linha está em modo edição.
-- Coluna "Plano de carreira"/"Meta diária": mesmo `<select>`/`<input>` + botão "Salvar" que já existe hoje, sem alteração de comportamento.
+- Coluna "Plano de carreira": select de plano + input de meta diária + botão "Salvar" próprio, todos dentro da mesma célula (mesmo `<select>`/`<input>` que já existe hoje, sem alteração de comportamento) — viram uma coluna só, não duas, porque o `<form>` que os envolve precisa ficar inteiro dentro de uma única célula de tabela (um `<form>` não pode atravessar `<td>`s).
 - Coluna "Ações": `Editar` (entra no modo edição de nome/telefone) e `Desativar`/`Reativar` (alterna `ativo`), mesmo texto/estilo (`text-primary`/`text-destructive`, sublinhado) usado em `ServicoRow`.
 - Barbeiro desativado: linha com `opacity-50` (mesmo padrão visual de serviço/produto desativado), some da lista de "novo agendamento"/"atender agora" (já filtram por `ativo`, comportamento herdado automaticamente, nenhuma mudança necessária ali) mas mantém todo o histórico de atendimentos já lançado.
 

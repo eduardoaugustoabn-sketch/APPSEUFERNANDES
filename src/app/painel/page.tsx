@@ -77,7 +77,12 @@ export default async function BarbeiroDashboardPage() {
     minutosDisponiveis: ociosidadeRaw?.minutos_disponiveis ?? 0,
     minutosOcupados: ociosidadeRaw?.minutos_ocupados ?? 0,
     faturamentoServicos: Number(ociosidadeRaw?.faturamento_servicos ?? 0),
+    quantidadeAtendimentos: atendimentos?.length ?? 0,
   })
+
+  const totalGanhos = faturamentoServicos + faturamentoProdutos
+  const percentualServicos = totalGanhos > 0 ? Math.round((faturamentoServicos / totalGanhos) * 100) : 0
+  const percentualProdutos = totalGanhos > 0 ? Math.round((faturamentoProdutos / totalGanhos) * 100) : 0
 
   return (
     <div>
@@ -87,7 +92,7 @@ export default async function BarbeiroDashboardPage() {
         <Card className="flex-1 min-w-[160px]">
           <CardContent>
             <p className="text-xs uppercase text-muted-foreground">Faturamento do mês</p>
-            <p className="text-2xl font-bold text-primary">R$ {(faturamentoServicos + faturamentoProdutos).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">R$ {totalGanhos.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card className="flex-1 min-w-[160px]">
@@ -104,37 +109,96 @@ export default async function BarbeiroDashboardPage() {
         </Card>
       </div>
 
-      <h2 className="font-heading text-lg font-semibold mb-2">Ganhos por categoria</h2>
-      <p>Cortes e serviços: R$ {faturamentoServicos.toFixed(2)} → comissão R$ {comissaoServicos.toFixed(2)}</p>
-      <p>Produtos: R$ {faturamentoProdutos.toFixed(2)} → comissão R$ {comissaoProdutos.toFixed(2)}</p>
+      <Card className="mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Ganhos por categoria</p>
+          <div className="mb-5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Cortes e serviços</span>
+              <span className="flex items-center gap-2">
+                <span className="text-base font-bold">R$ {faturamentoServicos.toFixed(2)}</span>
+                <span className="inline-flex items-baseline gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoServicos.toFixed(2)}
+                </span>
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${percentualServicos}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Produtos</span>
+              <span className="flex items-center gap-2">
+                <span className="text-base font-bold">R$ {faturamentoProdutos.toFixed(2)}</span>
+                <span className="inline-flex items-baseline gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoProdutos.toFixed(2)}
+                </span>
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${percentualProdutos}%` }} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Tempo de cadeira (mês)</h2>
-      <div className="w-full bg-muted rounded h-6 overflow-hidden flex">
-        <div className="bg-primary flex items-center justify-center text-primary-foreground text-xs" style={{ width: `${ociosidade.percentualOcupacao}%` }}>
-          Ocupado {ociosidade.percentualOcupacao}%
-        </div>
-      </div>
-      <div className="flex gap-4 mt-2">
-        <p>Ganho médio por hora ocupada: <strong>R$ {ociosidade.ganhoPorHoraOcupada.toFixed(2)}</strong></p>
-        <p className="text-destructive">Estimativa perdida no mês: <strong>R$ {ociosidade.valorPerdidoEstimado.toFixed(2)}</strong></p>
-      </div>
+      <Card className="mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Tempo de cadeira (mês)</p>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-3xl font-bold text-primary">{ociosidade.percentualOcupacao}%</span>
+            <span className="text-sm text-muted-foreground">ocupado no mês</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-7 overflow-hidden mb-5">
+            <div className="bg-primary h-full rounded-full flex items-center justify-end pr-3" style={{ width: `${ociosidade.percentualOcupacao}%` }}>
+              <span className="text-primary-foreground text-xs font-bold">{ociosidade.percentualOcupacao}%</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Clientes atendidos</p>
+              <p className="text-lg font-bold">{realizados}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Ganho médio / hora ocupada</p>
+              <p className="text-lg font-bold">R$ {ociosidade.ganhoPorHoraOcupada.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Estimativa perdida no mês</p>
+              <p className="text-lg font-bold">
+                R$ {ociosidade.valorPerdidoEstimado.toFixed(2)}
+                <span className="block text-xs font-semibold text-destructive mt-0.5">≈ {ociosidade.atendimentosPerdidosEstimado} atendimentos</span>
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Indicadores de agendamento (mês) — não somado ao financeiro acima</h2>
-      <div className="flex gap-4 flex-wrap">
-        <p>Total: <strong>{totalAgendamentos}</strong></p>
-        <p>Realizados: <strong>{realizados}</strong></p>
-        <p>Não compareceram: <strong>{naoCompareceram}</strong></p>
-        <p>Cancelados: <strong>{cancelados}</strong></p>
-        <p>Remarcados: <strong>{remarcados}</strong></p>
-      </div>
+      <Card className="mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Indicadores de agendamento (mês) <span className="font-normal text-muted-foreground text-sm">— não somado ao financeiro acima</span></p>
+          <div className="grid grid-cols-5 gap-5 text-center">
+            <div><p className="text-2xl font-bold">{totalAgendamentos}</p><p className="text-xs text-muted-foreground mt-1">Total</p></div>
+            <div><p className="text-2xl font-bold text-primary">{realizados}</p><p className="text-xs text-muted-foreground mt-1">Realizados</p></div>
+            <div><p className="text-2xl font-bold">{naoCompareceram}</p><p className="text-xs text-muted-foreground mt-1">Não compareceram</p></div>
+            <div><p className="text-2xl font-bold">{cancelados}</p><p className="text-xs text-muted-foreground mt-1">Cancelados</p></div>
+            <div><p className="text-2xl font-bold">{remarcados}</p><p className="text-xs text-muted-foreground mt-1">Remarcados</p></div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Prospecção (mês)</h2>
-      <div className="flex gap-4 flex-wrap">
-        <p>Prospectados: <strong>{prospectados}</strong></p>
-        <p>Convertidos: <strong>{convertidosProspeccao}</strong></p>
-        <p>Não convertidos: <strong>{naoConvertidosProspeccao}</strong></p>
-        <p>Faturamento gerado: <strong>R$ {faturamentoProspeccao.toFixed(2)}</strong></p>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-5">Prospecção (mês)</p>
+          <div className="grid grid-cols-4 gap-5 text-center">
+            <div><p className="text-2xl font-bold">{prospectados}</p><p className="text-xs text-muted-foreground mt-1">Prospectados</p></div>
+            <div><p className="text-2xl font-bold text-primary">{convertidosProspeccao}</p><p className="text-xs text-muted-foreground mt-1">Convertidos</p></div>
+            <div><p className="text-2xl font-bold">{naoConvertidosProspeccao}</p><p className="text-xs text-muted-foreground mt-1">Não convertidos</p></div>
+            <div><p className="text-2xl font-bold">R$ {faturamentoProspeccao.toFixed(2)}</p><p className="text-xs text-muted-foreground mt-1">Faturamento gerado</p></div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

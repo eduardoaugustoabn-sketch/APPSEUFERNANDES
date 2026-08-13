@@ -165,8 +165,13 @@ export function AgendaDia({
                   const jaPassou = new Date(`${data}T${agendamento.hora_inicio}`) < new Date()
                   const concluido = agendamento.status === 'realizado' || agendamento.status === 'nao_compareceu'
                   const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
+                  const corStatus = agendamento.status === 'realizado'
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : agendamento.status === 'nao_compareceu'
+                      ? 'bg-transparent border-transparent'
+                      : 'bg-yellow-50 border-yellow-200'
                   return (
-                    <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 ${concluido ? 'opacity-60' : ''}`}>
+                    <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 px-1.5 rounded border ${corStatus} ${concluido ? 'opacity-60' : ''}`}>
                       <button
                         type="button"
                         onClick={() => atenderAgendamento(agendamento)}

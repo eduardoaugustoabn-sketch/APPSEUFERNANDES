@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
@@ -62,17 +62,23 @@ export function LancamentoForm({
   const [retornoHorario, setRetornoHorario] = useState('')
   const [buscandoHorarios, setBuscandoHorarios] = useState(false)
 
-  async function buscarHorariosRetorno() {
-    if (!retornoServicoId) return
+  // Busca automaticamente assim que serviço/data do retorno estão definidos
+  // — antes exigia um clique extra em "Ver horários" que não ficava óbvio.
+  useEffect(() => {
+    if (!agendarRetorno || !retornoServicoId) { setRetornoHorarios([]); setRetornoHorario(''); return }
+    let cancelado = false
     setBuscandoHorarios(true)
     setRetornoHorario('')
     const supabase = getBrowserSupabaseClient()
-    const { data: slots } = await supabase.rpc('horarios_disponiveis', {
+    supabase.rpc('horarios_disponiveis', {
       p_barbearia_id: barbeariaId, p_membro_id: membroId, p_servico_id: retornoServicoId, p_data: retornoData,
+    }).then(({ data: slots }) => {
+      if (cancelado) return
+      setRetornoHorarios(slots ?? [])
+      setBuscandoHorarios(false)
     })
-    setRetornoHorarios(slots ?? [])
-    setBuscandoHorarios(false)
-  }
+    return () => { cancelado = true }
+  }, [agendarRetorno, retornoServicoId, retornoData, barbeariaId, membroId])
 
   // Every catalog item stays selectable (not filtered down as items get
   // added) — a visit can need the same serviço twice (e.g. corte + corte
@@ -242,20 +248,20 @@ export function LancamentoForm({
         </label>
         {agendarRetorno && (
           <div className="flex flex-col gap-2 mt-2">
-            <select value={retornoServicoId} onChange={(e) => { setRetornoServicoId(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} className="border rounded px-2 py-1">
+            <select value={retornoServicoId} onChange={(e) => setRetornoServicoId(e.target.value)} className="border rounded px-2 py-1">
               <option value="">Serviço do retorno</option>
               {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
-            <Input type="date" value={retornoData} onChange={(e) => { setRetornoData(e.target.value); setRetornoHorarios([]); setRetornoHorario('') }} />
-            <Button type="button" variant="outline" onClick={buscarHorariosRetorno} disabled={!retornoServicoId || buscandoHorarios}>Ver horários</Button>
-            {retornoHorarios.length > 0 && (
+            <Input type="date" value={retornoData} onChange={(e) => setRetornoData(e.target.value)} />
+            {buscandoHorarios && <p className="text-xs text-muted-foreground">Buscando horários...</p>}
+            {!buscandoHorarios && retornoHorarios.length > 0 && (
               <select value={retornoHorario} onChange={(e) => setRetornoHorario(e.target.value)} className="border rounded px-2 py-1">
                 <option value="">Horário</option>
                 {retornoHorarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
               </select>
             )}
-            {retornoHorarios.length === 0 && !buscandoHorarios && retornoServicoId && (
-              <p className="text-xs text-muted-foreground">Clique em &quot;Ver horários&quot; para escolher.</p>
+            {!buscandoHorarios && retornoHorarios.length === 0 && retornoServicoId && (
+              <p className="text-xs text-muted-foreground">Nenhum horário disponível para esse dia.</p>
             )}
           </div>
         )}

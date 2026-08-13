@@ -166,7 +166,7 @@ export function AgendaDia({
                   const concluido = agendamento.status === 'realizado' || agendamento.status === 'nao_compareceu'
                   const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
                   const corStatus = agendamento.status === 'realizado'
-                    ? 'bg-emerald-50 border-emerald-200'
+                    ? 'bg-emerald-100 border-emerald-300'
                     : agendamento.status === 'nao_compareceu'
                       ? 'bg-transparent border-transparent'
                       : 'bg-yellow-50 border-yellow-200'

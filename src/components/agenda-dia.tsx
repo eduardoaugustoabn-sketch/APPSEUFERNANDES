@@ -190,6 +190,9 @@ export function AgendaDia({
                       )}
                       {eDesteSlot && agendamento.status === 'confirmado' && (
                         <span className="flex gap-2 ml-2 shrink-0">
+                          <button type="button" onClick={() => atenderAgendamento(agendamento)} className="text-primary text-xs underline">
+                            atender
+                          </button>
                           <button
                             type="button"
                             onClick={() => { fecharPaineis(); setRemarcando({ id: agendamento.id, servicoId: agendamento.servicos?.id ?? '', clienteNome: agendamento.clientes?.nome ?? '' }) }}

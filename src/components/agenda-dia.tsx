@@ -7,6 +7,7 @@ import { LancamentoForm, type ModoAgenda } from './lancamento-form'
 import { AgendarSlotForm } from './agendar-slot-form'
 import { RemarcarForm } from './remarcar-form'
 import { AtenderAgoraForm } from './atender-agora-form'
+import { BloqueioForm } from './bloqueio-form'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
@@ -226,6 +227,8 @@ export function AgendaDia({
           )
         })}
 
+        <h2 className="font-heading text-base font-semibold mt-6 mb-2">Bloquear horário</h2>
+        <BloqueioForm membroId={membroId} onBloqueado={carregar} />
       </div>
 
       {painelAberto && (

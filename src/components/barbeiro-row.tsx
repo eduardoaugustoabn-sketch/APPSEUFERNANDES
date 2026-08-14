@@ -60,35 +60,44 @@ export function BarbeiroRow({
       <form
         key={`${barbeiro.id}-${barbeiro.plano_carreira_id ?? 'none'}-${barbeiro.meta_prospeccao_dia ?? 'none'}-${barbeiro.meta_prospeccao_semana ?? 'none'}-${barbeiro.meta_faturamento_mes ?? 'none'}`}
         action={vincularPlanoAction}
-        className="flex gap-2 items-center flex-wrap"
+        className="flex gap-2 items-end flex-wrap"
       >
         <input type="hidden" name="membro_id" value={barbeiro.id} />
-        <select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} className="border rounded px-2 py-1 bg-input">
-          <option value="">Sem plano</option>
-          {planos.filter((p) => p.ativo || p.id === barbeiro.plano_carreira_id).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </select>
-        <input
-          name="meta_prospeccao_dia"
-          type="number"
-          defaultValue={barbeiro.meta_prospeccao_dia ?? ''}
-          placeholder="Meta prospecção/dia"
-          className="border rounded px-2 py-1 w-36 bg-input"
-        />
-        <input
-          name="meta_prospeccao_semana"
-          type="number"
-          defaultValue={barbeiro.meta_prospeccao_semana ?? ''}
-          placeholder="Meta prospecção/semana"
-          className="border rounded px-2 py-1 w-40 bg-input"
-        />
-        <input
-          name="meta_faturamento_mes"
-          type="number"
-          step="0.01"
-          defaultValue={barbeiro.meta_faturamento_mes ?? ''}
-          placeholder="Meta faturamento/mês (R$)"
-          className="border rounded px-2 py-1 w-44 bg-input"
-        />
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase text-muted-foreground">Plano de carreira</label>
+          <select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} className="border rounded px-2 py-1 bg-input">
+            <option value="">Sem plano</option>
+            {planos.filter((p) => p.ativo || p.id === barbeiro.plano_carreira_id).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase text-muted-foreground">Meta prospecção/dia</label>
+          <input
+            name="meta_prospeccao_dia"
+            type="number"
+            defaultValue={barbeiro.meta_prospeccao_dia ?? ''}
+            className="border rounded px-2 py-1 w-36 bg-input"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase text-muted-foreground">Meta prospecção/semana</label>
+          <input
+            name="meta_prospeccao_semana"
+            type="number"
+            defaultValue={barbeiro.meta_prospeccao_semana ?? ''}
+            className="border rounded px-2 py-1 w-40 bg-input"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase text-muted-foreground">Meta faturamento/mês (R$)</label>
+          <input
+            name="meta_faturamento_mes"
+            type="number"
+            step="0.01"
+            defaultValue={barbeiro.meta_faturamento_mes ?? ''}
+            className="border rounded px-2 py-1 w-44 bg-input"
+          />
+        </div>
         <Button type="submit" variant="outline">Salvar</Button>
       </form>
     </TableCell>

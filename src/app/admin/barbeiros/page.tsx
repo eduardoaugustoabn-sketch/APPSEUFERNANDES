@@ -65,6 +65,11 @@ async function criarBarbeiro(formData: FormData) {
     telefone,
   })
   if (erroMembro) {
+    try {
+      await admin.auth.admin.deleteUser(novoUsuario.user.id)
+    } catch {
+      // Ignora falha na limpeza — o erro original abaixo é o que importa.
+    }
     throw new Error(erroMembro.message)
   }
 

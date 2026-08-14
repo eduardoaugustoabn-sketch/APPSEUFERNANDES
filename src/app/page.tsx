@@ -7,5 +7,6 @@ export default async function HomePage() {
   if (!user) redirect('/login')
 
   const { data: membro } = await supabase.from('membros').select('papel').eq('user_id', user.id).single()
-  redirect(membro?.papel === 'admin' ? '/admin' : '/painel')
+  if (!membro) redirect('/login')
+  redirect(membro.papel === 'admin' ? '/admin' : '/painel')
 }

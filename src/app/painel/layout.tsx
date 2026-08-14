@@ -20,7 +20,12 @@ export default async function BarbeiroLayout({ children }: { children: React.Rea
     .eq('user_id', user.id)
     .single()
 
-  if (membro?.papel !== 'barbeiro') redirect('/')
+  if (!membro) {
+    await supabase.auth.signOut()
+    redirect('/login')
+  }
+
+  if (membro.papel !== 'barbeiro') redirect('/')
 
   return (
     <div>

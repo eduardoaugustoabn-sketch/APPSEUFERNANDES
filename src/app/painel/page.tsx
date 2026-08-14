@@ -36,7 +36,7 @@ function agruparPorId(itens: { id: string; nome: string; quantidade: number; val
 export default async function BarbeiroDashboardPage() {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: membro } = await supabase.from('membros').select('id, nome').eq('user_id', user!.id).single()
+  const { data: membro } = await supabase.from('membros').select('id, nome, meta_faturamento_mes').eq('user_id', user!.id).single()
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10)
@@ -135,6 +135,18 @@ export default async function BarbeiroDashboardPage() {
           <CardContent>
             <p className="text-xs uppercase text-muted-foreground">Faturamento do mês</p>
             <p className="text-2xl font-bold text-primary">R$ {totalGanhos.toFixed(2)}</p>
+            {membro!.meta_faturamento_mes != null && membro!.meta_faturamento_mes > 0 && (
+              <div className="mt-2">
+                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden mb-1">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min((totalGanhos / membro!.meta_faturamento_mes) * 100, 100)}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {totalGanhos >= membro!.meta_faturamento_mes
+                    ? 'Meta batida!'
+                    : `R$ ${totalGanhos.toFixed(2)} de R$ ${membro!.meta_faturamento_mes.toFixed(2)} — faltam R$ ${(membro!.meta_faturamento_mes - totalGanhos).toFixed(2)}`}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card className="flex-1 min-w-[160px]">

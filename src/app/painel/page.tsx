@@ -1,6 +1,7 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
 import { Card, CardContent } from '@/components/ui/card'
+import { SonhoPessoalCard } from '@/components/sonho-pessoal-card'
 
 type ItemContagem = { id: string; nome: string; quantidade: number; valor: number }
 
@@ -36,7 +37,7 @@ function agruparPorId(itens: { id: string; nome: string; quantidade: number; val
 export default async function BarbeiroDashboardPage() {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: membro } = await supabase.from('membros').select('id, nome, meta_faturamento_mes').eq('user_id', user!.id).single()
+  const { data: membro } = await supabase.from('membros').select('id, nome, barbearia_id, meta_faturamento_mes').eq('user_id', user!.id).single()
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10)
@@ -93,6 +94,35 @@ export default async function BarbeiroDashboardPage() {
   const faturamentoProspeccao =
     (atendimentosProspeccao ?? []).reduce((s, a) => s + Number(a.preco), 0) +
     (vendasProspeccao ?? []).reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
+
+  const { data: sonhoAtivo } = await supabase
+    .from('sonhos_pessoais')
+    .select('*')
+    .eq('membro_id', membro!.id)
+    .eq('status', 'ativo')
+    .maybeSingle()
+
+  const { data: historicoSonhos } = await supabase
+    .from('sonhos_pessoais')
+    .select('*')
+    .eq('membro_id', membro!.id)
+    .neq('status', 'ativo')
+    .order('concluido_em', { ascending: false })
+
+  let guardado = 0
+  if (sonhoAtivo) {
+    const desde = sonhoAtivo.criado_em.slice(0, 10)
+    const { data: atendimentosSonho } = await supabase
+      .from('atendimentos').select('comissao_valor')
+      .eq('membro_id', membro!.id).gte('data', desde)
+    const { data: vendasSonho } = await supabase
+      .from('vendas_produtos').select('comissao_valor')
+      .eq('membro_id', membro!.id).gte('data', desde)
+    const comissaoDesdeSonho =
+      (atendimentosSonho ?? []).reduce((s, a) => s + Number(a.comissao_valor ?? 0), 0) +
+      (vendasSonho ?? []).reduce((s, v) => s + Number(v.comissao_valor ?? 0), 0)
+    guardado = (sonhoAtivo.percentual / 100) * comissaoDesdeSonho
+  }
 
   const atendimentosCortes = atendimentos.filter((a) => a.servicos?.tipo === 'corte')
   const atendimentosExtras = atendimentos.filter((a) => a.servicos?.tipo === 'servico_extra')
@@ -300,6 +330,14 @@ export default async function BarbeiroDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      <SonhoPessoalCard
+        membroId={membro!.id}
+        barbeariaId={membro!.barbearia_id}
+        sonhoAtivo={sonhoAtivo}
+        guardado={guardado}
+        historico={historicoSonhos ?? []}
+      />
     </div>
   )
 }

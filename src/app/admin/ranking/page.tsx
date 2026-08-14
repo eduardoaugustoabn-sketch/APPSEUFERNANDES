@@ -22,36 +22,42 @@ export default async function RankingPage() {
     .order('nome')
 
   const { data: atendimentos } = await supabase
-    .from('atendimentos').select('membro_id, servico_id')
+    .from('atendimentos').select('membro_id, servico_id, preco')
     .eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
   const { data: vendas } = await supabase
-    .from('vendas_produtos').select('membro_id, produto_id, quantidade')
+    .from('vendas_produtos').select('membro_id, produto_id, quantidade, preco_unitario')
     .eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
 
   function rankingServico(servicoId: string) {
     return (barbeiros ?? [])
-      .map((b) => ({
-        nome: b.nome,
-        quantidade: (atendimentos ?? []).filter((a) => a.servico_id === servicoId && a.membro_id === b.id).length,
-      }))
+      .map((b) => {
+        const linhas = (atendimentos ?? []).filter((a) => a.servico_id === servicoId && a.membro_id === b.id)
+        return {
+          nome: b.nome,
+          quantidade: linhas.length,
+          valor: linhas.reduce((s, a) => s + Number(a.preco), 0),
+        }
+      })
       .sort((a, b) => b.quantidade - a.quantidade)
   }
 
   function rankingProduto(produtoId: string) {
     return (barbeiros ?? [])
-      .map((b) => ({
-        nome: b.nome,
-        quantidade: (vendas ?? [])
-          .filter((v) => v.produto_id === produtoId && v.membro_id === b.id)
-          .reduce((s, v) => s + v.quantidade, 0),
-      }))
+      .map((b) => {
+        const linhas = (vendas ?? []).filter((v) => v.produto_id === produtoId && v.membro_id === b.id)
+        return {
+          nome: b.nome,
+          quantidade: linhas.reduce((s, v) => s + v.quantidade, 0),
+          valor: linhas.reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0),
+        }
+      })
       .sort((a, b) => b.quantidade - a.quantidade)
   }
 
   const cortes = (servicos ?? []).filter((s) => s.tipo === 'corte')
   const extras = (servicos ?? []).filter((s) => s.tipo === 'servico_extra')
 
-  function Secao({ titulo, itens, ranking }: { titulo: string; itens: { id: string; nome: string }[]; ranking: (id: string) => { nome: string; quantidade: number }[] }) {
+  function Secao({ titulo, itens, ranking }: { titulo: string; itens: { id: string; nome: string }[]; ranking: (id: string) => { nome: string; quantidade: number; valor: number }[] }) {
     return (
       <>
         <h2 className="font-heading text-lg font-semibold mb-3">{titulo}</h2>
@@ -62,9 +68,9 @@ export default async function RankingPage() {
                 <p className="font-semibold mb-2">{item.nome}</p>
                 <ol className="text-sm flex flex-col gap-1">
                   {ranking(item.id).map((r, i) => (
-                    <li key={r.nome} className="flex justify-between">
+                    <li key={r.nome} className="flex justify-between gap-2">
                       <span>{i + 1}. {r.nome}</span>
-                      <span className="font-medium">{r.quantidade}x</span>
+                      <span className="font-medium text-right">{r.quantidade}x — R$ {r.valor.toFixed(2)}</span>
                     </li>
                   ))}
                 </ol>

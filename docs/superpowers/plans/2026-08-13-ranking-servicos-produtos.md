@@ -40,8 +40,8 @@ alter table servicos
 
 - [ ] **Step 2: Apply the migration locally**
 
-Run: `npx supabase db reset`
-Expected: succeeds, no errors. This re-applies every migration (including the new one) against the local Supabase instance.
+Run: `npx supabase migration up`
+Expected: succeeds, no errors. Applies only the new pending migration against the already-running local Supabase instance — do NOT use `supabase db reset` here, it would wipe every row in the local database (including real test data already created through the app during manual testing this session: barbeiros, agendamentos, bloqueios, atendimentos).
 
 - [ ] **Step 3: Replace `src/components/servico-row.tsx` in full**
 

@@ -33,18 +33,32 @@ async function novoContato(formData: FormData) {
 export default async function ProspeccaoPage() {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: membro } = await supabase.from('membros').select('id, barbearia_id, meta_prospeccao_dia').eq('user_id', user!.id).single()
+  const { data: membro } = await supabase
+    .from('membros')
+    .select('id, barbearia_id, meta_prospeccao_dia, meta_prospeccao_semana')
+    .eq('user_id', user!.id)
+    .single()
 
   const hoje = new Date().toISOString().slice(0, 10)
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
 
+  const agora = new Date()
+  const diaSemanaAtual = agora.getDay() // 0 = domingo, 1 = segunda, ...
+  const diasDesdeSegunda = diaSemanaAtual === 0 ? 6 : diaSemanaAtual - 1
+  const inicioSemana = new Date(agora)
+  inicioSemana.setDate(agora.getDate() - diasDesdeSegunda)
+  const inicioSemanaStr = inicioSemana.toISOString().slice(0, 10)
+
   const { data: contatosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).eq('data', hoje)
+  const { data: contatosSemana } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('data', inicioSemanaStr)
   const { data: convertidosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('convertido_em', `${hoje}T00:00:00`)
   const { data: pendentes } = await supabase.from('prospeccoes').select('*').eq('membro_id', membro!.id).in('status', ['novo_lead', 'em_contato', 'interessado']).order('criado_em')
   const { data: contatosMes } = await supabase.from('prospeccoes').select('status').eq('membro_id', membro!.id).gte('data', inicioMes)
 
   const totalContatosHoje = contatosHoje?.length ?? 0
-  const meta = membro!.meta_prospeccao_dia ?? 0
+  const metaDia = membro!.meta_prospeccao_dia ?? 0
+  const totalContatosSemana = contatosSemana?.length ?? 0
+  const metaSemana = membro!.meta_prospeccao_semana ?? 0
   const totalMes = contatosMes?.length ?? 0
   const convertidosMes = contatosMes?.filter((c) => c.status === 'convertido').length ?? 0
   const naoConvertidosMes = contatosMes?.filter((c) => c.status === 'nao_convertido').length ?? 0
@@ -55,15 +69,32 @@ export default async function ProspeccaoPage() {
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Prospecção</h1>
 
-      {meta > 0 && (
-        <>
+      {metaDia > 0 && (
+        <div className="mb-4">
           <p className="text-sm mb-1">Meta diária de contatos</p>
-          <div className="w-full bg-muted rounded h-6 overflow-hidden">
-            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / meta) * 100, 100)}%` }}>
-              {totalContatosHoje} / {meta}
+          <div className="w-full bg-muted rounded h-6 overflow-hidden mb-1">
+            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / metaDia) * 100, 100)}%` }}>
+              {totalContatosHoje} / {metaDia}
             </div>
           </div>
-        </>
+          <p className="text-xs text-muted-foreground">
+            {totalContatosHoje >= metaDia ? 'Meta batida!' : `${totalContatosHoje} de ${metaDia} — faltam ${metaDia - totalContatosHoje}`}
+          </p>
+        </div>
+      )}
+
+      {metaSemana > 0 && (
+        <div className="mb-4">
+          <p className="text-sm mb-1">Meta semanal de contatos</p>
+          <div className="w-full bg-muted rounded h-6 overflow-hidden mb-1">
+            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosSemana / metaSemana) * 100, 100)}%` }}>
+              {totalContatosSemana} / {metaSemana}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {totalContatosSemana >= metaSemana ? 'Meta batida!' : `${totalContatosSemana} de ${metaSemana} — faltam ${metaSemana - totalContatosSemana}`}
+          </p>
+        </div>
       )}
 
       <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">

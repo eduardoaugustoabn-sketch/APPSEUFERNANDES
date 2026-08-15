@@ -18,7 +18,8 @@ create policy "barbeiro le proprios sonhos" on sonhos for select
 create policy "barbeiro insere proprios sonhos" on sonhos for insert
   with check (membro_id = auth_membro_id() and barbearia_id = auth_barbearia_id());
 create policy "barbeiro atualiza proprios sonhos" on sonhos for update
-  using (membro_id = auth_membro_id());
+  using (membro_id = auth_membro_id())
+  with check (membro_id = auth_membro_id() and barbearia_id = auth_barbearia_id());
 create policy "barbeiro remove proprios sonhos" on sonhos for delete
   using (membro_id = auth_membro_id());
 

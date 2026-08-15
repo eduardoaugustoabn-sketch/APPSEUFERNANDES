@@ -8,12 +8,14 @@ insert into barbearias (id, nome, slug) values
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'joao@example.com'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'pedro@example.com'),
-  ('cccccccc-0000-0000-0000-000000000003', 'admin@example.com');
+  ('cccccccc-0000-0000-0000-000000000003', 'admin@example.com'),
+  ('dddddddd-0000-0000-0000-000000000004', 'carlos@example.com');
 
 insert into membros (id, barbearia_id, user_id, papel, nome) values
   ('a1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'barbeiro', 'João'),
   ('a1000000-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000002', 'barbeiro', 'Pedro'),
-  ('a1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'cccccccc-0000-0000-0000-000000000003', 'admin', 'Admin A');
+  ('a1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'cccccccc-0000-0000-0000-000000000003', 'admin', 'Admin A'),
+  ('a1000000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'dddddddd-0000-0000-0000-000000000004', 'barbeiro', 'Carlos');
 
 insert into sonhos (id, barbearia_id, membro_id, nome, valor_alvo, percentual_comissao) values
   ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'Moto nova', 15000, 40),
@@ -81,7 +83,7 @@ select is(
 -- admin cannot write — no insert policy exists for admin
 select throws_ok(
   $$ insert into sonhos (barbearia_id, membro_id, nome, valor_alvo, percentual_comissao)
-     values ('22222222-2222-2222-2222-222222222222', 'a1000000-0000-0000-0000-000000000002', 'Admin tentando', 100, 10) $$,
+     values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000004', 'Admin tentando', 100, 10) $$,
   'new row violates row-level security policy for table "sonhos"',
   'admin has no insert policy on sonhos — read-only access'
 );

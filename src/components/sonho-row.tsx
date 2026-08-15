@@ -28,11 +28,15 @@ export function SonhoRow({ sonho, valorAcumulado }: { sonho: Sonho; valorAcumula
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
-    await supabase
+    const { error } = await supabase
       .from('sonhos')
       .update({ nome, valor_alvo: Number(valorAlvo), percentual_comissao: Number(percentual) })
       .eq('id', sonho.id)
     setSalvando(false)
+    if (error) {
+      alert(error.message)
+      return
+    }
     setEditando(false)
     router.refresh()
   }

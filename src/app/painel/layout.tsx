@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/painel', label: 'Dashboard' },
   { href: '/painel/agenda', label: 'Agenda' },
   { href: '/painel/prospeccao', label: 'Prospecção' },
+  { href: '/painel/sonhos', label: 'Sonhos' },
 ]
 
 export default async function BarbeiroLayout({ children }: { children: React.ReactNode }) {

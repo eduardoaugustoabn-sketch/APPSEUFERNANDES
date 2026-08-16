@@ -110,7 +110,7 @@ export function BarbeiroRow({
       const { error: erroInserir } = await supabase.from('horarios_trabalho').insert(diasParaSalvar)
       if (erroInserir) {
         setSalvandoExpediente(false)
-        alert(erroInserir.message)
+        alert(`O expediente anterior já foi apagado e o novo não pôde ser gravado — o barbeiro está sem expediente. Tente salvar de novo.\n\n${erroInserir.message}`)
         return
       }
     }
@@ -211,7 +211,16 @@ export function BarbeiroRow({
         <TableCell className="flex gap-2">
           <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
           <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{barbeiro.ativo ? 'Desativar' : 'Reativar'}</button>
-          <button type="button" onClick={() => setMostrarExpediente((v) => !v)} className="text-xs text-primary underline">Expediente</button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!mostrarExpediente) setDias(construirDiasIniciais(expediente))
+              setMostrarExpediente((v) => !v)
+            }}
+            className="text-xs text-primary underline"
+          >
+            Expediente
+          </button>
         </TableCell>
       </TableRow>
       {linhaExpediente}

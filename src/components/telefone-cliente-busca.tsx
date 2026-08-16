@@ -27,9 +27,11 @@ export function TelefoneClienteBusca() {
   const [resultados, setResultados] = useState<ResultadoBusca[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const buscaSeqRef = useRef(0)
 
   function verificar(tel: string) {
     setTelefone(tel)
+    const seq = ++buscaSeqRef.current
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
@@ -43,6 +45,7 @@ export function TelefoneClienteBusca() {
     debounceRef.current = setTimeout(async () => {
       const supabase = getBrowserSupabaseClient()
       const { data: rows } = await supabase.rpc('buscar_clientes_por_telefone', { p_busca: tel })
+      if (seq !== buscaSeqRef.current) return
       setResultados(rows ?? [])
       setMostrarLista((rows ?? []).length > 0)
     }, 300)

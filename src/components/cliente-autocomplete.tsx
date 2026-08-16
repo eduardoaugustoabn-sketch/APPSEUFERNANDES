@@ -35,6 +35,7 @@ export function ClienteAutocomplete({
   const bairroRef = useRef('')
   const cidadeRef = useRef('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const buscaSeqRef = useRef(0)
 
   // Report the pre-filled value once on mount, so the parent (e.g.
   // LancamentoForm opened from an existing agendamento) has it immediately
@@ -87,6 +88,7 @@ export function ClienteAutocomplete({
   function verificar(tel: string) {
     telefoneRef.current = tel
     setTelefone(tel)
+    const seq = ++buscaSeqRef.current
     // Resolve synchronously with the raw typed value first — the caller
     // (LancamentoForm's salvar()) reads whatever onResolved last reported,
     // and buscar_clientes_por_telefone below is an async, debounced
@@ -111,6 +113,7 @@ export function ClienteAutocomplete({
     debounceRef.current = setTimeout(async () => {
       const supabase = getBrowserSupabaseClient()
       const { data: rows } = await supabase.rpc('buscar_clientes_por_telefone', { p_busca: tel })
+      if (seq !== buscaSeqRef.current) return
       setResultados(rows ?? [])
       setMostrarLista((rows ?? []).length > 0)
     }, 300)

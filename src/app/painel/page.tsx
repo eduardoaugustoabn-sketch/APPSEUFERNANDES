@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
 import { Card, CardContent } from '@/components/ui/card'
@@ -83,6 +84,27 @@ export default async function BarbeiroDashboardPage() {
   const totalGanhos = faturamentoServicos + faturamentoProdutos
   const percentualServicos = totalGanhos > 0 ? Math.round((faturamentoServicos / totalGanhos) * 100) : 0
   const percentualProdutos = totalGanhos > 0 ? Math.round((faturamentoProdutos / totalGanhos) * 100) : 0
+
+  const { data: sonhosAtivos } = await supabase
+    .from('sonhos')
+    .select('*')
+    .eq('membro_id', membro!.id)
+    .eq('concluido', false)
+    .order('criado_em')
+
+  const sonhosComProgresso = await Promise.all(
+    (sonhosAtivos ?? []).map(async (sonho) => {
+      const { data: comissaoSonho } = await supabase.rpc('comissao_acumulada', {
+        p_membro_id: membro!.id,
+        p_data_inicio: sonho.criado_em,
+      })
+      const valorAcumulado = Math.min(
+        Number(comissaoSonho ?? 0) * (sonho.percentual_comissao / 100),
+        sonho.valor_alvo
+      )
+      return { sonho, valorAcumulado }
+    })
+  )
 
   return (
     <div>
@@ -199,6 +221,33 @@ export default async function BarbeiroDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {sonhosComProgresso.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-5">
+              <p className="font-heading text-base font-bold">Sonhos</p>
+              <Link href="/painel/sonhos" className="text-xs text-primary underline">Ver todos</Link>
+            </div>
+            {sonhosComProgresso.map(({ sonho, valorAcumulado }) => {
+              const percentualProgresso = Math.min(Math.round((valorAcumulado / sonho.valor_alvo) * 100), 100)
+              return (
+                <div key={sonho.id} className="mb-4 last:mb-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-semibold text-foreground/80">{sonho.nome}</span>
+                    <span className="text-xs text-muted-foreground">
+                      R$ {valorAcumulado.toFixed(2)} de R$ {Number(sonho.valor_alvo).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                    <div className="bg-primary h-full rounded-full" style={{ width: `${percentualProgresso}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

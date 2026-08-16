@@ -9,12 +9,13 @@ type Cliente = { id: string; nome: string; telefone: string; cidade: string | nu
 export function ListaClientes({ clientes, baseHref }: { clientes: Cliente[]; baseHref: string }) {
   const [busca, setBusca] = useState('')
 
-  const buscaLower = busca.toLowerCase()
-  const buscaDigitos = busca.replace(/\D/g, '')
+  const termo = busca.trim()
+  const termoLower = termo.toLowerCase()
+  const termoDigitos = termo.replace(/\D/g, '')
   const filtrados = clientes.filter((c) => {
-    if (busca === '') return true
-    const nomeBate = c.nome.toLowerCase().includes(buscaLower)
-    const telefoneBate = buscaDigitos.length > 0 && c.telefone.includes(buscaDigitos)
+    if (termo === '') return true
+    const nomeBate = c.nome.toLowerCase().includes(termoLower)
+    const telefoneBate = termoDigitos.length > 0 && c.telefone.includes(termoDigitos)
     return nomeBate || telefoneBate
   })
 

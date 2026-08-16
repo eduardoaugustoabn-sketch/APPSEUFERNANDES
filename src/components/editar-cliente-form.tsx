@@ -24,13 +24,18 @@ export function EditarClienteForm({
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('clientes')
-      .update({ bairro: bairro || null, cidade: cidade || null, observacao: observacao || null })
+      .update({ bairro: bairro.trim() || null, cidade: cidade.trim() || null, observacao: observacao.trim() || null })
       .eq('id', clienteId)
+      .select('id')
     setSalvando(false)
     if (error) {
       alert(error.message)
+      return
+    }
+    if (!data || data.length === 0) {
+      alert('Não foi possível salvar — você não tem permissão para editar este cliente.')
       return
     }
     setEditando(false)

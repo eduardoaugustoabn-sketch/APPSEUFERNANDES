@@ -39,7 +39,7 @@ export function LancamentoForm({
   onSalvo?: () => void
 }) {
   const router = useRouter()
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string } | null>(
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string } | null>(
     { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }
   )
   const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>(() => {
@@ -124,7 +124,9 @@ export function LancamentoForm({
     const supabase = getBrowserSupabaseClient()
 
     const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
-      p_barbearia_id: barbeariaId, p_nome: cliente.nome, p_telefone: cliente.telefone, p_data_nascimento: cliente.dataNascimento ?? null,
+      p_barbearia_id: barbeariaId, p_nome: cliente.nome, p_telefone: cliente.telefone,
+      p_data_nascimento: cliente.dataNascimento ?? null,
+      p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 

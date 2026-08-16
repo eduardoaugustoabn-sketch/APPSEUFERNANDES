@@ -8,18 +8,22 @@ export function ClienteAutocomplete({
   barbeariaId, onResolved, valorInicial,
 }: {
   barbeariaId: string
-  onResolved: (info: { nome: string; telefone: string; totalCortes: number; dataNascimento?: string }) => void
+  onResolved: (info: { nome: string; telefone: string; totalCortes: number; dataNascimento?: string; bairro?: string; cidade?: string }) => void
   valorInicial?: { nome: string; telefone: string }
 }) {
   const [nome, setNome] = useState(valorInicial?.nome ?? '')
   const [telefone, setTelefone] = useState(valorInicial?.telefone ?? '')
   const [dataNascimento, setDataNascimento] = useState('')
+  const [bairro, setBairro] = useState('')
+  const [cidade, setCidade] = useState('')
   const [info, setInfo] = useState<string | null>(null)
   // Refs (not just state) so onResolved always reads the latest value
   // regardless of render timing.
   const nomeRef = useRef(valorInicial?.nome ?? '')
   const telefoneRef = useRef(valorInicial?.telefone ?? '')
   const dataNascimentoRef = useRef('')
+  const bairroRef = useRef('')
+  const cidadeRef = useRef('')
 
   // Report the pre-filled value once on mount, so the parent (e.g.
   // LancamentoForm opened from an existing agendamento) has it immediately
@@ -32,13 +36,41 @@ export function ClienteAutocomplete({
   function handleNomeChange(value: string) {
     nomeRef.current = value
     setNome(value)
-    onResolved({ nome: value, telefone: telefoneRef.current, totalCortes: 0, dataNascimento: dataNascimentoRef.current || undefined })
+    onResolved({
+      nome: value, telefone: telefoneRef.current, totalCortes: 0,
+      dataNascimento: dataNascimentoRef.current || undefined,
+      bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+    })
   }
 
   function handleDataNascimentoChange(value: string) {
     dataNascimentoRef.current = value
     setDataNascimento(value)
-    onResolved({ nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, dataNascimento: value || undefined })
+    onResolved({
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      dataNascimento: value || undefined,
+      bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+    })
+  }
+
+  function handleBairroChange(value: string) {
+    bairroRef.current = value
+    setBairro(value)
+    onResolved({
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      dataNascimento: dataNascimentoRef.current || undefined,
+      bairro: value || undefined, cidade: cidadeRef.current || undefined,
+    })
+  }
+
+  function handleCidadeChange(value: string) {
+    cidadeRef.current = value
+    setCidade(value)
+    onResolved({
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      dataNascimento: dataNascimentoRef.current || undefined,
+      bairro: bairroRef.current || undefined, cidade: value || undefined,
+    })
   }
 
   async function verificar(tel: string) {
@@ -51,7 +83,11 @@ export function ClienteAutocomplete({
     // click on "Salvar" landing before that round-trip completes would
     // submit with an empty/stale telefone, since the only onResolved call
     // for this field previously fired after the await.
-    onResolved({ nome: nomeRef.current, telefone: tel, totalCortes: 0, dataNascimento: dataNascimentoRef.current || undefined })
+    onResolved({
+      nome: nomeRef.current, telefone: tel, totalCortes: 0,
+      dataNascimento: dataNascimentoRef.current || undefined,
+      bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+    })
     if (tel.length < 10) return
     const supabase = getBrowserSupabaseClient()
     const { data: rows } = await supabase.rpc('reconhecer_cliente', { p_barbearia_id: barbeariaId, p_telefone: tel })
@@ -60,7 +96,11 @@ export function ClienteAutocomplete({
       nomeRef.current = encontrado.nome
       setNome(encontrado.nome)
       setInfo(`${encontrado.total_cortes}º corte deste cliente aqui`)
-      onResolved({ nome: encontrado.nome, telefone: tel, totalCortes: encontrado.total_cortes, dataNascimento: dataNascimentoRef.current || undefined })
+      onResolved({
+        nome: encontrado.nome, telefone: tel, totalCortes: encontrado.total_cortes,
+        dataNascimento: dataNascimentoRef.current || undefined,
+        bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+      })
     } else {
       setInfo(null)
     }
@@ -71,6 +111,8 @@ export function ClienteAutocomplete({
       <Input placeholder="Nome do cliente" value={nome} onChange={(e) => handleNomeChange(e.target.value)} />
       <Input placeholder="Telefone" value={telefone} onChange={(e) => verificar(e.target.value)} />
       <Input type="date" placeholder="Data de nascimento (opcional)" value={dataNascimento} onChange={(e) => handleDataNascimentoChange(e.target.value)} />
+      <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => handleBairroChange(e.target.value)} />
+      <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => handleCidadeChange(e.target.value)} />
       {info && <span className="text-xs text-muted-foreground">{info}</span>}
     </div>
   )

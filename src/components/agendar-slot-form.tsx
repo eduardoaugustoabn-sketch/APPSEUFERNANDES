@@ -23,7 +23,7 @@ export function AgendarSlotForm({
   agendamentosExistentes: AgendamentoExistente[]
   onAgendado?: () => void
 }) {
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string } | null>(null)
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string } | null>(null)
   const [servicoId, setServicoId] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
@@ -56,7 +56,9 @@ export function AgendarSlotForm({
     const supabase = getBrowserSupabaseClient()
 
     const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
-      p_barbearia_id: barbeariaId, p_nome: cliente!.nome, p_telefone: cliente!.telefone, p_data_nascimento: cliente!.dataNascimento ?? null,
+      p_barbearia_id: barbeariaId, p_nome: cliente!.nome, p_telefone: cliente!.telefone,
+      p_data_nascimento: cliente!.dataNascimento ?? null,
+      p_bairro: cliente!.bairro ?? null, p_cidade: cliente!.cidade ?? null,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 

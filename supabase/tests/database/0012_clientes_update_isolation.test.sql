@@ -31,6 +31,7 @@ select is(
 -- diferente de INSERT/WITH CHECK, que rejeitaria com exceção.
 update clientes set observacao = 'Tentativa indevida' where id = 'c1000000-0000-0000-0000-000000000002';
 
+reset role;
 select is(
   (select observacao from clientes where id = 'c1000000-0000-0000-0000-000000000002'),
   null,

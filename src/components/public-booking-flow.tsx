@@ -18,6 +18,8 @@ export function PublicBookingFlow({
   const [horario, setHorario] = useState<string | null>(null)
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [bairro, setBairro] = useState('')
+  const [cidade, setCidade] = useState('')
   const [reconhecimento, setReconhecimento] = useState<string | null>(null)
   const [confirmado, setConfirmado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -64,6 +66,7 @@ export function PublicBookingFlow({
     const { error } = await supabase.rpc('criar_agendamento_publico', {
       p_barbearia_id: barbearia.id, p_membro_id: barbeiro.id, p_servico_id: servico.id,
       p_data: data, p_hora_inicio: horario, p_nome_cliente: nome, p_telefone_cliente: telefone,
+      p_bairro: bairro || null, p_cidade: cidade || null,
     })
     if (error) { setErro(error.message); return }
     setConfirmado(true)
@@ -120,7 +123,9 @@ export function PublicBookingFlow({
         <>
           <p className="font-heading text-base font-semibold mt-4">4. Seus dados</p>
           <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mb-2" />
-          <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} />
+          <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} className="mb-2" />
+          <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} className="mb-2" />
+          <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
           {reconhecimento && <p className="text-sm text-primary mt-2">{reconhecimento}</p>}
           {erro && <p className="text-sm text-destructive mt-2">{erro}</p>}
           <Button onClick={confirmar} className="w-full mt-4">Confirmar agendamento</Button>

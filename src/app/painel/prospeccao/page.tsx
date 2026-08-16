@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { ProspeccaoStatusForm } from '@/components/prospeccao-status-form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { TelefoneClienteBusca } from '@/components/telefone-cliente-busca'
 
 async function novoContato(formData: FormData) {
   'use server'
@@ -70,10 +71,7 @@ export default async function ProspeccaoPage() {
       )}
 
       <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">
-        <Input name="nome" placeholder="Nome" required />
-        <Input name="telefone" placeholder="Telefone" required />
-        <Input name="bairro" placeholder="Bairro (opcional)" />
-        <Input name="cidade" placeholder="Cidade (opcional)" />
+        <TelefoneClienteBusca />
         <select name="canal" className="border rounded px-2 py-1 bg-input">
           <option value="">Canal (opcional)</option>
           <option value="whatsapp">WhatsApp</option>

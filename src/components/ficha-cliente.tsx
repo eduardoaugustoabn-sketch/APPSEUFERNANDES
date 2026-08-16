@@ -1,4 +1,5 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { EditarClienteForm } from '@/components/editar-cliente-form'
 
 type Ranking = { item: string; tipo: string; quantidade: number; valor_total: number }
 type AtendimentoHistorico = { data: string; preco: number; servicos: { nome: string } | null }
@@ -7,7 +8,7 @@ type VendaHistorico = { data: string; preco_unitario: number; quantidade: number
 export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const supabase = await getServerSupabaseClient()
 
-  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, data_nascimento, bairro, cidade').eq('id', clienteId).single()
+  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, data_nascimento, bairro, cidade, observacao').eq('id', clienteId).single()
   const { data: ranking } = await supabase.rpc('ranking_cliente', { p_cliente_id: clienteId }) as { data: Ranking[] | null }
   const { data: atendimentos } = await supabase.from('atendimentos').select('data, preco, servicos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: AtendimentoHistorico[] | null }
   const { data: vendas } = await supabase.from('vendas_produtos').select('data, preco_unitario, quantidade, produtos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: VendaHistorico[] | null }
@@ -40,6 +41,13 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
         {cliente?.cidade ? ` · ${cliente.cidade}` : ''}
       </p>
       <p className="text-xs text-muted-foreground mb-4">Cliente desde {cliente?.criado_em ? new Date(cliente.criado_em).toLocaleDateString() : ''}</p>
+
+      <EditarClienteForm
+        clienteId={clienteId}
+        bairroAtual={cliente?.bairro ?? null}
+        cidadeAtual={cliente?.cidade ?? null}
+        observacaoAtual={cliente?.observacao ?? null}
+      />
 
       <h3 className="font-heading text-base font-semibold mt-4 mb-2">Mais usados por ele</h3>
       {ranking?.map((r) => (

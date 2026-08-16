@@ -80,6 +80,14 @@ export default async function BarbeirosPage() {
   const supabase = await getServerSupabaseClient()
   const { data: barbeiros } = await supabase.from('membros').select('*').eq('papel', 'barbeiro').order('nome')
   const { data: planos } = await supabase.from('planos_carreira').select('*')
+  const { data: horarios } = await supabase.from('horarios_trabalho').select('membro_id, dia_semana, hora_inicio, hora_fim')
+
+  const expedientePorMembro = new Map<string, { dia_semana: number; hora_inicio: string; hora_fim: string }[]>()
+  for (const h of horarios ?? []) {
+    const lista = expedientePorMembro.get(h.membro_id) ?? []
+    lista.push({ dia_semana: h.dia_semana, hora_inicio: h.hora_inicio, hora_fim: h.hora_fim })
+    expedientePorMembro.set(h.membro_id, lista)
+  }
 
   return (
     <div>
@@ -104,7 +112,13 @@ export default async function BarbeirosPage() {
         </TableHeader>
         <TableBody>
           {barbeiros?.map((b) => (
-            <BarbeiroRow key={b.id} barbeiro={b} planos={planos ?? []} vincularPlanoAction={vincularPlano} />
+            <BarbeiroRow
+              key={b.id}
+              barbeiro={b}
+              planos={planos ?? []}
+              expediente={expedientePorMembro.get(b.id) ?? []}
+              vincularPlanoAction={vincularPlano}
+            />
           ))}
         </TableBody>
       </Table>

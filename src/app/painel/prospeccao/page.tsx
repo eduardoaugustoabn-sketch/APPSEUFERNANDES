@@ -12,9 +12,12 @@ async function novoContato(formData: FormData) {
 
   const nome = formData.get('nome') as string
   const telefone = formData.get('telefone') as string
+  const bairro = (formData.get('bairro') as string) || null
+  const cidade = (formData.get('cidade') as string) || null
 
   const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
     p_barbearia_id: membro!.barbearia_id, p_nome: nome, p_telefone: telefone,
+    p_bairro: bairro, p_cidade: cidade,
   })
   if (clienteId.error) return
 
@@ -69,6 +72,8 @@ export default async function ProspeccaoPage() {
       <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">
         <Input name="nome" placeholder="Nome" required />
         <Input name="telefone" placeholder="Telefone" required />
+        <Input name="bairro" placeholder="Bairro (opcional)" />
+        <Input name="cidade" placeholder="Cidade (opcional)" />
         <select name="canal" className="border rounded px-2 py-1 bg-input">
           <option value="">Canal (opcional)</option>
           <option value="whatsapp">WhatsApp</option>

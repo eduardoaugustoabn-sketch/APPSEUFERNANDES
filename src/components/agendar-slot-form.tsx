@@ -86,7 +86,7 @@ export function AgendarSlotForm({
   return (
     <div className="flex flex-col gap-3 max-w-md border rounded p-4">
       <h3 className="font-heading text-base font-semibold">Agendar horário — {horaInicio.slice(0, 5)}</h3>
-      <ClienteAutocomplete barbeariaId={barbeariaId} onResolved={setCliente} />
+      <ClienteAutocomplete onResolved={setCliente} />
       <select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }} className="border rounded px-2 py-1">
         <option value="">Serviço</option>
         {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}

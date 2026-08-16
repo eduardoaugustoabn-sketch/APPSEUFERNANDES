@@ -4,10 +4,19 @@ import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 
+type ResultadoBusca = {
+  id: string
+  nome: string
+  telefone: string
+  total_cortes: number
+  data_nascimento: string | null
+  bairro: string | null
+  cidade: string | null
+}
+
 export function ClienteAutocomplete({
-  barbeariaId, onResolved, valorInicial,
+  onResolved, valorInicial,
 }: {
-  barbeariaId: string
   onResolved: (info: { nome: string; telefone: string; totalCortes: number; dataNascimento?: string; bairro?: string; cidade?: string }) => void
   valorInicial?: { nome: string; telefone: string }
 }) {
@@ -16,7 +25,8 @@ export function ClienteAutocomplete({
   const [dataNascimento, setDataNascimento] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
-  const [info, setInfo] = useState<string | null>(null)
+  const [resultados, setResultados] = useState<ResultadoBusca[]>([])
+  const [mostrarLista, setMostrarLista] = useState(false)
   // Refs (not just state) so onResolved always reads the latest value
   // regardless of render timing.
   const nomeRef = useRef(valorInicial?.nome ?? '')
@@ -24,6 +34,7 @@ export function ClienteAutocomplete({
   const dataNascimentoRef = useRef('')
   const bairroRef = useRef('')
   const cidadeRef = useRef('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Report the pre-filled value once on mount, so the parent (e.g.
   // LancamentoForm opened from an existing agendamento) has it immediately
@@ -73,47 +84,86 @@ export function ClienteAutocomplete({
     })
   }
 
-  async function verificar(tel: string) {
+  function verificar(tel: string) {
     telefoneRef.current = tel
     setTelefone(tel)
     // Resolve synchronously with the raw typed value first — the caller
     // (LancamentoForm's salvar()) reads whatever onResolved last reported,
-    // and reconhecer_cliente() below is
-    // an async network round-trip. Without this synchronous resolve, a
-    // click on "Salvar" landing before that round-trip completes would
-    // submit with an empty/stale telefone, since the only onResolved call
-    // for this field previously fired after the await.
+    // and buscar_clientes_por_telefone below is an async, debounced
+    // network round-trip. Without this synchronous resolve, a click on
+    // "Salvar" landing before the debounce/round-trip completes would
+    // submit with an empty/stale telefone.
     onResolved({
       nome: nomeRef.current, telefone: tel, totalCortes: 0,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
     })
-    if (tel.length < 10) return
-    const supabase = getBrowserSupabaseClient()
-    const { data: rows } = await supabase.rpc('reconhecer_cliente', { p_barbearia_id: barbeariaId, p_telefone: tel })
-    const encontrado = rows?.[0]
-    if (encontrado) {
-      nomeRef.current = encontrado.nome
-      setNome(encontrado.nome)
-      setInfo(`${encontrado.total_cortes}º corte deste cliente aqui`)
-      onResolved({
-        nome: encontrado.nome, telefone: tel, totalCortes: encontrado.total_cortes,
-        dataNascimento: dataNascimentoRef.current || undefined,
-        bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
-      })
-    } else {
-      setInfo(null)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    const digitos = tel.replace(/\D/g, '')
+    if (digitos.length < 4) {
+      setResultados([])
+      setMostrarLista(false)
+      return
     }
+
+    debounceRef.current = setTimeout(async () => {
+      const supabase = getBrowserSupabaseClient()
+      const { data: rows } = await supabase.rpc('buscar_clientes_por_telefone', { p_busca: tel })
+      setResultados(rows ?? [])
+      setMostrarLista((rows ?? []).length > 0)
+    }, 300)
+  }
+
+  function selecionar(cliente: ResultadoBusca) {
+    nomeRef.current = cliente.nome
+    telefoneRef.current = cliente.telefone
+    dataNascimentoRef.current = cliente.data_nascimento ?? ''
+    bairroRef.current = cliente.bairro ?? ''
+    cidadeRef.current = cliente.cidade ?? ''
+    setNome(cliente.nome)
+    setTelefone(cliente.telefone)
+    setDataNascimento(cliente.data_nascimento ?? '')
+    setBairro(cliente.bairro ?? '')
+    setCidade(cliente.cidade ?? '')
+    setMostrarLista(false)
+    setResultados([])
+    onResolved({
+      nome: cliente.nome, telefone: cliente.telefone, totalCortes: cliente.total_cortes,
+      dataNascimento: cliente.data_nascimento ?? undefined,
+      bairro: cliente.bairro ?? undefined, cidade: cliente.cidade ?? undefined,
+    })
   }
 
   return (
     <div className="flex flex-col gap-1">
       <Input placeholder="Nome do cliente" value={nome} onChange={(e) => handleNomeChange(e.target.value)} />
-      <Input placeholder="Telefone" value={telefone} onChange={(e) => verificar(e.target.value)} />
+      <div className="relative">
+        <Input
+          placeholder="Telefone"
+          value={telefone}
+          onChange={(e) => verificar(e.target.value)}
+          onBlur={() => setMostrarLista(false)}
+        />
+        {mostrarLista && resultados.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-card border rounded shadow-md max-h-48 overflow-y-auto">
+            {resultados.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onMouseDown={() => selecionar(r)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
+              >
+                {r.nome} · {r.telefone} · {r.total_cortes}º corte aqui
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <Input type="date" placeholder="Data de nascimento (opcional)" value={dataNascimento} onChange={(e) => handleDataNascimentoChange(e.target.value)} />
       <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => handleBairroChange(e.target.value)} />
       <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => handleCidadeChange(e.target.value)} />
-      {info && <span className="text-xs text-muted-foreground">{info}</span>}
     </div>
   )
 }

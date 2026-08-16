@@ -197,7 +197,6 @@ export function LancamentoForm({
 
       <ClienteAutocomplete
         key={clienteAutocompleteKey}
-        barbeariaId={barbeariaId}
         onResolved={setCliente}
         valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
       />

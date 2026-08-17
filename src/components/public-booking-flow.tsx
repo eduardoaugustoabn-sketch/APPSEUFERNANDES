@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number }
 type Barbeiro = { id: string; nome: string }
@@ -20,6 +21,7 @@ export function PublicBookingFlow({
   const [telefone, setTelefone] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
+  const [categoriaOrigem, setCategoriaOrigem] = useState('')
   const [reconhecimento, setReconhecimento] = useState<string | null>(null)
   const [confirmado, setConfirmado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -62,11 +64,12 @@ export function PublicBookingFlow({
 
   async function confirmar() {
     if (!servico || !barbeiro || !horario) return
+    if (!reconhecimento && !categoriaOrigem) { setErro('Escolha como você conheceu a barbearia.'); return }
     const supabase = getBrowserSupabaseClient()
     const { error } = await supabase.rpc('criar_agendamento_publico', {
       p_barbearia_id: barbearia.id, p_membro_id: barbeiro.id, p_servico_id: servico.id,
       p_data: data, p_hora_inicio: horario, p_nome_cliente: nome, p_telefone_cliente: telefone,
-      p_bairro: bairro || null, p_cidade: cidade || null,
+      p_bairro: bairro || null, p_cidade: cidade || null, p_categoria_origem: categoriaOrigem || null,
     })
     if (error) { setErro(error.message); return }
     setConfirmado(true)
@@ -125,7 +128,15 @@ export function PublicBookingFlow({
           <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mb-2" />
           <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} className="mb-2" />
           <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} className="mb-2" />
-          <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+          <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="mb-2" />
+          <select
+            value={categoriaOrigem}
+            onChange={(e) => setCategoriaOrigem(e.target.value)}
+            className="border rounded px-2 py-1 w-full"
+          >
+            <option value="">Como conheceu a barbearia?</option>
+            {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
           {reconhecimento && <p className="text-sm text-primary mt-2">{reconhecimento}</p>}
           {erro && <p className="text-sm text-destructive mt-2">{erro}</p>}
           <Button onClick={confirmar} className="w-full mt-4">Confirmar agendamento</Button>

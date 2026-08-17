@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 type ResultadoBusca = {
   id: string
@@ -17,7 +18,10 @@ type ResultadoBusca = {
 export function ClienteAutocomplete({
   onResolved, valorInicial,
 }: {
-  onResolved: (info: { nome: string; telefone: string; totalCortes: number; dataNascimento?: string; bairro?: string; cidade?: string }) => void
+  onResolved: (info: {
+    nome: string; telefone: string; totalCortes: number; reconhecido: boolean
+    dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string
+  }) => void
   valorInicial?: { nome: string; telefone: string }
 }) {
   const [nome, setNome] = useState(valorInicial?.nome ?? '')
@@ -25,6 +29,7 @@ export function ClienteAutocomplete({
   const [dataNascimento, setDataNascimento] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
+  const [categoriaOrigem, setCategoriaOrigem] = useState('')
   const [resultados, setResultados] = useState<ResultadoBusca[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
   // Refs (not just state) so onResolved always reads the latest value
@@ -34,6 +39,14 @@ export function ClienteAutocomplete({
   const dataNascimentoRef = useRef('')
   const bairroRef = useRef('')
   const cidadeRef = useRef('')
+  const categoriaOrigemRef = useRef('')
+  // Pré-preenchido via valorInicial (aberto a partir de um agendamento já
+  // existente) e selecionado da lista de sugestões são as duas únicas
+  // formas de saber que é um cliente já cadastrado — nos dois casos a
+  // categoria de origem não é obrigatória. Qualquer edição manual do
+  // telefone depois disso volta a marcar como não reconhecido, porque não
+  // há mais garantia de que o telefone digitado é o mesmo cliente.
+  const reconhecidoRef = useRef(!!valorInicial)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buscaSeqRef = useRef(0)
 
@@ -42,16 +55,17 @@ export function ClienteAutocomplete({
   // instead of only after the user types something.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (valorInicial) onResolved({ nome: valorInicial.nome, telefone: valorInicial.telefone, totalCortes: 0 })
+    if (valorInicial) onResolved({ nome: valorInicial.nome, telefone: valorInicial.telefone, totalCortes: 0, reconhecido: true })
   }, [])
 
   function handleNomeChange(value: string) {
     nomeRef.current = value
     setNome(value)
     onResolved({
-      nome: value, telefone: telefoneRef.current, totalCortes: 0,
+      nome: value, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
     })
   }
 
@@ -59,9 +73,10 @@ export function ClienteAutocomplete({
     dataNascimentoRef.current = value
     setDataNascimento(value)
     onResolved({
-      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: value || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
     })
   }
 
@@ -69,9 +84,10 @@ export function ClienteAutocomplete({
     bairroRef.current = value
     setBairro(value)
     onResolved({
-      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: value || undefined, cidade: cidadeRef.current || undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
     })
   }
 
@@ -79,15 +95,28 @@ export function ClienteAutocomplete({
     cidadeRef.current = value
     setCidade(value)
     onResolved({
-      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0,
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: value || undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
+    })
+  }
+
+  function handleCategoriaOrigemChange(value: string) {
+    categoriaOrigemRef.current = value
+    setCategoriaOrigem(value)
+    onResolved({
+      nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
+      dataNascimento: dataNascimentoRef.current || undefined,
+      bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+      categoriaOrigem: value || undefined,
     })
   }
 
   function verificar(tel: string) {
     telefoneRef.current = tel
     setTelefone(tel)
+    reconhecidoRef.current = false
     const seq = ++buscaSeqRef.current
     // Resolve synchronously with the raw typed value first — the caller
     // (LancamentoForm's salvar()) reads whatever onResolved last reported,
@@ -96,9 +125,10 @@ export function ClienteAutocomplete({
     // "Salvar" landing before the debounce/round-trip completes would
     // submit with an empty/stale telefone.
     onResolved({
-      nome: nomeRef.current, telefone: tel, totalCortes: 0,
+      nome: nomeRef.current, telefone: tel, totalCortes: 0, reconhecido: false,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
     })
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -125,6 +155,7 @@ export function ClienteAutocomplete({
     dataNascimentoRef.current = cliente.data_nascimento ?? ''
     bairroRef.current = cliente.bairro ?? ''
     cidadeRef.current = cliente.cidade ?? ''
+    reconhecidoRef.current = true
     setNome(cliente.nome)
     setTelefone(cliente.telefone)
     setDataNascimento(cliente.data_nascimento ?? '')
@@ -133,9 +164,10 @@ export function ClienteAutocomplete({
     setMostrarLista(false)
     setResultados([])
     onResolved({
-      nome: cliente.nome, telefone: cliente.telefone, totalCortes: cliente.total_cortes,
+      nome: cliente.nome, telefone: cliente.telefone, totalCortes: cliente.total_cortes, reconhecido: true,
       dataNascimento: cliente.data_nascimento ?? undefined,
       bairro: cliente.bairro ?? undefined, cidade: cliente.cidade ?? undefined,
+      categoriaOrigem: categoriaOrigemRef.current || undefined,
     })
   }
 
@@ -167,6 +199,14 @@ export function ClienteAutocomplete({
       <Input type="date" placeholder="Data de nascimento (opcional)" value={dataNascimento} onChange={(e) => handleDataNascimentoChange(e.target.value)} />
       <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => handleBairroChange(e.target.value)} />
       <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => handleCidadeChange(e.target.value)} />
+      <select
+        value={categoriaOrigem}
+        onChange={(e) => handleCategoriaOrigemChange(e.target.value)}
+        className="border rounded px-2 py-1"
+      >
+        <option value="">Como conheceu a barbearia?</option>
+        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </select>
     </div>
   )
 }

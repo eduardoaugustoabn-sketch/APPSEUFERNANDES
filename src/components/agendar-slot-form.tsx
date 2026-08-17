@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
+import type { CategoriaOrigem } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boolean }
 type AgendamentoExistente = { hora_inicio: string; hora_fim: string }
@@ -23,7 +24,7 @@ export function AgendarSlotForm({
   agendamentosExistentes: AgendamentoExistente[]
   onAgendado?: () => void
 }) {
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string; reconhecido?: boolean } | null>(null)
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: CategoriaOrigem; reconhecido?: boolean } | null>(null)
   const [servicoId, setServicoId] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)

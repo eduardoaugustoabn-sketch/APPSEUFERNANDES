@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
+import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 export function EditarClienteForm({
   clienteId, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual,
@@ -14,14 +14,14 @@ export function EditarClienteForm({
   bairroAtual: string | null
   cidadeAtual: string | null
   observacaoAtual: string | null
-  categoriaOrigemAtual: string | null
+  categoriaOrigemAtual: CategoriaOrigem | null
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
   const [bairro, setBairro] = useState(bairroAtual ?? '')
   const [cidade, setCidade] = useState(cidadeAtual ?? '')
   const [observacao, setObservacao] = useState(observacaoAtual ?? '')
-  const [categoriaOrigem, setCategoriaOrigem] = useState(categoriaOrigemAtual ?? '')
+  const [categoriaOrigem, setCategoriaOrigem] = useState<CategoriaOrigem | ''>(categoriaOrigemAtual ?? '')
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
@@ -80,7 +80,7 @@ export function EditarClienteForm({
         onChange={(e) => setObservacao(e.target.value)}
         className="border rounded px-2 py-1 bg-input text-sm min-h-20"
       />
-      <select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value)} className="border rounded px-2 py-1">
+      <select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')} className="border rounded px-2 py-1">
         <option value="">Como conheceu a barbearia?</option>
         {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
       </select>

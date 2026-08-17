@@ -15,12 +15,13 @@ async function novoContato(formData: FormData) {
   const telefone = formData.get('telefone') as string
   const bairro = (formData.get('bairro') as string) || null
   const cidade = (formData.get('cidade') as string) || null
+  const categoriaOrigem = (formData.get('categoria_origem') as string) || null
 
   const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
     p_barbearia_id: membro!.barbearia_id, p_nome: nome, p_telefone: telefone,
-    p_bairro: bairro, p_cidade: cidade,
+    p_bairro: bairro, p_cidade: cidade, p_categoria_origem: categoriaOrigem,
   })
-  if (clienteId.error) return
+  if (clienteId.error) throw new Error(clienteId.error.message)
 
   await supabase.from('prospeccoes').insert({
     barbearia_id: membro!.barbearia_id,

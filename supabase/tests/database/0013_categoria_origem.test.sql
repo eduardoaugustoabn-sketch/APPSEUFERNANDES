@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(11);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -35,6 +35,11 @@ select throws_ok(
 select lives_ok(
   $$ select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', null, null, null, 'outro') $$,
   'calling again for an existing client with a different categoria_origem does not throw'
+);
+
+select lives_ok(
+  $$ select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777') $$,
+  'calling again for an existing client with no categoria_origem argument at all does not throw'
 );
 
 reset role;
@@ -78,6 +83,16 @@ select is(
   'redes_sociais',
   'categoria_origem passed through criar_agendamento_publico is persisted on the new client'
 );
+
+set local role anon;
+
+select throws_ok(
+  $$ select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Categoria Invalida', '11911112222', null, null, null, 'nao_existe') $$,
+  'Categoria de origem inválida.',
+  'creating a new client with an invalid categoria_origem value is rejected with a friendly message'
+);
+
+reset role;
 
 select * from finish();
 rollback;

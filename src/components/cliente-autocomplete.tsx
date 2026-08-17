@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
-import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
+import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 type ResultadoBusca = {
   id: string
@@ -20,7 +20,7 @@ export function ClienteAutocomplete({
 }: {
   onResolved: (info: {
     nome: string; telefone: string; totalCortes: number; reconhecido: boolean
-    dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string
+    dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: CategoriaOrigem
   }) => void
   valorInicial?: { nome: string; telefone: string }
 }) {
@@ -29,7 +29,7 @@ export function ClienteAutocomplete({
   const [dataNascimento, setDataNascimento] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
-  const [categoriaOrigem, setCategoriaOrigem] = useState('')
+  const [categoriaOrigem, setCategoriaOrigem] = useState<CategoriaOrigem | ''>('')
   const [resultados, setResultados] = useState<ResultadoBusca[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
   // Refs (not just state) so onResolved always reads the latest value
@@ -39,7 +39,7 @@ export function ClienteAutocomplete({
   const dataNascimentoRef = useRef('')
   const bairroRef = useRef('')
   const cidadeRef = useRef('')
-  const categoriaOrigemRef = useRef('')
+  const categoriaOrigemRef = useRef<CategoriaOrigem | ''>('')
   // Pré-preenchido via valorInicial (aberto a partir de um agendamento já
   // existente) e selecionado da lista de sugestões são as duas únicas
   // formas de saber que é um cliente já cadastrado — nos dois casos a
@@ -103,13 +103,14 @@ export function ClienteAutocomplete({
   }
 
   function handleCategoriaOrigemChange(value: string) {
-    categoriaOrigemRef.current = value
-    setCategoriaOrigem(value)
+    const categoria = value as CategoriaOrigem | ''
+    categoriaOrigemRef.current = categoria
+    setCategoriaOrigem(categoria)
     onResolved({
       nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
-      categoriaOrigem: value || undefined,
+      categoriaOrigem: categoria || undefined,
     })
   }
 

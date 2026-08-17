@@ -1,3 +1,5 @@
+-- Fonte da verdade do lado TS: src/lib/categorias-origem.ts (CATEGORIAS_ORIGEM) — ao
+-- adicionar uma 6ª categoria, atualize os dois lugares.
 alter table clientes add column categoria_origem text
   check (categoria_origem in ('indicacao', 'redes_sociais', 'google_internet', 'passou_na_rua', 'outro'));
 

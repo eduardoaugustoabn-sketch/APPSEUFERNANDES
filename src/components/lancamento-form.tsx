@@ -6,6 +6,7 @@ import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import type { CategoriaOrigem } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
@@ -39,7 +40,7 @@ export function LancamentoForm({
   onSalvo?: () => void
 }) {
   const router = useRouter()
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string; reconhecido?: boolean } | null>(
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: CategoriaOrigem; reconhecido?: boolean } | null>(
     { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }
   )
   const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>(() => {

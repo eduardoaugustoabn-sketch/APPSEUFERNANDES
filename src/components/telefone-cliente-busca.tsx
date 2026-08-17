@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 type ResultadoBusca = {
   id: string
@@ -89,6 +90,10 @@ export function TelefoneClienteBusca() {
       </div>
       <Input name="bairro" placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} />
       <Input name="cidade" placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+      <select name="categoria_origem" className="border rounded px-2 py-1 bg-input" defaultValue="">
+        <option value="">Como conheceu a barbearia?</option>
+        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </select>
     </>
   )
 }

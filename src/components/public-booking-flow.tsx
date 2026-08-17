@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
+import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number }
 type Barbeiro = { id: string; nome: string }
@@ -21,7 +21,7 @@ export function PublicBookingFlow({
   const [telefone, setTelefone] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
-  const [categoriaOrigem, setCategoriaOrigem] = useState('')
+  const [categoriaOrigem, setCategoriaOrigem] = useState<CategoriaOrigem | ''>('')
   const [reconhecimento, setReconhecimento] = useState<string | null>(null)
   const [confirmado, setConfirmado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -131,7 +131,7 @@ export function PublicBookingFlow({
           <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="mb-2" />
           <select
             value={categoriaOrigem}
-            onChange={(e) => setCategoriaOrigem(e.target.value)}
+            onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}
             className="border rounded px-2 py-1 w-full"
           >
             <option value="">Como conheceu a barbearia?</option>

@@ -5,20 +5,23 @@ import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 export function EditarClienteForm({
-  clienteId, bairroAtual, cidadeAtual, observacaoAtual,
+  clienteId, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual,
 }: {
   clienteId: string
   bairroAtual: string | null
   cidadeAtual: string | null
   observacaoAtual: string | null
+  categoriaOrigemAtual: string | null
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
   const [bairro, setBairro] = useState(bairroAtual ?? '')
   const [cidade, setCidade] = useState(cidadeAtual ?? '')
   const [observacao, setObservacao] = useState(observacaoAtual ?? '')
+  const [categoriaOrigem, setCategoriaOrigem] = useState(categoriaOrigemAtual ?? '')
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
@@ -26,7 +29,10 @@ export function EditarClienteForm({
     const supabase = getBrowserSupabaseClient()
     const { data, error } = await supabase
       .from('clientes')
-      .update({ bairro: bairro.trim() || null, cidade: cidade.trim() || null, observacao: observacao.trim() || null })
+      .update({
+        bairro: bairro.trim() || null, cidade: cidade.trim() || null, observacao: observacao.trim() || null,
+        categoria_origem: categoriaOrigem || null,
+      })
       .eq('id', clienteId)
       .select('id')
     setSalvando(false)
@@ -46,15 +52,19 @@ export function EditarClienteForm({
     setBairro(bairroAtual ?? '')
     setCidade(cidadeAtual ?? '')
     setObservacao(observacaoAtual ?? '')
+    setCategoriaOrigem(categoriaOrigemAtual ?? '')
     setEditando(false)
   }
+
+  const categoriaLabel = CATEGORIAS_ORIGEM.find((c) => c.value === categoriaOrigemAtual)?.label
 
   if (!editando) {
     return (
       <div className="mb-4">
         {observacaoAtual && <p className="text-sm text-muted-foreground mb-2">Observação: {observacaoAtual}</p>}
+        {categoriaLabel && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaLabel}</p>}
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">
-          Editar bairro/cidade/observação
+          Editar bairro/cidade/observação/origem
         </button>
       </div>
     )
@@ -70,6 +80,10 @@ export function EditarClienteForm({
         onChange={(e) => setObservacao(e.target.value)}
         className="border rounded px-2 py-1 bg-input text-sm min-h-20"
       />
+      <select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value)} className="border rounded px-2 py-1">
+        <option value="">Como conheceu a barbearia?</option>
+        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </select>
       <div className="flex gap-2">
         <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
         <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>

@@ -23,7 +23,7 @@ export function AgendarSlotForm({
   agendamentosExistentes: AgendamentoExistente[]
   onAgendado?: () => void
 }) {
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string } | null>(null)
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string; reconhecido?: boolean } | null>(null)
   const [servicoId, setServicoId] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
@@ -59,6 +59,7 @@ export function AgendarSlotForm({
       p_barbearia_id: barbeariaId, p_nome: cliente!.nome, p_telefone: cliente!.telefone,
       p_data_nascimento: cliente!.dataNascimento ?? null,
       p_bairro: cliente!.bairro ?? null, p_cidade: cliente!.cidade ?? null,
+      p_categoria_origem: cliente!.categoriaOrigem ?? null,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
@@ -78,6 +79,7 @@ export function AgendarSlotForm({
 
   function confirmar() {
     if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
+    if (!cliente.reconhecido && !cliente.categoriaOrigem) { setMensagem('Escolha como o cliente conheceu a barbearia.'); return }
     if (!servicoId) { setMensagem('Escolha o serviço.'); return }
     if (conflito && !pedindoConfirmacao) { setPedindoConfirmacao(true); return }
     gravar()

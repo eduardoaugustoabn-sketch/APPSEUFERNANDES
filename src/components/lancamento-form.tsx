@@ -39,7 +39,7 @@ export function LancamentoForm({
   onSalvo?: () => void
 }) {
   const router = useRouter()
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string } | null>(
+  const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: string; reconhecido?: boolean } | null>(
     { nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }
   )
   const [servicosSelecionados, setServicosSelecionados] = useState<ServicoSelecionado[]>(() => {
@@ -111,6 +111,7 @@ export function LancamentoForm({
 
   async function salvar() {
     if (!cliente || !cliente.nome || !cliente.telefone) { setMensagem('Preencha o cliente.'); return }
+    if (!cliente.reconhecido && !cliente.categoriaOrigem) { setMensagem('Escolha como o cliente conheceu a barbearia.'); return }
     // A produto-only sale (client just buys a pomada, no corte) is valid —
     // only require that at least one of the two lists isn't empty.
     if (servicosSelecionados.length === 0 && produtosSelecionados.length === 0) {
@@ -127,6 +128,7 @@ export function LancamentoForm({
       p_barbearia_id: barbeariaId, p_nome: cliente.nome, p_telefone: cliente.telefone,
       p_data_nascimento: cliente.dataNascimento ?? null,
       p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
+      p_categoria_origem: cliente.categoriaOrigem ?? null,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 

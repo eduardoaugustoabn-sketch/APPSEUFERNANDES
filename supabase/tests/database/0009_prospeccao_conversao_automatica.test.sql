@@ -13,7 +13,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', true);
 
 -- Scenario 1: prospecção → agenda → realizado → convertido.
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Um', '11900000001');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Um', '11900000001', null, null, null, 'indicacao');
 
 insert into prospeccoes (barbearia_id, membro_id, canal, nome, telefone, cliente_id)
 values (
@@ -49,7 +49,7 @@ select isnt(
 );
 
 -- Scenario 2: prospecção → agenda → não compareceu → não convertido.
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Dois', '11900000002');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Dois', '11900000002', null, null, null, 'indicacao');
 
 insert into prospeccoes (barbearia_id, membro_id, canal, nome, telefone, cliente_id)
 values (

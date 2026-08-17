@@ -7,7 +7,7 @@ insert into barbearias (id, nome, slug) values
 set local role anon;
 
 select is(
-  (select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777') is not null),
+  (select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', null, null, null, 'indicacao') is not null),
   true,
   'anon can create a client via criar_ou_obter_cliente'
 );

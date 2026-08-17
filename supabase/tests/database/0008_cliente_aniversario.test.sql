@@ -6,7 +6,7 @@ insert into barbearias (id, nome, slug) values
 
 set local role anon;
 
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', '1990-05-20');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', '1990-05-20', null, null, 'indicacao');
 
 reset role;
 
@@ -31,7 +31,7 @@ select is(
 
 set local role anon;
 
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Outro Cliente', '11977776666');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Outro Cliente', '11977776666', null, null, null, 'indicacao');
 
 reset role;
 
@@ -44,7 +44,7 @@ select is(
 set local role anon;
 
 -- Create a client without birthday first, then backfill the birthday on a later call.
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555', null, null, null, 'indicacao');
 
 reset role;
 

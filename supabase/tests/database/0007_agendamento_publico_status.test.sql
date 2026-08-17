@@ -14,7 +14,7 @@ insert into horarios_trabalho (membro_id, dia_semana, hora_inicio, hora_fim) val
 set local role anon;
 
 select lives_ok(
-  $$ select criar_agendamento_publico('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', current_date + 1, '09:00', 'Cliente 1', '11900000001') $$,
+  $$ select criar_agendamento_publico('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', current_date + 1, '09:00', 'Cliente 1', '11900000001', null, null, 'indicacao') $$,
   'public booking into a free slot still succeeds'
 );
 
@@ -32,7 +32,7 @@ set local role anon;
 -- guarantee moved from the dropped exclusion constraint into this function's
 -- own explicit overlap check.
 select throws_ok(
-  $$ select criar_agendamento_publico('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', current_date + 1, '09:00', 'Cliente 2', '11900000002') $$,
+  $$ select criar_agendamento_publico('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', current_date + 1, '09:00', 'Cliente 2', '11900000002', null, null, 'indicacao') $$,
   'Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.',
   'a second public booking for the same slot is still rejected'
 );

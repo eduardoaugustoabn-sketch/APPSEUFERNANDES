@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
+import { calcularDistribuicaoCategorias } from '@/lib/categoria-atendimento'
 import { Card, CardContent } from '@/components/ui/card'
 
 type ItemContagem = { id: string; nome: string; quantidade: number; valor: number }
@@ -10,7 +11,8 @@ type AtendimentoRow = {
   preco: string
   comissao_valor: string | null
   servico_id: string
-  servicos: { nome: string; tipo: 'corte' | 'servico_extra' } | null
+  agendamento_id: string | null
+  servicos: { nome: string; tipo: 'corte' | 'servico_extra'; categoria_servico: 'cabelo' | 'barba' | 'outro' } | null
 }
 
 type VendaRow = {
@@ -45,7 +47,7 @@ export default async function BarbeiroDashboardPage() {
 
   const { data: atendimentosData } = (await supabase
     .from('atendimentos')
-    .select('preco, comissao_valor, servico_id, servicos(nome, tipo)')
+    .select('preco, comissao_valor, servico_id, agendamento_id, servicos(nome, tipo, categoria_servico)')
     .eq('membro_id', membro!.id)
     .gte('data', inicioMes)) as { data: AtendimentoRow[] | null }
   const atendimentos = atendimentosData ?? []
@@ -98,6 +100,12 @@ export default async function BarbeiroDashboardPage() {
   const atendimentosCortes = atendimentos.filter((a) => a.servicos?.tipo === 'corte')
   const atendimentosExtras = atendimentos.filter((a) => a.servicos?.tipo === 'servico_extra')
 
+  const distribuicaoCategorias = calcularDistribuicaoCategorias(
+    atendimentos
+      .filter((a): a is typeof a & { agendamento_id: string; servicos: NonNullable<typeof a.servicos> } => !!a.agendamento_id && !!a.servicos)
+      .map((a) => ({ agendamentoId: a.agendamento_id, categoriaServico: a.servicos.categoria_servico }))
+  )
+
   const faturamentoCortes = atendimentosCortes.reduce((s, a) => s + Number(a.preco), 0)
   const comissaoCortes = atendimentosCortes.reduce((s, a) => s + Number(a.comissao_valor ?? 0), 0)
   const faturamentoExtras = atendimentosExtras.reduce((s, a) => s + Number(a.preco), 0)
@@ -126,6 +134,10 @@ export default async function BarbeiroDashboardPage() {
   const percentualCortes = totalGanhos > 0 ? Math.round((faturamentoCortes / totalGanhos) * 100) : 0
   const percentualExtras = totalGanhos > 0 ? Math.round((faturamentoExtras / totalGanhos) * 100) : 0
   const percentualProdutos = totalGanhos > 0 ? Math.round((faturamentoProdutos / totalGanhos) * 100) : 0
+
+  const percentualSoCabelo = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soCabelo / distribuicaoCategorias.totalClassificado) * 100) : 0
+  const percentualSoBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
+  const percentualCabeloEBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.cabeloEBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
 
   const { data: sonhosAtivos } = await supabase
     .from('sonhos')
@@ -181,6 +193,12 @@ export default async function BarbeiroDashboardPage() {
           <CardContent>
             <p className="text-xs uppercase text-muted-foreground">Ocupação da agenda</p>
             <p className="text-2xl font-bold text-primary">{ociosidade.percentualOcupacao}%</p>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px]">
+          <CardContent>
+            <p className="text-xs uppercase text-muted-foreground">Índice de Público-Alvo</p>
+            <p className="text-2xl font-bold text-primary">{distribuicaoCategorias.indicePublicoAlvo}%</p>
           </CardContent>
         </Card>
       </div>
@@ -262,6 +280,43 @@ export default async function BarbeiroDashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold">Perfil dos clientes atendidos (mês)</p>
+          <p className="text-xs text-muted-foreground mb-5">{distribuicaoCategorias.totalClassificado} visitas classificadas</p>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Só Cabelo</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.soCabelo} <span className="text-muted-foreground font-semibold">({percentualSoCabelo}%)</span></span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-amber-500" style={{ width: `${percentualSoCabelo}%` }} />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Só Barba</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.soBarba} <span className="text-muted-foreground font-semibold">({percentualSoBarba}%)</span></span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${percentualSoBarba}%` }} />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Cabelo + Barba</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.cabeloEBarba} <span className="text-muted-foreground font-semibold">({percentualCabeloEBarba}%)</span></span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${percentualCabeloEBarba}%` }} />
+            </div>
           </div>
         </CardContent>
       </Card>

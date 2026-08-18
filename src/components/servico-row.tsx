@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { TableRow, TableCell } from '@/components/ui/table'
 
-type Servico = { id: string; nome: string; duracao_minutos: number; preco: number; ativo: boolean; tipo: string }
+type Servico = { id: string; nome: string; duracao_minutos: number; preco: number; ativo: boolean; tipo: string; categoria_servico: string }
 
 const ROTULO_TIPO: Record<string, string> = { corte: 'Corte', servico_extra: 'Serviço extra' }
+const ROTULO_CATEGORIA: Record<string, string> = { cabelo: 'Cabelo', barba: 'Barba', outro: 'Outro' }
 
 export function ServicoRow({ servico }: { servico: Servico }) {
   const router = useRouter()
@@ -18,12 +19,13 @@ export function ServicoRow({ servico }: { servico: Servico }) {
   const [duracaoMinutos, setDuracaoMinutos] = useState(servico.duracao_minutos)
   const [preco, setPreco] = useState(servico.preco)
   const [tipo, setTipo] = useState(servico.tipo)
+  const [categoriaServico, setCategoriaServico] = useState(servico.categoria_servico)
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
-    await supabase.from('servicos').update({ nome, duracao_minutos: duracaoMinutos, preco, tipo }).eq('id', servico.id)
+    await supabase.from('servicos').update({ nome, duracao_minutos: duracaoMinutos, preco, tipo, categoria_servico: categoriaServico }).eq('id', servico.id)
     setSalvando(false)
     setEditando(false)
     router.refresh()
@@ -34,6 +36,7 @@ export function ServicoRow({ servico }: { servico: Servico }) {
     setDuracaoMinutos(servico.duracao_minutos)
     setPreco(servico.preco)
     setTipo(servico.tipo)
+    setCategoriaServico(servico.categoria_servico)
     setEditando(false)
   }
 
@@ -55,6 +58,13 @@ export function ServicoRow({ servico }: { servico: Servico }) {
             <option value="servico_extra">Serviço extra</option>
           </select>
         </TableCell>
+        <TableCell>
+          <select value={categoriaServico} onChange={(e) => setCategoriaServico(e.target.value)} className="border rounded px-2 py-1 bg-input">
+            <option value="cabelo">Cabelo</option>
+            <option value="barba">Barba</option>
+            <option value="outro">Outro</option>
+          </select>
+        </TableCell>
         <TableCell className="flex gap-2">
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
           <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>
@@ -69,6 +79,7 @@ export function ServicoRow({ servico }: { servico: Servico }) {
       <TableCell>{servico.duracao_minutos}min</TableCell>
       <TableCell>R$ {servico.preco}</TableCell>
       <TableCell>{ROTULO_TIPO[servico.tipo] ?? servico.tipo}</TableCell>
+      <TableCell>{ROTULO_CATEGORIA[servico.categoria_servico] ?? servico.categoria_servico}</TableCell>
       <TableCell className="flex gap-2">
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
         <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{servico.ativo ? 'Desativar' : 'Reativar'}</button>

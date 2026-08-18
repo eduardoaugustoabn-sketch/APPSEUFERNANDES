@@ -1,5 +1,5 @@
 begin;
-select plan(3);
+select plan(4);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -22,15 +22,22 @@ insert into produtos (id, barbearia_id, nome, preco_custo, preco_venda, quantida
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', true);
 
--- Deliberately send a bogus preco_unitario (999999) too, mirroring the
--- existing atendimentos test's proof that client-supplied values are ignored.
-insert into vendas_produtos (barbearia_id, membro_id, cliente_id, produto_id, quantidade, preco_unitario) values
-  ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 3, 999999);
+-- Deliberately send bogus preco_unitario (999999) and custo_unitario (0.01)
+-- too, mirroring the existing atendimentos test's proof that client-supplied
+-- values are ignored.
+insert into vendas_produtos (barbearia_id, membro_id, cliente_id, produto_id, quantidade, preco_unitario, custo_unitario) values
+  ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 3, 999999, 0.01);
 
 select is(
-  (select custo_unitario from vendas_produtos order by criado_em desc limit 1),
+  (select custo_unitario from vendas_produtos where quantidade = 3),
   20.00,
   'custo_unitario is frozen at the produto''s preco_custo (R$20) at the time of sale'
+);
+
+select is(
+  (select preco_unitario from vendas_produtos where quantidade = 3),
+  25.00,
+  'client-supplied preco_unitario (999999) is ignored — trigger overwrites it with the real produto price (R$25)'
 );
 
 reset role;
@@ -38,7 +45,7 @@ reset role;
 update produtos set preco_custo = 35 where id = 'd1000000-0000-0000-0000-000000000001';
 
 select is(
-  (select custo_unitario from vendas_produtos order by criado_em desc limit 1),
+  (select custo_unitario from vendas_produtos where quantidade = 3),
   20.00,
   'editing the produto''s preco_custo afterward does not retroactively change custo_unitario on the already-recorded sale'
 );
@@ -46,13 +53,13 @@ select is(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', true);
 
-insert into vendas_produtos (barbearia_id, membro_id, cliente_id, produto_id, quantidade, preco_unitario) values
-  ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 1, 999999);
+insert into vendas_produtos (barbearia_id, membro_id, cliente_id, produto_id, quantidade, preco_unitario, custo_unitario) values
+  ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 1, 999999, 0.01);
 
 reset role;
 
 select is(
-  (select custo_unitario from vendas_produtos order by criado_em desc limit 1),
+  (select custo_unitario from vendas_produtos where quantidade = 1),
   35.00,
   'a new sale made after the price change freezes the new preco_custo (R$35)'
 );

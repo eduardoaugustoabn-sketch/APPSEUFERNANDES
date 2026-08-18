@@ -18,9 +18,10 @@ type AtendimentoRow = {
 type VendaRow = {
   quantidade: number
   preco_unitario: string
+  custo_unitario: string | null
   comissao_valor: string | null
   produto_id: string
-  produtos: { nome: string } | null
+  produtos: { nome: string; preco_custo: string } | null
 }
 
 // Agrupa por id (não por nome) — dois serviços/produtos distintos podem ter
@@ -54,7 +55,7 @@ export default async function BarbeiroDashboardPage() {
 
   const { data: vendasData } = (await supabase
     .from('vendas_produtos')
-    .select('quantidade, preco_unitario, comissao_valor, produto_id, produtos(nome)')
+    .select('quantidade, preco_unitario, custo_unitario, comissao_valor, produto_id, produtos(nome, preco_custo)')
     .eq('membro_id', membro!.id)
     .gte('data', inicioMes)) as { data: VendaRow[] | null }
   const vendas = vendasData ?? []
@@ -112,6 +113,8 @@ export default async function BarbeiroDashboardPage() {
   const comissaoExtras = atendimentosExtras.reduce((s, a) => s + Number(a.comissao_valor ?? 0), 0)
   const faturamentoProdutos = vendas.reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
   const comissaoProdutos = vendas.reduce((s, v) => s + Number(v.comissao_valor ?? 0), 0)
+  const custoProdutos = vendas.reduce((s, v) => s + Number(v.custo_unitario ?? v.produtos?.preco_custo ?? 0) * v.quantidade, 0)
+  const lucroProdutos = faturamentoProdutos - custoProdutos
 
   const detalheCortes = agruparPorId(atendimentosCortes.map((a) => ({ id: a.servico_id, nome: a.servicos?.nome ?? 'Serviço', quantidade: 1, valor: Number(a.preco) })))
   const detalheExtras = agruparPorId(atendimentosExtras.map((a) => ({ id: a.servico_id, nome: a.servicos?.nome ?? 'Serviço', quantidade: 1, valor: Number(a.preco) })))
@@ -260,10 +263,16 @@ export default async function BarbeiroDashboardPage() {
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-foreground/80">Produtos</span>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold">R$ {faturamentoProdutos.toFixed(2)}</span>
                 <span className="inline-flex items-baseline gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
                   <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoProdutos.toFixed(2)}
+                </span>
+                <span className="inline-flex items-baseline gap-1 rounded-full bg-muted text-muted-foreground border border-border px-3 py-1 text-xs font-bold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">custo</span> R$ {custoProdutos.toFixed(2)}
+                </span>
+                <span className="inline-flex items-baseline gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 px-3 py-1 text-xs font-bold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">lucro</span> R$ {lucroProdutos.toFixed(2)}
                 </span>
               </span>
             </div>

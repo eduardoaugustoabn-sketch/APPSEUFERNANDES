@@ -9,14 +9,17 @@ import { Table, TableHeader, TableBody, TableRow, TableHead } from '@/components
 async function vincularPlano(formData: FormData) {
   'use server'
   const supabase = await getServerSupabaseClient()
-  const metaRaw = formData.get('meta_prospeccao_dia') as string
-  const meta = metaRaw === '' ? null : Number(metaRaw)
+  const metaProspeccaoDiaRaw = formData.get('meta_prospeccao_dia') as string
+  const metaProspeccaoSemanaRaw = formData.get('meta_prospeccao_semana') as string
+  const metaFaturamentoMesRaw = formData.get('meta_faturamento_mes') as string
 
   await supabase
     .from('membros')
     .update({
       plano_carreira_id: (formData.get('plano_carreira_id') as string) || null,
-      meta_prospeccao_dia: meta,
+      meta_prospeccao_dia: metaProspeccaoDiaRaw === '' ? null : Number(metaProspeccaoDiaRaw),
+      meta_prospeccao_semana: metaProspeccaoSemanaRaw === '' ? null : Number(metaProspeccaoSemanaRaw),
+      meta_faturamento_mes: metaFaturamentoMesRaw === '' ? null : Number(metaFaturamentoMesRaw),
     })
     .eq('id', formData.get('membro_id') as string)
   revalidatePath('/admin/barbeiros')
@@ -65,6 +68,9 @@ async function criarBarbeiro(formData: FormData) {
     telefone,
   })
   if (erroMembro) {
+    // Sem isso, um usuário de autenticação órfão fica pra trás — consegue
+    // logar, mas sem linha em `membros` fica preso num loop de redirect
+    // entre / e /painel, e o e-mail passa a estar "usado" para sempre.
     try {
       await admin.auth.admin.deleteUser(novoUsuario.user.id)
     } catch {
@@ -106,7 +112,14 @@ export default async function BarbeirosPage() {
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Telefone</TableHead>
-            <TableHead>Plano de carreira</TableHead>
+            <TableHead>
+              <div className="flex gap-2 flex-wrap">
+                <span>Plano de carreira</span>
+                <span className="w-32">Meta prospecção/dia</span>
+                <span className="w-36">Meta prospecção/semana</span>
+                <span className="w-44">Meta faturamento/mês (R$)</span>
+              </div>
+            </TableHead>
             <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>

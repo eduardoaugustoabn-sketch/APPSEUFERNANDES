@@ -14,6 +14,8 @@ type Barbeiro = {
   ativo: boolean
   plano_carreira_id: string | null
   meta_prospeccao_dia: number | null
+  meta_prospeccao_semana: number | null
+  meta_faturamento_mes: number | null
 }
 type Plano = { id: string; nome: string; ativo: boolean }
 type Expediente = { dia_semana: number; hora_inicio: string; hora_fim: string }
@@ -123,7 +125,7 @@ export function BarbeiroRow({
   const celulaPlano = (
     <TableCell>
       <form
-        key={`${barbeiro.id}-${barbeiro.plano_carreira_id ?? 'none'}-${barbeiro.meta_prospeccao_dia ?? 'none'}`}
+        key={`${barbeiro.id}-${barbeiro.plano_carreira_id ?? 'none'}-${barbeiro.meta_prospeccao_dia ?? 'none'}-${barbeiro.meta_prospeccao_semana ?? 'none'}-${barbeiro.meta_faturamento_mes ?? 'none'}`}
         action={vincularPlanoAction}
         className="flex gap-2 items-center flex-wrap"
       >
@@ -138,6 +140,21 @@ export function BarbeiroRow({
           defaultValue={barbeiro.meta_prospeccao_dia ?? ''}
           placeholder="Meta diária"
           className="border rounded px-2 py-1 w-32 bg-input"
+        />
+        <input
+          name="meta_prospeccao_semana"
+          type="number"
+          defaultValue={barbeiro.meta_prospeccao_semana ?? ''}
+          placeholder="Meta semanal"
+          className="border rounded px-2 py-1 w-36 bg-input"
+        />
+        <input
+          name="meta_faturamento_mes"
+          type="number"
+          step="0.01"
+          defaultValue={barbeiro.meta_faturamento_mes ?? ''}
+          placeholder="Meta faturamento/mês"
+          className="border rounded px-2 py-1 w-44 bg-input"
         />
         <Button type="submit" variant="outline">Salvar</Button>
       </form>

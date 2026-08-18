@@ -1,5 +1,4 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
-import { BloqueioForm } from '@/components/bloqueio-form'
 import { AgendaDia } from '@/components/agenda-dia'
 
 export default async function AgendaPage() {
@@ -19,9 +18,6 @@ export default async function AgendaPage() {
         servicos={servicos ?? []}
         produtos={produtos ?? []}
       />
-
-      <h2 className="font-heading text-lg font-semibold mt-8 mb-2">Bloquear horário</h2>
-      <BloqueioForm membroId={membro!.id} />
     </div>
   )
 }

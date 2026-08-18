@@ -3,26 +3,59 @@ import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
 import { Card, CardContent } from '@/components/ui/card'
 
+type ItemContagem = { id: string; nome: string; quantidade: number; valor: number }
+
+// Tipos para dados de Supabase sem generated types
+type AtendimentoRow = {
+  preco: string
+  comissao_valor: string | null
+  servico_id: string
+  servicos: { nome: string; tipo: 'corte' | 'servico_extra' } | null
+}
+
+type VendaRow = {
+  quantidade: number
+  preco_unitario: string
+  comissao_valor: string | null
+  produto_id: string
+  produtos: { nome: string } | null
+}
+
+// Agrupa por id (não por nome) — dois serviços/produtos distintos podem ter
+// o mesmo nome, e o id é a chave real que os diferencia.
+function agruparPorId(itens: { id: string; nome: string; quantidade: number; valor: number }[]): ItemContagem[] {
+  const mapa = new Map<string, ItemContagem>()
+  for (const { id, nome, quantidade, valor } of itens) {
+    const atual = mapa.get(id) ?? { id, nome, quantidade: 0, valor: 0 }
+    atual.quantidade += quantidade
+    atual.valor += valor
+    mapa.set(id, atual)
+  }
+  return Array.from(mapa.values()).sort((a, b) => b.valor - a.valor)
+}
+
 export default async function BarbeiroDashboardPage() {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: membro } = await supabase.from('membros').select('id, nome').eq('user_id', user!.id).single()
+  const { data: membro } = await supabase.from('membros').select('id, nome, barbearia_id, meta_faturamento_mes').eq('user_id', user!.id).single()
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10)
   const fimMes = hoje.toISOString().slice(0, 10)
 
-  const { data: atendimentos } = await supabase
+  const { data: atendimentosData } = (await supabase
     .from('atendimentos')
-    .select('preco, comissao_valor')
+    .select('preco, comissao_valor, servico_id, servicos(nome, tipo)')
     .eq('membro_id', membro!.id)
-    .gte('data', inicioMes)
+    .gte('data', inicioMes)) as { data: AtendimentoRow[] | null }
+  const atendimentos = atendimentosData ?? []
 
-  const { data: vendas } = await supabase
+  const { data: vendasData } = (await supabase
     .from('vendas_produtos')
-    .select('quantidade, preco_unitario, comissao_valor')
+    .select('quantidade, preco_unitario, comissao_valor, produto_id, produtos(nome)')
     .eq('membro_id', membro!.id)
-    .gte('data', inicioMes)
+    .gte('data', inicioMes)) as { data: VendaRow[] | null }
+  const vendas = vendasData ?? []
 
   const { data: agendamentosMes } = await supabase
     .from('agendamentos')
@@ -62,14 +95,22 @@ export default async function BarbeiroDashboardPage() {
     (atendimentosProspeccao ?? []).reduce((s, a) => s + Number(a.preco), 0) +
     (vendasProspeccao ?? []).reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
 
-  const faturamentoServicos = (atendimentos ?? []).reduce((sum, a) => sum + Number(a.preco), 0)
-  const comissaoServicos = (atendimentos ?? []).reduce((sum, a) => sum + Number(a.comissao_valor ?? 0), 0)
-  const faturamentoProdutos = (vendas ?? []).reduce((sum, v) => sum + Number(v.preco_unitario) * v.quantidade, 0)
-  const comissaoProdutos = (vendas ?? []).reduce((sum, v) => sum + Number(v.comissao_valor ?? 0), 0)
+  const atendimentosCortes = atendimentos.filter((a) => a.servicos?.tipo === 'corte')
+  const atendimentosExtras = atendimentos.filter((a) => a.servicos?.tipo === 'servico_extra')
+
+  const faturamentoCortes = atendimentosCortes.reduce((s, a) => s + Number(a.preco), 0)
+  const comissaoCortes = atendimentosCortes.reduce((s, a) => s + Number(a.comissao_valor ?? 0), 0)
+  const faturamentoExtras = atendimentosExtras.reduce((s, a) => s + Number(a.preco), 0)
+  const comissaoExtras = atendimentosExtras.reduce((s, a) => s + Number(a.comissao_valor ?? 0), 0)
+  const faturamentoProdutos = vendas.reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
+  const comissaoProdutos = vendas.reduce((s, v) => s + Number(v.comissao_valor ?? 0), 0)
+
+  const detalheCortes = agruparPorId(atendimentosCortes.map((a) => ({ id: a.servico_id, nome: a.servicos?.nome ?? 'Serviço', quantidade: 1, valor: Number(a.preco) })))
+  const detalheExtras = agruparPorId(atendimentosExtras.map((a) => ({ id: a.servico_id, nome: a.servicos?.nome ?? 'Serviço', quantidade: 1, valor: Number(a.preco) })))
+  const detalheProdutos = agruparPorId(vendas.map((v) => ({ id: v.produto_id, nome: v.produtos?.nome ?? 'Produto', quantidade: v.quantidade, valor: Number(v.preco_unitario) * v.quantidade })))
 
   // No generated Supabase types in this project (no `supabase gen types` step
-  // in the plan), so .rpc() infers an untyped result — cast to the RPC's
-  // known return shape (matches ociosidade()'s `returns table(...)`, Task 14).
+  // in the plan), so .rpc().single() is otherwise untyped.
   const { data: ociosidadeRaw } = await supabase
     .rpc('ociosidade', { p_membro_id: membro!.id, p_data_inicio: inicioMes, p_data_fim: fimMes })
     .single() as { data: { minutos_disponiveis: number; minutos_ocupados: number; faturamento_servicos: number } | null }
@@ -78,11 +119,12 @@ export default async function BarbeiroDashboardPage() {
     minutosDisponiveis: ociosidadeRaw?.minutos_disponiveis ?? 0,
     minutosOcupados: ociosidadeRaw?.minutos_ocupados ?? 0,
     faturamentoServicos: Number(ociosidadeRaw?.faturamento_servicos ?? 0),
-    quantidadeAtendimentos: atendimentos?.length ?? 0,
+    quantidadeAtendimentos: atendimentos.length,
   })
 
-  const totalGanhos = faturamentoServicos + faturamentoProdutos
-  const percentualServicos = totalGanhos > 0 ? Math.round((faturamentoServicos / totalGanhos) * 100) : 0
+  const totalGanhos = faturamentoCortes + faturamentoExtras + faturamentoProdutos
+  const percentualCortes = totalGanhos > 0 ? Math.round((faturamentoCortes / totalGanhos) * 100) : 0
+  const percentualExtras = totalGanhos > 0 ? Math.round((faturamentoExtras / totalGanhos) * 100) : 0
   const percentualProdutos = totalGanhos > 0 ? Math.round((faturamentoProdutos / totalGanhos) * 100) : 0
 
   const { data: sonhosAtivos } = await supabase
@@ -115,12 +157,24 @@ export default async function BarbeiroDashboardPage() {
           <CardContent>
             <p className="text-xs uppercase text-muted-foreground">Faturamento do mês</p>
             <p className="text-2xl font-bold text-primary">R$ {totalGanhos.toFixed(2)}</p>
+            {membro!.meta_faturamento_mes != null && membro!.meta_faturamento_mes > 0 && (
+              <div className="mt-2">
+                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden mb-1">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min((totalGanhos / membro!.meta_faturamento_mes) * 100, 100)}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {totalGanhos >= membro!.meta_faturamento_mes
+                    ? 'Meta batida!'
+                    : `R$ ${totalGanhos.toFixed(2)} de R$ ${membro!.meta_faturamento_mes.toFixed(2)} — faltam R$ ${(membro!.meta_faturamento_mes - totalGanhos).toFixed(2)}`}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card className="flex-1 min-w-[160px]">
           <CardContent>
             <p className="text-xs uppercase text-muted-foreground">Comissão do mês</p>
-            <p className="text-2xl font-bold text-primary">R$ {(comissaoServicos + comissaoProdutos).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">R$ {(comissaoCortes + comissaoExtras + comissaoProdutos).toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card className="flex-1 min-w-[160px]">
@@ -134,20 +188,57 @@ export default async function BarbeiroDashboardPage() {
       <Card className="mb-5">
         <CardContent className="p-6">
           <p className="font-heading text-base font-bold mb-5">Ganhos por categoria</p>
-          <div className="mb-5">
+
+          <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-foreground/80">Cortes e serviços</span>
+              <span className="text-sm font-semibold text-foreground/80">Cortes</span>
               <span className="flex items-center gap-2">
-                <span className="text-base font-bold">R$ {faturamentoServicos.toFixed(2)}</span>
+                <span className="text-base font-bold">R$ {faturamentoCortes.toFixed(2)}</span>
                 <span className="inline-flex items-baseline gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoServicos.toFixed(2)}
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoCortes.toFixed(2)}
                 </span>
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${percentualServicos}%` }} />
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${percentualCortes}%` }} />
             </div>
+            {detalheCortes.length > 0 && (
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                {detalheCortes.map((item) => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>{item.nome}</span>
+                    <span>{item.quantidade}x — R$ {item.valor.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Serviços extras</span>
+              <span className="flex items-center gap-2">
+                <span className="text-base font-bold">R$ {faturamentoExtras.toFixed(2)}</span>
+                <span className="inline-flex items-baseline gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-75">comissão</span> R$ {comissaoExtras.toFixed(2)}
+                </span>
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
+              <div className="h-full rounded-full bg-amber-500" style={{ width: `${percentualExtras}%` }} />
+            </div>
+            {detalheExtras.length > 0 && (
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                {detalheExtras.map((item) => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>{item.nome}</span>
+                    <span>{item.quantidade}x — R$ {item.valor.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-foreground/80">Produtos</span>
@@ -158,9 +249,19 @@ export default async function BarbeiroDashboardPage() {
                 </span>
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
               <div className="h-full rounded-full bg-indigo-500" style={{ width: `${percentualProdutos}%` }} />
             </div>
+            {detalheProdutos.length > 0 && (
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                {detalheProdutos.map((item) => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>{item.nome}</span>
+                    <span>{item.quantidade}x — R$ {item.valor.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { TableRow, TableCell } from '@/components/ui/table'
 
-type Servico = { id: string; nome: string; duracao_minutos: number; preco: number; ativo: boolean }
+type Servico = { id: string; nome: string; duracao_minutos: number; preco: number; ativo: boolean; tipo: string }
+
+const ROTULO_TIPO: Record<string, string> = { corte: 'Corte', servico_extra: 'Serviço extra' }
 
 export function ServicoRow({ servico }: { servico: Servico }) {
   const router = useRouter()
@@ -15,12 +17,13 @@ export function ServicoRow({ servico }: { servico: Servico }) {
   const [nome, setNome] = useState(servico.nome)
   const [duracaoMinutos, setDuracaoMinutos] = useState(servico.duracao_minutos)
   const [preco, setPreco] = useState(servico.preco)
+  const [tipo, setTipo] = useState(servico.tipo)
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
-    await supabase.from('servicos').update({ nome, duracao_minutos: duracaoMinutos, preco }).eq('id', servico.id)
+    await supabase.from('servicos').update({ nome, duracao_minutos: duracaoMinutos, preco, tipo }).eq('id', servico.id)
     setSalvando(false)
     setEditando(false)
     router.refresh()
@@ -30,6 +33,7 @@ export function ServicoRow({ servico }: { servico: Servico }) {
     setNome(servico.nome)
     setDuracaoMinutos(servico.duracao_minutos)
     setPreco(servico.preco)
+    setTipo(servico.tipo)
     setEditando(false)
   }
 
@@ -45,6 +49,12 @@ export function ServicoRow({ servico }: { servico: Servico }) {
         <TableCell><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></TableCell>
         <TableCell><Input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} className="w-20" /></TableCell>
         <TableCell><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(Number(e.target.value))} className="w-24" /></TableCell>
+        <TableCell>
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="border rounded px-2 py-1 bg-input">
+            <option value="corte">Corte</option>
+            <option value="servico_extra">Serviço extra</option>
+          </select>
+        </TableCell>
         <TableCell className="flex gap-2">
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
           <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>
@@ -58,6 +68,7 @@ export function ServicoRow({ servico }: { servico: Servico }) {
       <TableCell>{servico.nome}</TableCell>
       <TableCell>{servico.duracao_minutos}min</TableCell>
       <TableCell>R$ {servico.preco}</TableCell>
+      <TableCell>{ROTULO_TIPO[servico.tipo] ?? servico.tipo}</TableCell>
       <TableCell className="flex gap-2">
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">Editar</button>
         <button type="button" onClick={alternarAtivo} className="text-xs text-destructive underline">{servico.ativo ? 'Desativar' : 'Reativar'}</button>

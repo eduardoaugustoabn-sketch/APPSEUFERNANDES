@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/admin/produtos', label: 'Produtos' },
   { href: '/admin/planos-carreira', label: 'Planos de carreira' },
   { href: '/admin/barbeiros', label: 'Barbeiros' },
+  { href: '/admin/ranking', label: 'Ranking' },
   { href: '/admin/prospeccao', label: 'Prospecção' },
   { href: '/admin/clientes', label: 'Clientes' },
   { href: '/admin/sonhos', label: 'Sonhos' },

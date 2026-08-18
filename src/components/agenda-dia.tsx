@@ -7,6 +7,7 @@ import { LancamentoForm, type ModoAgenda } from './lancamento-form'
 import { AgendarSlotForm } from './agendar-slot-form'
 import { RemarcarForm } from './remarcar-form'
 import { AtenderAgoraForm } from './atender-agora-form'
+import { BloqueioForm } from './bloqueio-form'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
@@ -21,7 +22,7 @@ type AgendamentoDia = {
   servicos: { id: string; nome: string } | null
 }
 
-type Bloqueio = { hora_inicio: string; hora_fim: string; motivo: string | null }
+type Bloqueio = { id: string; hora_inicio: string; hora_fim: string; motivo: string | null }
 type Expediente = { hora_inicio: string; hora_fim: string }
 
 const PASSO_MINUTOS = 60
@@ -59,7 +60,7 @@ export function AgendaDia({
 
     const [expedienteRes, bloqueioRes, agendamentoRes] = await Promise.all([
       supabase.from('horarios_trabalho').select('hora_inicio, hora_fim').eq('membro_id', membroId).eq('dia_semana', diaSemana),
-      supabase.from('bloqueios_agenda').select('hora_inicio, hora_fim, motivo').eq('membro_id', membroId).eq('data', data),
+      supabase.from('bloqueios_agenda').select('id, hora_inicio, hora_fim, motivo').eq('membro_id', membroId).eq('data', data),
       supabase.from('agendamentos')
         .select('id, hora_inicio, hora_fim, status, origem, clientes(nome, telefone), servicos(id, nome)')
         .eq('membro_id', membroId).eq('data', data).neq('status', 'cancelado')
@@ -132,6 +133,12 @@ export function AgendaDia({
     if (!error) carregar()
   }
 
+  async function desbloquear(id: string) {
+    const supabase = getBrowserSupabaseClient()
+    const { error } = await supabase.from('bloqueios_agenda').delete().eq('id', id)
+    if (!error) carregar()
+  }
+
   const painelAberto = modoAgenda || slotParaAgendar || remarcando || atendendoAgora
 
   return (
@@ -153,6 +160,7 @@ export function AgendaDia({
             return (
               <div key={slot} className="flex justify-between items-center text-sm py-1.5 px-2 opacity-60">
                 <span>{rotulo} — bloqueado{info.bloqueio.motivo ? ` (${info.bloqueio.motivo})` : ''}</span>
+                <button type="button" onClick={() => desbloquear(info.bloqueio.id)} className="text-destructive text-xs underline">desbloquear</button>
               </div>
             )
           }
@@ -165,8 +173,13 @@ export function AgendaDia({
                   const jaPassou = new Date(`${data}T${agendamento.hora_inicio}`) < new Date()
                   const concluido = agendamento.status === 'realizado' || agendamento.status === 'nao_compareceu'
                   const eDesteSlot = agendamento.hora_inicio.slice(0, 5) === slot.slice(0, 5)
+                  const corStatus = agendamento.status === 'realizado'
+                    ? 'bg-emerald-100 border-emerald-300'
+                    : agendamento.status === 'nao_compareceu'
+                      ? 'bg-transparent border-transparent'
+                      : 'bg-yellow-50 border-yellow-200'
                   return (
-                    <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 ${concluido ? 'opacity-60' : ''}`}>
+                    <div key={agendamento.id} className={`flex justify-between items-center text-sm py-1 px-1.5 rounded border ${corStatus} ${concluido ? 'opacity-60' : ''}`}>
                       <button
                         type="button"
                         onClick={() => atenderAgendamento(agendamento)}
@@ -185,6 +198,9 @@ export function AgendaDia({
                       )}
                       {eDesteSlot && agendamento.status === 'confirmado' && (
                         <span className="flex gap-2 ml-2 shrink-0">
+                          <button type="button" onClick={() => atenderAgendamento(agendamento)} className="text-primary text-xs underline">
+                            atendimento
+                          </button>
                           <button
                             type="button"
                             onClick={() => { fecharPaineis(); setRemarcando({ id: agendamento.id, servicoId: agendamento.servicos?.id ?? '', clienteNome: agendamento.clientes?.nome ?? '' }) }}
@@ -218,6 +234,8 @@ export function AgendaDia({
           )
         })}
 
+        <h2 className="font-heading text-base font-semibold mt-6 mb-2">Bloquear horário</h2>
+        <BloqueioForm membroId={membroId} onBloqueado={carregar} />
       </div>
 
       {painelAberto && (

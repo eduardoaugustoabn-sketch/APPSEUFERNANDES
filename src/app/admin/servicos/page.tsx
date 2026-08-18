@@ -17,6 +17,7 @@ async function criarServico(formData: FormData) {
     duracao_minutos: Number(formData.get('duracao_minutos')),
     preco: Number(formData.get('preco')),
     tipo: (formData.get('tipo') as string) || 'corte',
+    categoria_servico: (formData.get('categoria_servico') as string) || 'outro',
   })
   revalidatePath('/admin/servicos')
 }
@@ -36,10 +37,15 @@ export default async function ServicosPage() {
           <option value="corte">Corte</option>
           <option value="servico_extra">Serviço extra</option>
         </select>
+        <select name="categoria_servico" defaultValue="outro" className="border rounded px-2 py-1 bg-input">
+          <option value="cabelo">Cabelo</option>
+          <option value="barba">Barba</option>
+          <option value="outro">Outro</option>
+        </select>
         <Button type="submit">Adicionar</Button>
       </form>
       <Table>
-        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Duração</TableHead><TableHead>Preço</TableHead><TableHead>Tipo</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Duração</TableHead><TableHead>Preço</TableHead><TableHead>Tipo</TableHead><TableHead>Categoria</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
         <TableBody>
           {servicos?.map((s) => <ServicoRow key={s.id} servico={s} />)}
         </TableBody>

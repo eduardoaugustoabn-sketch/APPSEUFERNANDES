@@ -15,6 +15,7 @@ async function criarProduto(formData: FormData) {
     barbearia_id: membro!.barbearia_id,
     nome: formData.get('nome') as string,
     categoria: formData.get('categoria') as string,
+    preco_custo: Number(formData.get('preco_custo')) || 0,
     preco_venda: Number(formData.get('preco_venda')),
     quantidade_estoque: Number(formData.get('quantidade_estoque')),
     estoque_minimo: Number(formData.get('estoque_minimo')),
@@ -32,13 +33,14 @@ export default async function ProdutosPage() {
       <form action={criarProduto} className="flex gap-2 mb-6 flex-wrap">
         <Input name="nome" placeholder="Nome" required />
         <Input name="categoria" placeholder="Categoria" />
+        <Input name="preco_custo" type="number" step="0.01" placeholder="Preço de compra" />
         <Input name="preco_venda" type="number" step="0.01" placeholder="Preço de venda" required />
         <Input name="quantidade_estoque" type="number" placeholder="Estoque inicial" required />
         <Input name="estoque_minimo" type="number" placeholder="Estoque mínimo" required />
         <Button type="submit">Adicionar</Button>
       </form>
       <Table>
-        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Preço</TableHead><TableHead>Estoque</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Custo</TableHead><TableHead>Preço</TableHead><TableHead>Estoque</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
         <TableBody>
           {produtos?.map((p) => <ProdutoRow key={p.id} produto={p} />)}
         </TableBody>

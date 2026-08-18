@@ -11,6 +11,7 @@ type Produto = {
   id: string
   nome: string
   categoria: string | null
+  preco_custo: number
   preco_venda: number
   quantidade_estoque: number
   estoque_minimo: number
@@ -22,6 +23,7 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
   const [editando, setEditando] = useState(false)
   const [nome, setNome] = useState(produto.nome)
   const [categoria, setCategoria] = useState(produto.categoria ?? '')
+  const [precoCusto, setPrecoCusto] = useState(produto.preco_custo)
   const [precoVenda, setPrecoVenda] = useState(produto.preco_venda)
   const [quantidadeEstoque, setQuantidadeEstoque] = useState(produto.quantidade_estoque)
   const [estoqueMinimo, setEstoqueMinimo] = useState(produto.estoque_minimo)
@@ -31,7 +33,7 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
     await supabase.from('produtos').update({
-      nome, categoria: categoria || null, preco_venda: precoVenda,
+      nome, categoria: categoria || null, preco_custo: precoCusto, preco_venda: precoVenda,
       quantidade_estoque: quantidadeEstoque, estoque_minimo: estoqueMinimo,
     }).eq('id', produto.id)
     setSalvando(false)
@@ -42,6 +44,7 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
   function cancelar() {
     setNome(produto.nome)
     setCategoria(produto.categoria ?? '')
+    setPrecoCusto(produto.preco_custo)
     setPrecoVenda(produto.preco_venda)
     setQuantidadeEstoque(produto.quantidade_estoque)
     setEstoqueMinimo(produto.estoque_minimo)
@@ -59,6 +62,7 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
       <TableRow>
         <TableCell><Input value={nome} onChange={(e) => setNome(e.target.value)} className="w-32" /></TableCell>
         <TableCell><Input value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-28" /></TableCell>
+        <TableCell><Input type="number" step="0.01" value={precoCusto} onChange={(e) => setPrecoCusto(Number(e.target.value))} className="w-24" /></TableCell>
         <TableCell><Input type="number" step="0.01" value={precoVenda} onChange={(e) => setPrecoVenda(Number(e.target.value))} className="w-24" /></TableCell>
         <TableCell>
           <Input type="number" value={quantidadeEstoque} onChange={(e) => setQuantidadeEstoque(Number(e.target.value))} className="w-20" />
@@ -76,6 +80,7 @@ export function ProdutoRow({ produto }: { produto: Produto }) {
     <TableRow className={`${produto.ativo ? '' : 'opacity-50'} ${produto.quantidade_estoque <= produto.estoque_minimo ? 'text-destructive' : ''}`}>
       <TableCell>{produto.nome}</TableCell>
       <TableCell>{produto.categoria}</TableCell>
+      <TableCell>R$ {produto.preco_custo}</TableCell>
       <TableCell>R$ {produto.preco_venda}</TableCell>
       <TableCell>{produto.quantidade_estoque}</TableCell>
       <TableCell className="flex gap-2">

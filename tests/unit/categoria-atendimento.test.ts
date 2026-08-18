@@ -55,4 +55,34 @@ describe('calcularDistribuicaoCategorias', () => {
     const result = calcularDistribuicaoCategorias([])
     expect(result).toEqual({ soCabelo: 0, soBarba: 0, cabeloEBarba: 0, totalClassificado: 0, indicePublicoAlvo: 0 })
   })
+
+  it('is robust to out-of-order/interleaved entries across visits', () => {
+    const result = calcularDistribuicaoCategorias([
+      { agendamentoId: 'a1', categoriaServico: 'cabelo' },
+      { agendamentoId: 'a2', categoriaServico: 'barba' },
+      { agendamentoId: 'a1', categoriaServico: 'barba' },
+      { agendamentoId: 'a2', categoriaServico: 'cabelo' },
+    ])
+    expect(result).toEqual({ soCabelo: 0, soBarba: 0, cabeloEBarba: 2, totalClassificado: 2, indicePublicoAlvo: 100 })
+  })
+
+  it('excludes an outro-only visit from totalClassificado even alongside classifiable visits', () => {
+    const result = calcularDistribuicaoCategorias([
+      { agendamentoId: 'a1', categoriaServico: 'outro' },
+      { agendamentoId: 'a2', categoriaServico: 'cabelo' },
+      { agendamentoId: 'a3', categoriaServico: 'cabelo' },
+      { agendamentoId: 'a3', categoriaServico: 'barba' },
+    ])
+    expect(result).toEqual({ soCabelo: 1, soBarba: 0, cabeloEBarba: 1, totalClassificado: 2, indicePublicoAlvo: 50 })
+  })
+
+  it('rounds a non-round percentage (1 of 3 classified visits is Cabelo + Barba)', () => {
+    const result = calcularDistribuicaoCategorias([
+      { agendamentoId: 'a1', categoriaServico: 'cabelo' },
+      { agendamentoId: 'a1', categoriaServico: 'barba' },
+      { agendamentoId: 'a2', categoriaServico: 'cabelo' },
+      { agendamentoId: 'a3', categoriaServico: 'barba' },
+    ])
+    expect(result).toEqual({ soCabelo: 1, soBarba: 1, cabeloEBarba: 1, totalClassificado: 3, indicePublicoAlvo: 33 })
+  })
 })

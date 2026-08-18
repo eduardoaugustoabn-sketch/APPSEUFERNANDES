@@ -11,7 +11,7 @@ type AtendimentoRow = {
   preco: string
   comissao_valor: string | null
   servico_id: string
-  agendamento_id: string
+  agendamento_id: string | null
   servicos: { nome: string; tipo: 'corte' | 'servico_extra'; categoria_servico: 'cabelo' | 'barba' | 'outro' } | null
 }
 
@@ -102,8 +102,8 @@ export default async function BarbeiroDashboardPage() {
 
   const distribuicaoCategorias = calcularDistribuicaoCategorias(
     atendimentos
-      .filter((a) => a.agendamento_id && a.servicos)
-      .map((a) => ({ agendamentoId: a.agendamento_id, categoriaServico: a.servicos!.categoria_servico }))
+      .filter((a): a is typeof a & { agendamento_id: string; servicos: NonNullable<typeof a.servicos> } => !!a.agendamento_id && !!a.servicos)
+      .map((a) => ({ agendamentoId: a.agendamento_id, categoriaServico: a.servicos.categoria_servico }))
   )
 
   const faturamentoCortes = atendimentosCortes.reduce((s, a) => s + Number(a.preco), 0)
@@ -134,6 +134,10 @@ export default async function BarbeiroDashboardPage() {
   const percentualCortes = totalGanhos > 0 ? Math.round((faturamentoCortes / totalGanhos) * 100) : 0
   const percentualExtras = totalGanhos > 0 ? Math.round((faturamentoExtras / totalGanhos) * 100) : 0
   const percentualProdutos = totalGanhos > 0 ? Math.round((faturamentoProdutos / totalGanhos) * 100) : 0
+
+  const percentualSoCabelo = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soCabelo / distribuicaoCategorias.totalClassificado) * 100) : 0
+  const percentualSoBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
+  const percentualCabeloEBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.cabeloEBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
 
   const { data: sonhosAtivos } = await supabase
     .from('sonhos')
@@ -282,19 +286,36 @@ export default async function BarbeiroDashboardPage() {
 
       <Card className="mb-5">
         <CardContent className="p-6">
-          <p className="font-heading text-base font-bold mb-5">Perfil dos clientes atendidos (mês)</p>
-          <div className="grid grid-cols-3 gap-5 text-center">
-            <div>
-              <p className="text-2xl font-bold">{distribuicaoCategorias.soCabelo}</p>
-              <p className="text-xs text-muted-foreground mt-1">Só Cabelo</p>
+          <p className="font-heading text-base font-bold">Perfil dos clientes atendidos (mês)</p>
+          <p className="text-xs text-muted-foreground mb-5">{distribuicaoCategorias.totalClassificado} visitas classificadas</p>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Só Cabelo</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.soCabelo} <span className="text-muted-foreground font-semibold">({percentualSoCabelo}%)</span></span>
             </div>
-            <div>
-              <p className="text-2xl font-bold">{distribuicaoCategorias.soBarba}</p>
-              <p className="text-xs text-muted-foreground mt-1">Só Barba</p>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-amber-500" style={{ width: `${percentualSoCabelo}%` }} />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-primary">{distribuicaoCategorias.cabeloEBarba}</p>
-              <p className="text-xs text-muted-foreground mt-1">Cabelo + Barba</p>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Só Barba</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.soBarba} <span className="text-muted-foreground font-semibold">({percentualSoBarba}%)</span></span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${percentualSoBarba}%` }} />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-foreground/80">Cabelo + Barba</span>
+              <span className="text-base font-bold">{distribuicaoCategorias.cabeloEBarba} <span className="text-muted-foreground font-semibold">({percentualCabeloEBarba}%)</span></span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${percentualCabeloEBarba}%` }} />
             </div>
           </div>
         </CardContent>

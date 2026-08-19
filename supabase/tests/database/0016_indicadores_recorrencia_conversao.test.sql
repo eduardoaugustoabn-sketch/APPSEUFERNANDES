@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(14);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -48,6 +48,10 @@ insert into agendamentos (id, barbearia_id, membro_id, cliente_id, servico_id, d
   -- ambiguous; the atendimentos rows below (see criado_em literals) give the cabelo+barba
   -- visit a later criado_em, so the fixed function must correctly resolve Elis's most
   -- recent visit as cabelo_barba, not só cabelo.
+  -- Note: because tied data_visita values sort in an UNSPECIFIED order pre-fix (not
+  -- deterministically wrong), this test locks in the correct post-fix answer rather than
+  -- proving a red→green transition — correctness here rests on the code review + hand
+  -- derivation, not on having watched this specific assertion go from failing to passing.
   ('e1000000-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', '2026-04-01', '09:00', '09:30', 'realizado', 'interno'),
   ('e1000000-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', '2026-04-01', '15:00', '15:50', 'realizado', 'interno');
 
@@ -170,6 +174,15 @@ select is(
   (select clientes_fora_alvo from indicadores_recorrencia_conversao('a1000000-0000-0000-0000-000000000004')),
   0,
   'Marcos: 0 clientes fora do alvo (Elis teve empate de data no mesmo dia, mas criado_em resolve corretamente que a visita mais recente foi cabelo+barba)'
+);
+-- Covers the other half of the ordering fix: `order by data_visita asc`, which drives
+-- primeira_categoria (and therefore conversao_categoria_alvo). If primeira_categoria ever
+-- resolved to cabelo_barba instead of the true first visit (só cabelo), Elis would drop
+-- out of the conversão denominator entirely and this would come back null, not 100.
+select is(
+  (select conversao_categoria_alvo from indicadores_recorrencia_conversao('a1000000-0000-0000-0000-000000000004')),
+  100::numeric,
+  'Marcos: conversão 100% — criado_em resolve que a PRIMEIRA visita de Elis foi só cabelo, não cabelo+barba'
 );
 
 reset role;

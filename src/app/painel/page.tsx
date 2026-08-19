@@ -142,6 +142,31 @@ export default async function BarbeiroDashboardPage() {
   const percentualSoBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
   const percentualCabeloEBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.cabeloEBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
 
+  const { data: indicadoresRaw } = await supabase
+    .rpc('indicadores_recorrencia_conversao', { p_membro_id: membro!.id })
+    .single() as {
+      data: {
+        recorrencia_so_cabelo: string | null
+        recorrencia_so_barba: string | null
+        recorrencia_cabelo_barba: string | null
+        recorrencia_total: string | null
+        conversao_categoria_alvo: string | null
+        clientes_fora_alvo: number | null
+        clientes_so_cabelo: number | null
+        clientes_so_barba: number | null
+        potencial_conversao: string | null
+      } | null
+    }
+
+  const recorrenciaSoCabelo = Number(indicadoresRaw?.recorrencia_so_cabelo ?? 0)
+  const recorrenciaSoBarba = Number(indicadoresRaw?.recorrencia_so_barba ?? 0)
+  const recorrenciaCabeloBarba = Number(indicadoresRaw?.recorrencia_cabelo_barba ?? 0)
+  const recorrenciaTotal = Number(indicadoresRaw?.recorrencia_total ?? 0)
+  const conversaoCategoriaAlvo = Number(indicadoresRaw?.conversao_categoria_alvo ?? 0)
+  const clientesSoCabeloForaAlvo = indicadoresRaw?.clientes_so_cabelo ?? 0
+  const clientesSoBarbaForaAlvo = indicadoresRaw?.clientes_so_barba ?? 0
+  const potencialConversao = Number(indicadoresRaw?.potencial_conversao ?? 0)
+
   const { data: sonhosAtivos } = await supabase
     .from('sonhos')
     .select('*')
@@ -326,6 +351,32 @@ export default async function BarbeiroDashboardPage() {
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div className="h-full rounded-full bg-primary" style={{ width: `${percentualCabeloEBarba}%` }} />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-5">
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold">Recorrência e Conversão (histórico completo)</p>
+          <p className="text-xs text-muted-foreground mb-5">Considera todo o histórico do cliente com você, não só o mês</p>
+
+          <p className="text-sm font-semibold text-foreground/80 mb-3">Recorrência</p>
+          <div className="grid grid-cols-4 gap-5 text-center mb-6">
+            <div><p className="text-2xl font-bold">{recorrenciaSoCabelo}%</p><p className="text-xs text-muted-foreground mt-1">Só Cabelo</p></div>
+            <div><p className="text-2xl font-bold">{recorrenciaSoBarba}%</p><p className="text-xs text-muted-foreground mt-1">Só Barba</p></div>
+            <div><p className="text-2xl font-bold">{recorrenciaCabeloBarba}%</p><p className="text-xs text-muted-foreground mt-1">Cabelo + Barba</p></div>
+            <div><p className="text-2xl font-bold text-primary">{recorrenciaTotal}%</p><p className="text-xs text-muted-foreground mt-1">Total</p></div>
+          </div>
+
+          <p className="text-sm font-semibold text-foreground/80 mb-3">Conversão e oportunidade</p>
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className="text-3xl font-bold text-primary">{conversaoCategoriaAlvo}%</span>
+            <span className="text-sm text-muted-foreground">converteram para Cabelo + Barba</span>
+          </div>
+          <div className="grid grid-cols-3 gap-5 text-center">
+            <div><p className="text-2xl font-bold">{clientesSoCabeloForaAlvo}</p><p className="text-xs text-muted-foreground mt-1">Fora do alvo — Só Cabelo</p></div>
+            <div><p className="text-2xl font-bold">{clientesSoBarbaForaAlvo}</p><p className="text-xs text-muted-foreground mt-1">Fora do alvo — Só Barba</p></div>
+            <div><p className="text-2xl font-bold">{potencialConversao}%</p><p className="text-xs text-muted-foreground mt-1">Potencial de conversão</p></div>
           </div>
         </CardContent>
       </Card>

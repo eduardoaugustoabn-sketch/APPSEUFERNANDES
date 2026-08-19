@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
 import { calcularDistribuicaoCategorias } from '@/lib/categoria-atendimento'
+import { calcularDiagnostico } from '@/lib/diagnostico'
 import { Card, CardContent } from '@/components/ui/card'
 
 type ItemContagem = { id: string; nome: string; quantidade: number; valor: number }
@@ -142,6 +143,22 @@ export default async function BarbeiroDashboardPage() {
   const percentualSoBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.soBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
   const percentualCabeloEBarba = distribuicaoCategorias.totalClassificado > 0 ? Math.round((distribuicaoCategorias.cabeloEBarba / distribuicaoCategorias.totalClassificado) * 100) : 0
 
+  const ticketMedio = realizados > 0 ? totalGanhos / realizados : 0
+
+  // Sem returns table(...), então data já vem como o escalar direto (string
+  // | null — numeric chega como string via PostgREST), sem precisar de .single().
+  const { data: mediaTicketBarbeariaRaw } = await supabase.rpc('media_ticket_barbearia') as { data: string | null }
+  const mediaTicketBarbearia = mediaTicketBarbeariaRaw !== null ? Number(mediaTicketBarbeariaRaw) : null
+
+  const diagnostico = calcularDiagnostico({
+    percentualOcupacao: ociosidade.percentualOcupacao,
+    indicePublicoAlvo: distribuicaoCategorias.indicePublicoAlvo,
+    ticketMedio,
+    mediaTicketBarbearia,
+    percentualSoCabelo,
+    percentualSoBarba,
+  })
+
   const { data: indicadoresRaw } = await supabase
     .rpc('indicadores_recorrencia_conversao', { p_membro_id: membro!.id })
     .single() as {
@@ -191,6 +208,17 @@ export default async function BarbeiroDashboardPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Olá, {membro!.nome}</h1>
+
+      <Card className={`mb-5 border-2 ${
+        diagnostico.tipo === 'positivo' ? 'border-emerald-500/40 bg-emerald-500/5' :
+        diagnostico.tipo === 'neutro' ? '' :
+        'border-amber-500/40 bg-amber-500/5'
+      }`}>
+        <CardContent className="p-6">
+          <p className="font-heading text-base font-bold mb-2">Diagnóstico</p>
+          <p className="text-sm text-foreground/90">{diagnostico.mensagem}</p>
+        </CardContent>
+      </Card>
 
       <div className="flex gap-4 flex-wrap mb-6">
         <Card className="flex-1 min-w-[160px]">

@@ -24,6 +24,18 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-emerald-tint: var(--emerald-tint);
+  --color-emerald-tint-border: var(--emerald-tint-border);
+  --color-emerald-dark: var(--emerald-dark);
+  --color-amber: var(--amber);
+  --color-amber-text: var(--amber-text);
+  --color-amber-tint: var(--amber-tint);
+  --color-indigo: var(--indigo);
+  --color-indigo-tint: var(--indigo-tint);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-icon: var(--sidebar-icon);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -34,25 +46,38 @@
 }
 
 :root {
-  --background: #f8f9fb;
-  --foreground: #111827;
+  --background: #F6F7F4;
+  --foreground: #16201C;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #16201C;
   --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #0ea472;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f2f4;
-  --secondary-foreground: #111827;
-  --muted: #f1f2f4;
-  --muted-foreground: #6b7280;
-  --accent: #f1f2f4;
-  --accent-foreground: #111827;
+  --popover-foreground: #16201C;
+  --primary: #0F9D6E;
+  --primary-foreground: #06231A;
+  --secondary: #F0F1EE;
+  --secondary-foreground: #16201C;
+  --muted: #F0F1EE;
+  --muted-foreground: #8A968F;
+  --accent: #F0F1EE;
+  --accent-foreground: #16201C;
   --destructive: #dc2626;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #0ea472;
-  --radius: 0.625rem;
+  --border: #E8E9E5;
+  --input: #E4E6E1;
+  --ring: #0F9D6E;
+  --radius: 0.85rem;
+
+  --emerald-tint: #EAF6F0;
+  --emerald-tint-border: #CFE8DC;
+  --emerald-dark: #0B7F58;
+  --amber: #E0942F;
+  --amber-text: #B26A00;
+  --amber-tint: #FDF3E3;
+  --indigo: #5B5BD6;
+  --indigo-tint: #EEEEFB;
+  --sidebar-bg: #101A16;
+  --sidebar-fg: #E8EFEA;
+  --sidebar-muted: #7E8C85;
+  --sidebar-icon: #8FE3C2;
 }
 
 @layer base {

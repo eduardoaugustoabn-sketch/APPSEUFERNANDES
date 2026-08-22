@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
+import { Select } from '@/components/ui/select'
 
 type ResultadoBusca = {
   id: string
@@ -173,7 +174,7 @@ export function ClienteAutocomplete({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2.5">
       <Input placeholder="Nome do cliente" value={nome} onChange={(e) => handleNomeChange(e.target.value)} />
       <div className="relative">
         <Input
@@ -183,13 +184,13 @@ export function ClienteAutocomplete({
           onBlur={() => setMostrarLista(false)}
         />
         {mostrarLista && resultados.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-card border rounded shadow-md max-h-48 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1.5 bg-card border border-border rounded-2xl shadow-[0_1px_2px_rgba(20,32,27,0.04)] max-h-48 overflow-y-auto">
             {resultados.map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onMouseDown={() => selecionar(r)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
+                className="w-full text-left px-3.5 py-2.5 text-[13.5px] hover:bg-muted border-b border-muted last:border-b-0"
               >
                 {r.nome} · {r.telefone} · {r.total_cortes}º corte aqui
               </button>
@@ -200,14 +201,13 @@ export function ClienteAutocomplete({
       <Input type="date" placeholder="Data de nascimento (opcional)" value={dataNascimento} onChange={(e) => handleDataNascimentoChange(e.target.value)} />
       <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => handleBairroChange(e.target.value)} />
       <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => handleCidadeChange(e.target.value)} />
-      <select
+      <Select
         value={categoriaOrigem}
         onChange={(e) => handleCategoriaOrigemChange(e.target.value)}
-        className="border rounded px-2 py-1"
       >
         <option value="">Como conheceu a barbearia?</option>
         {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-      </select>
+      </Select>
     </div>
   )
 }

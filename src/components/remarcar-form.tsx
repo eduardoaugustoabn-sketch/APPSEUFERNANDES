@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 
 export function RemarcarForm({
   barbeariaId, membroId, servicoId, agendamentoId, clienteNome, onRemarcado, onCancelar,
@@ -55,21 +57,25 @@ export function RemarcarForm({
   }
 
   return (
-    <div className="flex flex-col gap-2 max-w-sm border rounded p-4">
-      <h3 className="font-heading text-base font-semibold">Remarcar — {clienteNome}</h3>
-      <Input type="date" value={data} onChange={(e) => { setData(e.target.value); setHorarios([]); setHorario('') }} />
-      <Button type="button" variant="outline" onClick={buscarHorarios} disabled={buscando}>Ver horários</Button>
-      {horarios.length > 0 && (
-        <select value={horario} onChange={(e) => setHorario(e.target.value)} className="border rounded px-2 py-1">
-          <option value="">Horário</option>
-          {horarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
-        </select>
-      )}
-      <div className="flex gap-2">
-        <Button type="button" onClick={confirmar} disabled={salvando || !horario}>Confirmar</Button>
-        <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
-      </div>
-      {mensagem && <p className="text-sm">{mensagem}</p>}
-    </div>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="font-heading text-base font-bold mb-4">Remarcar — {clienteNome}</h3>
+        <div className="flex flex-col gap-3">
+          <Input type="date" value={data} onChange={(e) => { setData(e.target.value); setHorarios([]); setHorario('') }} />
+          <Button type="button" variant="outline" onClick={buscarHorarios} disabled={buscando}>Ver horários</Button>
+          {horarios.length > 0 && (
+            <Select value={horario} onChange={(e) => setHorario(e.target.value)}>
+              <option value="">Horário</option>
+              {horarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
+            </Select>
+          )}
+        </div>
+        <div className="flex gap-2 mt-4">
+          <Button type="button" onClick={confirmar} disabled={salvando || !horario}>Confirmar</Button>
+          <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
+        </div>
+        {mensagem && <p className="text-sm text-muted-foreground mt-2">{mensagem}</p>}
+      </CardContent>
+    </Card>
   )
 }

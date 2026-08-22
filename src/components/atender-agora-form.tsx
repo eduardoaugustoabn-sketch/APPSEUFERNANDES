@@ -6,6 +6,8 @@ import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
 import type { ModoAgenda } from './lancamento-form'
 import type { CategoriaOrigem } from '@/lib/categorias-origem'
+import { Select } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boolean }
 
@@ -71,18 +73,22 @@ export function AtenderAgoraForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 max-w-md border rounded p-4">
-      <h3 className="font-heading text-base font-semibold">Atender agora</h3>
-      <ClienteAutocomplete onResolved={setCliente} />
-      <select value={servicoId} onChange={(e) => setServicoId(e.target.value)} className="border rounded px-2 py-1">
-        <option value="">Serviço</option>
-        {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-      </select>
-      <div className="flex gap-2">
-        <Button type="button" onClick={criar} disabled={salvando}>Iniciar atendimento</Button>
-        <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
-      </div>
-      {mensagem && <p className="text-sm">{mensagem}</p>}
-    </div>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="font-heading text-base font-bold mb-4">Atender agora</h3>
+        <div className="flex flex-col gap-3">
+          <ClienteAutocomplete onResolved={setCliente} />
+          <Select value={servicoId} onChange={(e) => setServicoId(e.target.value)}>
+            <option value="">Serviço</option>
+            {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+          </Select>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <Button type="button" onClick={criar} disabled={salvando}>Iniciar atendimento</Button>
+          <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
+        </div>
+        {mensagem && <p className="text-sm text-muted-foreground mt-2">{mensagem}</p>}
+      </CardContent>
+    </Card>
   )
 }

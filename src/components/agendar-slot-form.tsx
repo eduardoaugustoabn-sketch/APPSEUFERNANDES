@@ -5,6 +5,8 @@ import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Button } from '@/components/ui/button'
 import type { CategoriaOrigem } from '@/lib/categorias-origem'
+import { Select } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boolean }
 type AgendamentoExistente = { hora_inicio: string; hora_fim: string }
@@ -87,28 +89,32 @@ export function AgendarSlotForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 max-w-md border rounded p-4">
-      <h3 className="font-heading text-base font-semibold">Agendar horário — {horaInicio.slice(0, 5)}</h3>
-      <ClienteAutocomplete onResolved={setCliente} />
-      <select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }} className="border rounded px-2 py-1">
-        <option value="">Serviço</option>
-        {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-      </select>
-
-      {pedindoConfirmacao && (
-        <div className="border border-primary/40 bg-primary/10 rounded p-3 flex flex-col gap-2">
-          <p className="text-sm">Este horário já possui um serviço agendado. Tem certeza de que deseja confirmar este agendamento?</p>
-          <div className="flex gap-2">
-            <Button type="button" onClick={gravar} disabled={salvando}>Confirmar mesmo assim</Button>
-            <Button type="button" variant="outline" onClick={() => setPedindoConfirmacao(false)}>Cancelar</Button>
-          </div>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="font-heading text-base font-bold mb-4">Agendar horário — {horaInicio.slice(0, 5)}</h3>
+        <div className="flex flex-col gap-3">
+          <ClienteAutocomplete onResolved={setCliente} />
+          <Select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }}>
+            <option value="">Serviço</option>
+            {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+          </Select>
         </div>
-      )}
 
-      {!pedindoConfirmacao && (
-        <Button type="button" onClick={confirmar} disabled={salvando}>Confirmar agendamento</Button>
-      )}
-      {mensagem && <p className="text-sm">{mensagem}</p>}
-    </div>
+        {pedindoConfirmacao && (
+          <div className="mt-4 rounded-2xl border border-amber/30 bg-amber-tint p-4 flex flex-col gap-3">
+            <p className="text-[13.5px] text-amber-text">Este horário já possui um serviço agendado. Tem certeza de que deseja confirmar este agendamento?</p>
+            <div className="flex gap-2">
+              <Button type="button" onClick={gravar} disabled={salvando}>Confirmar mesmo assim</Button>
+              <Button type="button" variant="outline" onClick={() => setPedindoConfirmacao(false)}>Cancelar</Button>
+            </div>
+          </div>
+        )}
+
+        {!pedindoConfirmacao && (
+          <Button type="button" onClick={confirmar} disabled={salvando} className="w-full mt-4">Confirmar agendamento</Button>
+        )}
+        {mensagem && <p className="text-sm text-muted-foreground mt-2">{mensagem}</p>}
+      </CardContent>
+    </Card>
   )
 }

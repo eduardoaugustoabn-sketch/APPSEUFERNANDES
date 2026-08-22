@@ -7,6 +7,8 @@ import { ClienteAutocomplete } from './cliente-autocomplete'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import type { CategoriaOrigem } from '@/lib/categorias-origem'
+import { Select } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
@@ -201,78 +203,80 @@ export function LancamentoForm({
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-md border rounded p-4">
-      <h3 className="font-heading text-base font-semibold">Atender agendamento — {modoAgenda.horaInicio.slice(0, 5)}</h3>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="font-heading text-base font-bold mb-4">Atender agendamento — {modoAgenda.horaInicio.slice(0, 5)}</h3>
 
-      <ClienteAutocomplete
-        key={clienteAutocompleteKey}
-        onResolved={setCliente}
-        valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
-      />
+        <ClienteAutocomplete
+          key={clienteAutocompleteKey}
+          onResolved={setCliente}
+          valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
+        />
 
-      <div>
-        <p className="text-sm font-medium mb-1">Serviços (corte, serviço extra...)</p>
-        {servicosSelecionados.map((s, index) => (
-          <div key={`${s.id}-${index}`} className="flex justify-between items-center text-sm border-b py-1">
-            <span>{s.nome} (R${s.preco})</span>
-            <button type="button" onClick={() => removerServico(index)} className="text-destructive text-xs">remover</button>
+        <div className="mt-4">
+          <p className="text-[11.5px] font-bold text-foreground/70 uppercase tracking-wide mb-2">Serviços (corte, serviço extra...)</p>
+          {servicosSelecionados.map((s, index) => (
+            <div key={`${s.id}-${index}`} className="flex justify-between items-center text-[13.5px] py-1.5 border-b border-muted">
+              <span>{s.nome} (R${s.preco})</span>
+              <button type="button" onClick={() => removerServico(index)} className="text-destructive text-xs font-bold underline">remover</button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2.5">
+            <Select value={servicoParaAdicionar} onChange={(e) => setServicoParaAdicionar(e.target.value)} className="flex-1">
+              <option value="">Serviço</option>
+              {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
+            </Select>
+            <Button type="button" variant="outline" onClick={adicionarServico} disabled={!servicoParaAdicionar}>+ Adicionar</Button>
           </div>
-        ))}
-        <div className="flex gap-2 mt-2">
-          <select value={servicoParaAdicionar} onChange={(e) => setServicoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
-            <option value="">Serviço</option>
-            {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome} (R${s.preco})</option>)}
-          </select>
-          <Button type="button" variant="outline" onClick={adicionarServico} disabled={!servicoParaAdicionar}>+ Adicionar</Button>
         </div>
-      </div>
 
-      <div>
-        <p className="text-sm font-medium mb-1">Produtos (opcional)</p>
-        {produtosSelecionados.map((p) => (
-          <div key={p.id} className="flex justify-between items-center text-sm border-b py-1">
-            <span>{p.quantidade}x {p.nome} (R${p.preco_venda})</span>
-            <button type="button" onClick={() => removerProduto(p.id)} className="text-destructive text-xs">remover</button>
+        <div className="mt-4">
+          <p className="text-[11.5px] font-bold text-foreground/70 uppercase tracking-wide mb-2">Produtos (opcional)</p>
+          {produtosSelecionados.map((p) => (
+            <div key={p.id} className="flex justify-between items-center text-[13.5px] py-1.5 border-b border-muted">
+              <span>{p.quantidade}x {p.nome} (R${p.preco_venda})</span>
+              <button type="button" onClick={() => removerProduto(p.id)} className="text-destructive text-xs font-bold underline">remover</button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2.5">
+            <Select value={produtoParaAdicionar} onChange={(e) => setProdutoParaAdicionar(e.target.value)} className="flex-1">
+              <option value="">Produto</option>
+              {produtos.filter((p) => p.ativo).map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
+            </Select>
+            <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
+            <Button type="button" variant="outline" onClick={adicionarProduto} disabled={!produtoParaAdicionar}>+ Adicionar</Button>
           </div>
-        ))}
-        <div className="flex gap-2 mt-2">
-          <select value={produtoParaAdicionar} onChange={(e) => setProdutoParaAdicionar(e.target.value)} className="border rounded px-2 py-1 flex-1">
-            <option value="">Produto</option>
-            {produtos.filter((p) => p.ativo).map((p) => <option key={p.id} value={p.id}>{p.nome} (estoque: {p.quantidade_estoque})</option>)}
-          </select>
-          <Input type="number" min={1} value={quantidadeParaAdicionar} onChange={(e) => setQuantidadeParaAdicionar(Number(e.target.value))} className="w-16" />
-          <Button type="button" variant="outline" onClick={adicionarProduto} disabled={!produtoParaAdicionar}>+ Adicionar</Button>
         </div>
-      </div>
 
-      <div>
-        <label className="text-sm font-medium flex items-center gap-2">
-          <input type="checkbox" checked={agendarRetorno} onChange={(e) => setAgendarRetorno(e.target.checked)} />
-          Agendar próxima visita deste cliente
-        </label>
-        {agendarRetorno && (
-          <div className="flex flex-col gap-2 mt-2">
-            <select value={retornoServicoId} onChange={(e) => setRetornoServicoId(e.target.value)} className="border rounded px-2 py-1">
-              <option value="">Serviço do retorno</option>
-              {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-            </select>
-            <Input type="date" value={retornoData} onChange={(e) => setRetornoData(e.target.value)} />
-            {buscandoHorarios && <p className="text-xs text-muted-foreground">Buscando horários...</p>}
-            {!buscandoHorarios && retornoHorarios.length > 0 && (
-              <select value={retornoHorario} onChange={(e) => setRetornoHorario(e.target.value)} className="border rounded px-2 py-1">
-                <option value="">Horário</option>
-                {retornoHorarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
-              </select>
-            )}
-            {!buscandoHorarios && retornoHorarios.length === 0 && retornoServicoId && (
-              <p className="text-xs text-muted-foreground">Nenhum horário disponível para esse dia.</p>
-            )}
-          </div>
-        )}
-      </div>
+        <div className="mt-4">
+          <label className="text-[13px] font-semibold flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={agendarRetorno} onChange={(e) => setAgendarRetorno(e.target.checked)} className="w-4 h-4 accent-primary" />
+            Agendar próxima visita deste cliente
+          </label>
+          {agendarRetorno && (
+            <div className="flex flex-col gap-2.5 mt-3">
+              <Select value={retornoServicoId} onChange={(e) => setRetornoServicoId(e.target.value)}>
+                <option value="">Serviço do retorno</option>
+                {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+              </Select>
+              <Input type="date" value={retornoData} onChange={(e) => setRetornoData(e.target.value)} />
+              {buscandoHorarios && <p className="text-xs text-muted-foreground">Buscando horários...</p>}
+              {!buscandoHorarios && retornoHorarios.length > 0 && (
+                <Select value={retornoHorario} onChange={(e) => setRetornoHorario(e.target.value)}>
+                  <option value="">Horário</option>
+                  {retornoHorarios.map((h) => <option key={h.hora_inicio} value={h.hora_inicio}>{h.hora_inicio.slice(0, 5)}</option>)}
+                </Select>
+              )}
+              {!buscandoHorarios && retornoHorarios.length === 0 && retornoServicoId && (
+                <p className="text-xs text-muted-foreground">Nenhum horário disponível para esse dia.</p>
+              )}
+            </div>
+          )}
+        </div>
 
-      <Button type="button" onClick={salvar} disabled={salvando}>Concluir atendimento</Button>
-      {mensagem && <p className="text-sm">{mensagem}</p>}
-    </div>
+        <Button type="button" onClick={salvar} disabled={salvando} className="w-full mt-5">Concluir atendimento</Button>
+        {mensagem && <p className="text-sm text-muted-foreground mt-2">{mensagem}</p>}
+      </CardContent>
+    </Card>
   )
 }

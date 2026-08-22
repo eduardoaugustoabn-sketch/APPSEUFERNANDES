@@ -33,15 +33,15 @@ export function BloqueioForm({ membroId, onBloqueado }: { membroId: string; onBl
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-2 items-end flex-wrap">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
         <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
         <Input type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
         <Input type="time" value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
-        <Input placeholder="Motivo (almoço, ausência...)" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-        <Button type="button" onClick={salvar} disabled={salvando}>Bloquear</Button>
       </div>
-      {mensagem && <p className="text-sm">{mensagem}</p>}
+      <Input placeholder="Motivo (almoço, ausência...)" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Button type="button" onClick={salvar} disabled={salvando} className="w-full">Bloquear</Button>
+      {mensagem && <p className="text-sm text-muted-foreground">{mensagem}</p>}
     </div>
   )
 }

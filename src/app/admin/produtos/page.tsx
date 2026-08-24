@@ -1,5 +1,6 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProdutoRow } from '@/components/produto-row'
@@ -30,21 +31,33 @@ export default async function ProdutosPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Produtos</h1>
-      <form action={criarProduto} className="flex gap-2 mb-6 flex-wrap">
-        <Input name="nome" placeholder="Nome" required />
-        <Input name="categoria" placeholder="Categoria" />
-        <Input name="preco_custo" type="number" step="0.01" placeholder="Preço de compra" />
-        <Input name="preco_venda" type="number" step="0.01" placeholder="Preço de venda" required />
-        <Input name="quantidade_estoque" type="number" placeholder="Estoque inicial" required />
-        <Input name="estoque_minimo" type="number" placeholder="Estoque mínimo" required />
-        <Button type="submit">Adicionar</Button>
-      </form>
-      <Table>
-        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Custo</TableHead><TableHead>Preço</TableHead><TableHead>Estoque</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
-        <TableBody>
-          {produtos?.map((p) => <ProdutoRow key={p.id} produto={p} />)}
-        </TableBody>
-      </Table>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Adicionar produto</h2>
+          <form action={criarProduto} className="flex gap-2 flex-wrap">
+            <Input name="nome" placeholder="Nome" required className="w-40" />
+            <Input name="categoria" placeholder="Categoria" className="w-32" />
+            <Input name="preco_custo" type="number" step="0.01" placeholder="Preço de compra" className="w-28" />
+            <Input name="preco_venda" type="number" step="0.01" placeholder="Preço de venda" required className="w-28" />
+            <Input name="quantidade_estoque" type="number" placeholder="Estoque inicial" required className="w-28" />
+            <Input name="estoque_minimo" type="number" placeholder="Estoque mínimo" required className="w-28" />
+            <Button type="submit">Adicionar</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Produtos cadastrados</h2>
+          <Table>
+            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Custo</TableHead><TableHead>Preço</TableHead><TableHead>Estoque</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {produtos?.map((p) => <ProdutoRow key={p.id} produto={p} />)}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

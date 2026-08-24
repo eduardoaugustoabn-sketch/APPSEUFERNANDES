@@ -131,7 +131,7 @@ export function BarbeiroRow({
         className="flex gap-2 items-center flex-wrap"
       >
         <input type="hidden" name="membro_id" value={barbeiro.id} />
-        <Select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} className="w-40">
+        <Select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} aria-label="Plano de carreira" className="w-40">
           <option value="">Sem plano</option>
           {planos.filter((p) => p.ativo || p.id === barbeiro.plano_carreira_id).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
         </Select>
@@ -182,7 +182,7 @@ export function BarbeiroRow({
                 value={d.hora_inicio}
                 onChange={(e) => atualizarDia(i, { hora_inicio: e.target.value })}
                 disabled={!d.trabalha}
-                className="w-28"
+                className="w-32"
               />
               <span className="text-sm text-muted-foreground">até</span>
               <Input
@@ -190,7 +190,7 @@ export function BarbeiroRow({
                 value={d.hora_fim}
                 onChange={(e) => atualizarDia(i, { hora_fim: e.target.value })}
                 disabled={!d.trabalha}
-                className="w-28"
+                className="w-32"
               />
             </div>
           ))}

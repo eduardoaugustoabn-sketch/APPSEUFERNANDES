@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
-import { SignOutButton } from '@/components/sign-out-button'
-import { NavLinks } from '@/components/nav-links'
+import { AdminSidebar } from '@/components/admin/sidebar'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Visão geral' },
@@ -22,22 +21,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const { data: membro } = await supabase
     .from('membros')
-    .select('papel')
+    .select('nome, papel')
     .eq('user_id', user.id)
     .single()
 
   if (membro?.papel !== 'admin') redirect('/')
 
   return (
-    <div>
-      <nav className="flex items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-8">
-          <span className="font-heading text-lg font-bold tracking-wide">SEU FERNANDES</span>
-          <NavLinks items={NAV_ITEMS} />
-        </div>
-        <SignOutButton />
-      </nav>
-      <div className="p-6">{children}</div>
+    <div className="flex min-h-screen items-stretch">
+      <AdminSidebar navItems={NAV_ITEMS} nomeAdmin={membro.nome} />
+      <div className="flex-1 min-w-0 p-6 md:p-8 lg:p-10">{children}</div>
     </div>
   )
 }

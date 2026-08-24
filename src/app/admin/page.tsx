@@ -105,8 +105,8 @@ export default async function AdminOverviewPage() {
         />
         <KpiCard
           label="Produtos com estoque baixo"
-          value={`${produtosBaixos?.length ?? 0} itens`}
-          chip={produtosBaixos && produtosBaixos.length > 0 ? { text: `${produtosBaixos.length} itens`, tone: 'amber' } : undefined}
+          value={`${produtosBaixos.length} itens`}
+          chip={produtosBaixos.length > 0 ? { text: 'estoque baixo', tone: 'amber' } : undefined}
         />
       </div>
 

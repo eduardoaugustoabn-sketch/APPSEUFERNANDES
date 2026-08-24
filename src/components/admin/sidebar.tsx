@@ -62,7 +62,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
 
 function NavIcon({ href }: { href: string }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-sidebar-icon)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-sidebar-icon)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       {ICON_PATHS[href]}
     </svg>
   )
@@ -75,8 +75,9 @@ export function AdminSidebar({
   nomeAdmin: string
 }) {
   const pathname = usePathname()
-  // Mesmo critério de nav-links.tsx (href mais longo que casa), reimplementado
-  // aqui em vez de reaproveitado — mesma decisão já tomada em painel/sidebar.tsx.
+  // Mesmo critério de rota ativa (href mais longo que casa) de
+  // painel/sidebar.tsx — duplicado deliberadamente em vez de compartilhado,
+  // ver decisão na spec da fase 3.
   const ativoHref = navItems
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href

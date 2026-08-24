@@ -39,7 +39,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
 
 function NavIcon({ href }: { href: string }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-sidebar-icon)" strokeWidth="1.8" className="shrink-0">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-sidebar-icon)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       {ICON_PATHS[href]}
     </svg>
   )
@@ -54,9 +54,9 @@ export function PainelSidebar({
   metaFaturamentoMes: number | null
 }) {
   const pathname = usePathname()
-  // Mesmo critério de nav-links.tsx (href mais longo que casa), reimplementado
-  // aqui em vez de reaproveitado — a sidebar é visualmente muito diferente da
-  // nav horizontal do admin, e nav-links.tsx não pode mudar nesta fase.
+  // Mesmo critério de rota ativa (href mais longo que casa) de
+  // admin/sidebar.tsx — duplicado deliberadamente em vez de compartilhado,
+  // sidebars visualmente diferentes o bastante pra não valer abstração agora.
   const ativoHref = navItems
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href

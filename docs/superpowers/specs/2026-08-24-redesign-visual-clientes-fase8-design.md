@@ -25,7 +25,7 @@ Sem protótipo do Claude Design, como nas fases anteriores do admin.
 
 | Elemento atual | Mudança |
 |---|---|
-| `<div>` externo com `Input` de busca (`mb-4`) + lista de `<Link>` | Vira um `Card` com `CardContent`; a `Input` de busca perde o `mb-4` próprio (o espaçamento passa a vir do layout interno do Card) e ganha um wrapper `mb-4` no lugar certo dentro do Card. |
+| `<div>` externo com `Input` de busca (`mb-4`) + lista de `<Link>` | Vira um `Card` com `CardContent`; a `Input` de busca mantém seu `mb-4` (já é o espaçamento certo dentro do Card, sem precisar de wrapper extra). |
 | Linhas de cliente (`<Link className="flex justify-between border-b py-2 hover:bg-muted/50">`) | Mantidas exatamente como estão — mesmo texto, mesma estrutura, dentro do Card agora. |
 | Mensagem "Nenhum cliente encontrado." | Mantida sem mudança. |
 

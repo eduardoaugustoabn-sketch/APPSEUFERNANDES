@@ -36,14 +36,14 @@ export default async function ServicosPage() {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Adicionar serviço</h2>
           <form action={criarServico} className="flex gap-2 flex-wrap">
-            <Input name="nome" placeholder="Nome" required />
-            <Input name="duracao_minutos" type="number" placeholder="Duração (min)" required />
-            <Input name="preco" type="number" step="0.01" placeholder="Preço" required />
-            <Select name="tipo" defaultValue="corte">
+            <Input name="nome" placeholder="Nome" required className="w-40" />
+            <Input name="duracao_minutos" type="number" placeholder="Duração (min)" required className="w-36" />
+            <Input name="preco" type="number" step="0.01" placeholder="Preço" required className="w-28" />
+            <Select name="tipo" defaultValue="corte" aria-label="Tipo" className="w-40">
               <option value="corte">Corte</option>
               <option value="servico_extra">Serviço extra</option>
             </Select>
-            <Select name="categoria_servico" defaultValue="outro">
+            <Select name="categoria_servico" defaultValue="outro" aria-label="Categoria" className="w-32">
               <option value="cabelo">Cabelo</option>
               <option value="barba">Barba</option>
               <option value="outro">Outro</option>

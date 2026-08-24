@@ -54,13 +54,13 @@ export function ServicoRow({ servico }: { servico: Servico }) {
         <TableCell><Input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} className="w-20" /></TableCell>
         <TableCell><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(Number(e.target.value))} className="w-24" /></TableCell>
         <TableCell>
-          <Select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+          <Select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Tipo" className="w-32">
             <option value="corte">Corte</option>
             <option value="servico_extra">Serviço extra</option>
           </Select>
         </TableCell>
         <TableCell>
-          <Select value={categoriaServico} onChange={(e) => setCategoriaServico(e.target.value)}>
+          <Select value={categoriaServico} onChange={(e) => setCategoriaServico(e.target.value)} aria-label="Categoria" className="w-28">
             <option value="cabelo">Cabelo</option>
             <option value="barba">Barba</option>
             <option value="outro">Outro</option>

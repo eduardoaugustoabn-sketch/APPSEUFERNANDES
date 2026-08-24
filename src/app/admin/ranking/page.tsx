@@ -68,9 +68,9 @@ export default async function RankingPage() {
                 <p className="font-semibold mb-3">{item.nome}</p>
                 <ol className="text-sm flex flex-col gap-1">
                   {ranking(item.id).map((r, i) => (
-                    <li key={r.nome} className={`flex justify-between gap-2 ${i === 0 ? 'text-primary font-bold' : ''}`}>
+                    <li key={r.nome} className={`flex justify-between gap-2 ${i === 0 && r.quantidade > 0 ? 'text-primary font-bold' : ''}`}>
                       <span>{i + 1}. {r.nome}</span>
-                      <span className="font-medium text-right">{r.quantidade}x — R$ {r.valor.toFixed(2)}</span>
+                      <span className={`text-right ${i === 0 && r.quantidade > 0 ? 'font-bold' : 'font-medium'}`}>{r.quantidade}x — R$ {r.valor.toFixed(2)}</span>
                     </li>
                   ))}
                 </ol>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
@@ -78,12 +79,12 @@ export function EditarClienteForm({
         placeholder="Observação"
         value={observacao}
         onChange={(e) => setObservacao(e.target.value)}
-        className="border rounded px-2 py-1 bg-input text-sm min-h-20"
+        className="w-full rounded-lg border border-input bg-input-bg px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-20"
       />
-      <select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')} className="border rounded px-2 py-1">
+      <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}>
         <option value="">Como conheceu a barbearia?</option>
         {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-      </select>
+      </Select>
       <div className="flex gap-2">
         <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>
         <Button type="button" variant="outline" onClick={cancelar}>Cancelar</Button>

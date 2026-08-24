@@ -375,6 +375,7 @@ export function BarbeiroRow({
                 value={d.hora_inicio}
                 onChange={(e) => atualizarDia(i, { hora_inicio: e.target.value })}
                 disabled={!d.trabalha}
+                className="w-28"
               />
               <span className="text-sm text-muted-foreground">até</span>
               <Input
@@ -382,6 +383,7 @@ export function BarbeiroRow({
                 value={d.hora_fim}
                 onChange={(e) => atualizarDia(i, { hora_fim: e.target.value })}
                 disabled={!d.trabalha}
+                className="w-28"
               />
             </div>
           ))}

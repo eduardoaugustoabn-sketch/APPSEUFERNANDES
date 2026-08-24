@@ -61,7 +61,7 @@ export function EditarClienteForm({
 
   if (!editando) {
     return (
-      <div className="mb-4">
+      <div>
         {observacaoAtual && <p className="text-sm text-muted-foreground mb-2">Observação: {observacaoAtual}</p>}
         {categoriaLabel && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaLabel}</p>}
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">
@@ -72,14 +72,14 @@ export function EditarClienteForm({
   }
 
   return (
-    <div className="flex flex-col gap-2 mb-4 border rounded p-3">
+    <div className="flex flex-col gap-2 border rounded-lg p-3">
       <Input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
       <Input placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
       <textarea
         placeholder="Observação"
         value={observacao}
         onChange={(e) => setObservacao(e.target.value)}
-        className="w-full rounded-lg border border-input bg-input-bg px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-20"
+        className="w-full rounded-lg border border-input bg-input-bg px-2.5 py-1.5 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-20"
       />
       <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}>
         <option value="">Como conheceu a barbearia?</option>

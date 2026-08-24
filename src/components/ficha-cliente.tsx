@@ -70,6 +70,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
               </div>
             </div>
           ))}
+          {(ranking ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhum item registrado ainda.</p>}
         </CardContent>
       </Card>
 
@@ -77,11 +78,12 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Histórico completo</h2>
           {historico.map((h, i) => (
-            <div key={i} className="flex justify-between text-sm border-b py-1">
+            <div key={i} className="flex justify-between text-sm border-b py-1 last:border-b-0">
               <span>{new Date(h.data).toLocaleDateString()} — {h.texto}</span>
               <span>R$ {Number(h.valor).toFixed(2)}</span>
             </div>
           ))}
+          {historico.length === 0 && <p className="text-sm text-muted-foreground">Nenhum atendimento ou venda ainda.</p>}
         </CardContent>
       </Card>
 
@@ -89,11 +91,12 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Agendamentos</h2>
           {(agendamentosHistorico ?? []).map((a, i) => (
-            <div key={i} className="flex justify-between text-sm border-b py-1">
+            <div key={i} className="flex justify-between text-sm border-b py-1 last:border-b-0">
               <span>{new Date(a.data).toLocaleDateString()} {a.hora_inicio.slice(0, 5)} — {a.servicos?.nome ?? '—'}</span>
               <span className="text-muted-foreground">{a.status}</span>
             </div>
           ))}
+          {(agendamentosHistorico ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhum agendamento ainda.</p>}
         </CardContent>
       </Card>
 
@@ -102,7 +105,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
           <CardContent className="p-6">
             <h2 className="font-heading text-base font-bold mb-5">Prospecção</h2>
             {prospeccaoHistorico!.map((p, i) => (
-              <div key={i} className="flex justify-between text-sm border-b py-1">
+              <div key={i} className="flex justify-between text-sm border-b py-1 last:border-b-0">
                 <span>{new Date(p.data).toLocaleDateString()} — {p.canal ?? 'sem canal'}</span>
                 <span className="text-muted-foreground">{p.status}{p.convertido_em ? ` (${new Date(p.convertido_em).toLocaleDateString()})` : ''}</span>
               </div>

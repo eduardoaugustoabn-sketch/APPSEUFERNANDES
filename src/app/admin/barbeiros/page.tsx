@@ -1,6 +1,7 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { BarbeiroRow } from '@/components/barbeiro-row'
@@ -99,42 +100,52 @@ export default async function BarbeirosPage() {
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Barbeiros</h1>
 
-      <form action={criarBarbeiro} className="flex gap-2 mb-6 flex-wrap">
-        <Input name="nome" placeholder="Nome" required />
-        <Input name="telefone" placeholder="Telefone" />
-        <Input name="email" type="email" placeholder="E-mail" required />
-        <Input name="senha" type="password" placeholder="Senha" required minLength={6} />
-        <Button type="submit">Adicionar</Button>
-      </form>
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Adicionar barbeiro</h2>
+          <form action={criarBarbeiro} className="flex gap-2 flex-wrap">
+            <Input name="nome" placeholder="Nome" required className="w-40" />
+            <Input name="telefone" placeholder="Telefone" className="w-32" />
+            <Input name="email" type="email" placeholder="E-mail" required className="w-48" />
+            <Input name="senha" type="password" placeholder="Senha" required minLength={6} className="w-32" />
+            <Button type="submit">Adicionar</Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead>
-              <div className="flex gap-2 flex-wrap">
-                <span>Plano de carreira</span>
-                <span className="w-32">Meta prospecção/dia</span>
-                <span className="w-36">Meta prospecção/semana</span>
-                <span className="w-44">Meta faturamento/mês (R$)</span>
-              </div>
-            </TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {barbeiros?.map((b) => (
-            <BarbeiroRow
-              key={b.id}
-              barbeiro={b}
-              planos={planos ?? []}
-              expediente={expedientePorMembro.get(b.id) ?? []}
-              vincularPlanoAction={vincularPlano}
-            />
-          ))}
-        </TableBody>
-      </Table>
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Barbeiros cadastrados</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>
+                  <div className="flex gap-2 flex-wrap">
+                    <span>Plano de carreira</span>
+                    <span className="w-32">Meta prospecção/dia</span>
+                    <span className="w-36">Meta prospecção/semana</span>
+                    <span className="w-44">Meta faturamento/mês (R$)</span>
+                  </div>
+                </TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {barbeiros?.map((b) => (
+                <BarbeiroRow
+                  key={b.id}
+                  barbeiro={b}
+                  planos={planos ?? []}
+                  expediente={expedientePorMembro.get(b.id) ?? []}
+                  vincularPlanoAction={vincularPlano}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

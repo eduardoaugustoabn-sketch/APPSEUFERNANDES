@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { TableRow, TableCell } from '@/components/ui/table'
 
@@ -130,31 +131,31 @@ export function BarbeiroRow({
         className="flex gap-2 items-center flex-wrap"
       >
         <input type="hidden" name="membro_id" value={barbeiro.id} />
-        <select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} className="border rounded px-2 py-1 bg-input">
+        <Select name="plano_carreira_id" defaultValue={barbeiro.plano_carreira_id ?? ''} className="w-40">
           <option value="">Sem plano</option>
           {planos.filter((p) => p.ativo || p.id === barbeiro.plano_carreira_id).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </select>
-        <input
+        </Select>
+        <Input
           name="meta_prospeccao_dia"
           type="number"
           defaultValue={barbeiro.meta_prospeccao_dia ?? ''}
           placeholder="Meta diária"
-          className="border rounded px-2 py-1 w-32 bg-input"
+          className="w-32"
         />
-        <input
+        <Input
           name="meta_prospeccao_semana"
           type="number"
           defaultValue={barbeiro.meta_prospeccao_semana ?? ''}
           placeholder="Meta semanal"
-          className="border rounded px-2 py-1 w-36 bg-input"
+          className="w-36"
         />
-        <input
+        <Input
           name="meta_faturamento_mes"
           type="number"
           step="0.01"
           defaultValue={barbeiro.meta_faturamento_mes ?? ''}
           placeholder="Meta faturamento/mês"
-          className="border rounded px-2 py-1 w-44 bg-input"
+          className="w-44"
         />
         <Button type="submit" variant="outline">Salvar</Button>
       </form>
@@ -176,20 +177,18 @@ export function BarbeiroRow({
                 />
                 <span className="text-sm">{d.nome}</span>
               </label>
-              <input
+              <Input
                 type="time"
                 value={d.hora_inicio}
                 onChange={(e) => atualizarDia(i, { hora_inicio: e.target.value })}
                 disabled={!d.trabalha}
-                className="border rounded px-2 py-1 bg-input disabled:opacity-50"
               />
               <span className="text-sm text-muted-foreground">até</span>
-              <input
+              <Input
                 type="time"
                 value={d.hora_fim}
                 onChange={(e) => atualizarDia(i, { hora_fim: e.target.value })}
                 disabled={!d.trabalha}
-                className="border rounded px-2 py-1 bg-input disabled:opacity-50"
               />
             </div>
           ))}

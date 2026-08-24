@@ -64,11 +64,11 @@ export default async function RankingPage() {
         <div className="grid gap-4 mb-8 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
           {itens.map((item) => (
             <Card key={item.id}>
-              <CardContent className="p-4">
-                <p className="font-semibold mb-2">{item.nome}</p>
+              <CardContent className="p-6">
+                <p className="font-semibold mb-3">{item.nome}</p>
                 <ol className="text-sm flex flex-col gap-1">
                   {ranking(item.id).map((r, i) => (
-                    <li key={r.nome} className="flex justify-between gap-2">
+                    <li key={r.nome} className={`flex justify-between gap-2 ${i === 0 ? 'text-primary font-bold' : ''}`}>
                       <span>{i + 1}. {r.nome}</span>
                       <span className="font-medium text-right">{r.quantidade}x — R$ {r.valor.toFixed(2)}</span>
                     </li>

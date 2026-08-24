@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { TableRow, TableCell } from '@/components/ui/table'
 
@@ -53,17 +54,17 @@ export function ServicoRow({ servico }: { servico: Servico }) {
         <TableCell><Input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} className="w-20" /></TableCell>
         <TableCell><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(Number(e.target.value))} className="w-24" /></TableCell>
         <TableCell>
-          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="border rounded px-2 py-1 bg-input">
+          <Select value={tipo} onChange={(e) => setTipo(e.target.value)}>
             <option value="corte">Corte</option>
             <option value="servico_extra">Serviço extra</option>
-          </select>
+          </Select>
         </TableCell>
         <TableCell>
-          <select value={categoriaServico} onChange={(e) => setCategoriaServico(e.target.value)} className="border rounded px-2 py-1 bg-input">
+          <Select value={categoriaServico} onChange={(e) => setCategoriaServico(e.target.value)}>
             <option value="cabelo">Cabelo</option>
             <option value="barba">Barba</option>
             <option value="outro">Outro</option>
-          </select>
+          </Select>
         </TableCell>
         <TableCell className="flex gap-2">
           <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>

@@ -1,6 +1,8 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ServicoRow } from '@/components/servico-row'
 import { Table, TableHeader, TableBody, TableRow, TableHead } from '@/components/ui/table'
@@ -29,27 +31,39 @@ export default async function ServicosPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Serviços</h1>
-      <form action={criarServico} className="flex gap-2 mb-6 flex-wrap">
-        <Input name="nome" placeholder="Nome" required />
-        <Input name="duracao_minutos" type="number" placeholder="Duração (min)" required />
-        <Input name="preco" type="number" step="0.01" placeholder="Preço" required />
-        <select name="tipo" defaultValue="corte" className="border rounded px-2 py-1 bg-input">
-          <option value="corte">Corte</option>
-          <option value="servico_extra">Serviço extra</option>
-        </select>
-        <select name="categoria_servico" defaultValue="outro" className="border rounded px-2 py-1 bg-input">
-          <option value="cabelo">Cabelo</option>
-          <option value="barba">Barba</option>
-          <option value="outro">Outro</option>
-        </select>
-        <Button type="submit">Adicionar</Button>
-      </form>
-      <Table>
-        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Duração</TableHead><TableHead>Preço</TableHead><TableHead>Tipo</TableHead><TableHead>Categoria</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
-        <TableBody>
-          {servicos?.map((s) => <ServicoRow key={s.id} servico={s} />)}
-        </TableBody>
-      </Table>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Adicionar serviço</h2>
+          <form action={criarServico} className="flex gap-2 flex-wrap">
+            <Input name="nome" placeholder="Nome" required />
+            <Input name="duracao_minutos" type="number" placeholder="Duração (min)" required />
+            <Input name="preco" type="number" step="0.01" placeholder="Preço" required />
+            <Select name="tipo" defaultValue="corte">
+              <option value="corte">Corte</option>
+              <option value="servico_extra">Serviço extra</option>
+            </Select>
+            <Select name="categoria_servico" defaultValue="outro">
+              <option value="cabelo">Cabelo</option>
+              <option value="barba">Barba</option>
+              <option value="outro">Outro</option>
+            </Select>
+            <Button type="submit">Adicionar</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Serviços cadastrados</h2>
+          <Table>
+            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Duração</TableHead><TableHead>Preço</TableHead><TableHead>Tipo</TableHead><TableHead>Categoria</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {servicos?.map((s) => <ServicoRow key={s.id} servico={s} />)}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

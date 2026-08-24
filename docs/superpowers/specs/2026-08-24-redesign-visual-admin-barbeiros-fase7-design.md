@@ -28,7 +28,7 @@ Sem protótipo do Claude Design, como nas fases anteriores do admin.
 
 | Elemento atual | Mudança |
 |---|---|
-| `celulaPlano`: `<select name="plano_carreira_id" ... className="border rounded px-2 py-1 bg-input">` | Vira `<Select name="plano_carreira_id" defaultValue={...}>` (mesmas `<option>`, mesmo `name`/`defaultValue`). |
+| `celulaPlano`: `<select name="plano_carreira_id" ... className="border rounded px-2 py-1 bg-input">` | Vira `<Select name="plano_carreira_id" defaultValue={...} className="w-40">` (mesmas `<option>`, mesmo `name`/`defaultValue`). A largura explícita é necessária pela mesma razão das Fases 4/5: `Select` é `w-full` por padrão, e sem largura própria ele estica pra 100% dentro do `flex ... flex-wrap` da célula, empurrando os campos de meta pra baixo em vez de manter a linha compacta. |
 | `celulaPlano`: `<input name="meta_prospeccao_dia" ... className="border rounded px-2 py-1 w-32 bg-input">` | Vira `<Input name="meta_prospeccao_dia" ... className="w-32">` (mesmos atributos, sem o `border`/`bg-input` manuais — o componente já cuida disso). |
 | `celulaPlano`: `<input name="meta_prospeccao_semana" ...>` (mesmo padrão, `w-36`) | Mesma troca, `Input` com `className="w-36"`. |
 | `celulaPlano`: `<input name="meta_faturamento_mes" ...>` (mesmo padrão, `w-44`) | Mesma troca, `Input` com `className="w-44"`. |

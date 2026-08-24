@@ -2,6 +2,7 @@ import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { KpiCard } from '@/components/painel/kpi-card'
 
 export default async function AdminOverviewPage() {
   const supabase = await getServerSupabaseClient()
@@ -93,25 +94,20 @@ export default async function AdminOverviewPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Visão geral</h1>
-      <div className="flex gap-4 flex-wrap mb-6">
-        <Card className="flex-1 min-w-[160px]">
-          <CardContent>
-            <p className="text-xs uppercase text-muted-foreground">Faturamento do mês (todos)</p>
-            <p className="text-2xl font-bold text-primary">R$ {faturamentoTotal.toFixed(2)}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex-1 min-w-[160px]">
-          <CardContent>
-            <p className="text-xs uppercase text-muted-foreground">Comissões acumuladas no mês</p>
-            <p className="text-2xl font-bold text-primary">R$ {comissaoTotal.toFixed(2)}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex-1 min-w-[160px]">
-          <CardContent>
-            <p className="text-xs uppercase text-muted-foreground">Produtos com estoque baixo</p>
-            <p className="text-2xl font-bold text-destructive">{produtosBaixos?.length ?? 0} itens</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(215px,1fr))] gap-4 mb-6">
+        <KpiCard
+          label="Faturamento do mês (todos)"
+          value={`R$ ${faturamentoTotal.toFixed(2)}`}
+        />
+        <KpiCard
+          label="Comissões acumuladas no mês"
+          value={`R$ ${comissaoTotal.toFixed(2)}`}
+        />
+        <KpiCard
+          label="Produtos com estoque baixo"
+          value={`${produtosBaixos?.length ?? 0} itens`}
+          chip={produtosBaixos && produtosBaixos.length > 0 ? { text: `${produtosBaixos.length} itens`, tone: 'amber' } : undefined}
+        />
       </div>
 
       <h2 className="font-heading text-lg font-semibold mb-2">Barbeiros</h2>

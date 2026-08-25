@@ -1,4 +1,5 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type Linha = {
@@ -53,28 +54,32 @@ export default async function AdminProspeccaoPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Conversão de prospecção</h1>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead><TableHead>Telefone</TableHead><TableHead>Prospecção</TableHead><TableHead>Atendimento</TableHead>
-            <TableHead>Serviços</TableHead><TableHead>Produtos</TableHead><TableHead>Total</TableHead><TableHead>Profissional</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {linhas.map((l, i) => (
-            <TableRow key={i}>
-              <TableCell>{l.nome}</TableCell>
-              <TableCell>{l.telefone}</TableCell>
-              <TableCell>{new Date(l.data).toLocaleDateString()}</TableCell>
-              <TableCell>{l.convertido_em ? new Date(l.convertido_em).toLocaleDateString() : '—'}</TableCell>
-              <TableCell>{l.servicosTexto}</TableCell>
-              <TableCell>{l.produtosTexto}</TableCell>
-              <TableCell>R$ {l.valorTotal.toFixed(2)}</TableCell>
-              <TableCell>{l.membros?.nome ?? '—'}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead><TableHead>Telefone</TableHead><TableHead>Prospecção</TableHead><TableHead>Atendimento</TableHead>
+                <TableHead>Serviços</TableHead><TableHead>Produtos</TableHead><TableHead>Total</TableHead><TableHead>Profissional</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {linhas.map((l, i) => (
+                <TableRow key={i}>
+                  <TableCell>{l.nome}</TableCell>
+                  <TableCell>{l.telefone}</TableCell>
+                  <TableCell>{new Date(l.data).toLocaleDateString()}</TableCell>
+                  <TableCell>{l.convertido_em ? new Date(l.convertido_em).toLocaleDateString() : '—'}</TableCell>
+                  <TableCell>{l.servicosTexto}</TableCell>
+                  <TableCell>{l.produtosTexto}</TableCell>
+                  <TableCell>R$ {l.valorTotal.toFixed(2)}</TableCell>
+                  <TableCell>{l.membros?.nome ?? '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

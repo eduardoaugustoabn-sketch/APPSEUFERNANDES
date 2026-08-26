@@ -111,7 +111,7 @@ export default async function ProspeccaoPage() {
         </Card>
       )}
 
-      <Card className="mb-6">
+      <Card className="mb-6 overflow-visible">
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Novo contato prospectado</h2>
           <form action={novoContato} className="flex gap-2 items-center flex-wrap">

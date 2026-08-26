@@ -27,7 +27,7 @@ export function ProspeccaoStatusForm({ prospeccaoId, statusAtual }: { prospeccao
   }
 
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex gap-2 items-center shrink-0">
       <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status" className="w-36">
         {OPCOES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </Select>

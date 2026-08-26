@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 type ResultadoBusca = {
@@ -63,7 +64,7 @@ export function TelefoneClienteBusca() {
 
   return (
     <>
-      <Input name="nome" placeholder="Nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+      <Input name="nome" placeholder="Nome" required value={nome} onChange={(e) => setNome(e.target.value)} className="w-40" />
       <div className="relative">
         <Input
           name="telefone"
@@ -72,9 +73,10 @@ export function TelefoneClienteBusca() {
           value={telefone}
           onChange={(e) => verificar(e.target.value)}
           onBlur={() => setMostrarLista(false)}
+          className="w-40"
         />
         {mostrarLista && resultados.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-card border rounded shadow-md max-h-48 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1 bg-card border rounded-lg shadow-md max-h-48 overflow-y-auto">
             {resultados.map((r) => (
               <button
                 key={r.id}
@@ -88,12 +90,12 @@ export function TelefoneClienteBusca() {
           </div>
         )}
       </div>
-      <Input name="bairro" placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} />
-      <Input name="cidade" placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
-      <select name="categoria_origem" className="border rounded px-2 py-1 bg-input" defaultValue="">
+      <Input name="bairro" placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} className="w-32" />
+      <Input name="cidade" placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-32" />
+      <Select name="categoria_origem" aria-label="Como conheceu a barbearia?" className="w-56" defaultValue="">
         <option value="">Como conheceu a barbearia?</option>
         {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-      </select>
+      </Select>
     </>
   )
 }

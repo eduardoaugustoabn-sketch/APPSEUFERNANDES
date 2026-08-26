@@ -1,7 +1,9 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ProspeccaoStatusForm } from '@/components/prospeccao-status-form'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { TelefoneClienteBusca } from '@/components/telefone-cliente-busca'
 
@@ -74,61 +76,82 @@ export default async function ProspeccaoPage() {
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Prospecção</h1>
 
-      {metaDia > 0 && (
-        <div className="mb-4">
-          <p className="text-sm mb-1">Meta diária de contatos</p>
-          <div className="w-full bg-muted rounded h-6 overflow-hidden mb-1">
-            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / metaDia) * 100, 100)}%` }}>
-              {totalContatosHoje} / {metaDia}
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {totalContatosHoje >= metaDia ? 'Meta batida!' : `${totalContatosHoje} de ${metaDia} — faltam ${metaDia - totalContatosHoje}`}
-          </p>
-        </div>
+      {(metaDia > 0 || metaSemana > 0) && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h2 className="font-heading text-base font-bold mb-5">Metas de prospecção</h2>
+            {metaDia > 0 && (
+              <div className="mb-4">
+                <p className="text-sm mb-1">Meta diária de contatos</p>
+                <div className="w-full bg-muted rounded-full h-6 overflow-hidden mb-1">
+                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / metaDia) * 100, 100)}%` }}>
+                    {totalContatosHoje} / {metaDia}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {totalContatosHoje >= metaDia ? 'Meta batida!' : `${totalContatosHoje} de ${metaDia} — faltam ${metaDia - totalContatosHoje}`}
+                </p>
+              </div>
+            )}
+
+            {metaSemana > 0 && (
+              <div>
+                <p className="text-sm mb-1">Meta semanal de contatos</p>
+                <div className="w-full bg-muted rounded-full h-6 overflow-hidden mb-1">
+                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosSemana / metaSemana) * 100, 100)}%` }}>
+                    {totalContatosSemana} / {metaSemana}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {totalContatosSemana >= metaSemana ? 'Meta batida!' : `${totalContatosSemana} de ${metaSemana} — faltam ${metaSemana - totalContatosSemana}`}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {metaSemana > 0 && (
-        <div className="mb-4">
-          <p className="text-sm mb-1">Meta semanal de contatos</p>
-          <div className="w-full bg-muted rounded h-6 overflow-hidden mb-1">
-            <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosSemana / metaSemana) * 100, 100)}%` }}>
-              {totalContatosSemana} / {metaSemana}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Novo contato prospectado</h2>
+          <form action={novoContato} className="flex gap-2 items-center flex-wrap">
+            <TelefoneClienteBusca />
+            <Select name="canal" aria-label="Canal" className="w-40" defaultValue="">
+              <option value="">Canal (opcional)</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="indicacao">Indicação</option>
+              <option value="rua">Na rua</option>
+              <option value="redes_sociais">Redes sociais</option>
+              <option value="outro">Outro</option>
+            </Select>
+            <label className="text-sm flex items-center gap-1">
+              <input type="checkbox" name="oferta_corte_gratis" /> Ofereci corte grátis + consultoria
+            </label>
+            <Button type="submit">+ Novo contato prospectado</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
+          {pendentes?.map((p) => (
+            <div key={p.id} className="flex justify-between items-center border-b py-2 last:border-b-0">
+              <span>{p.nome} · {p.telefone} · {p.canal ?? 'sem canal'}{p.oferta_corte_gratis && ' · corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
+              <ProspeccaoStatusForm prospeccaoId={p.id} statusAtual={p.status} />
             </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {totalContatosSemana >= metaSemana ? 'Meta batida!' : `${totalContatosSemana} de ${metaSemana} — faltam ${metaSemana - totalContatosSemana}`}
-          </p>
-        </div>
-      )}
+          ))}
+          {(pendentes?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Nenhuma prospecção pendente.</p>}
+        </CardContent>
+      </Card>
 
-      <form action={novoContato} className="flex gap-2 items-center mt-4 flex-wrap">
-        <TelefoneClienteBusca />
-        <select name="canal" className="border rounded px-2 py-1 bg-input">
-          <option value="">Canal (opcional)</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="indicacao">Indicação</option>
-          <option value="rua">Na rua</option>
-          <option value="redes_sociais">Redes sociais</option>
-          <option value="outro">Outro</option>
-        </select>
-        <label className="text-sm flex items-center gap-1">
-          <input type="checkbox" name="oferta_corte_gratis" /> Ofereci corte grátis + consultoria
-        </label>
-        <Button type="submit">+ Novo contato prospectado</Button>
-      </form>
-
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
-      {pendentes?.map((p) => (
-        <div key={p.id} className="flex justify-between items-center border-b py-2">
-          <span>{p.nome} · {p.telefone} · {p.canal ?? 'sem canal'}{p.oferta_corte_gratis && ' · corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
-          <ProspeccaoStatusForm prospeccaoId={p.id} statusAtual={p.status} />
-        </div>
-      ))}
-
-      <h2 className="font-heading text-lg font-semibold mt-6 mb-2">Conversão</h2>
-      <p>Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
-      <p>Taxa de conversão deste mês: {taxaMes}% ({finalizadosMes} finalizados de {totalMes} prospectados — os que ainda não agendaram/compareceram não entram nessa conta)</p>
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Conversão</h2>
+          <p className="text-sm">Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
+          <p className="text-xs text-muted-foreground mt-1">Taxa de conversão deste mês: {taxaMes}% ({finalizadosMes} finalizados de {totalMes} prospectados — os que ainda não agendaram/compareceram não entram nessa conta)</p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

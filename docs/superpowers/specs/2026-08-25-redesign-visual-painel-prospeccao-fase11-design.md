@@ -23,7 +23,7 @@ Sem protótipo do Claude Design pra essa página (o protótipo original da Fase 
 | `<h1>` "Prospecção" | Mantido como texto simples. |
 | Bloco "Meta diária de contatos" + bloco "Meta semanal de contatos" (dois `<div className="mb-4">` soltos) | Viram um único `Card` "Metas de prospecção", com as duas barras dentro (cada uma mantendo seu próprio título pequeno, texto de progresso e condicional `metaDia > 0`/`metaSemana > 0` — se nenhuma meta estiver configurada, o Card inteiro não aparece). Barras: `rounded` → `rounded-full`. |
 | `<form action={novoContato}>` (`flex gap-2 items-center mt-4 flex-wrap`) | Vira `Card` com título "Novo contato prospectado". `<select name="canal">` vira `Select` com `aria-label="Canal"` e largura `w-40`. Checkbox mantido nativo. `Button` mantido. |
-| "Pendentes de conversão (N)" + lista de `<div>` com `ProspeccaoStatusForm` | Vira `Card` com título "Pendentes de conversão (N)" (o contador continua no título). Linhas mantidas (`flex justify-between items-center border-b py-2`, com `last:border-b-0`). |
+| "Pendentes de conversão (N)" + lista de `<div>` com `ProspeccaoStatusForm` | Vira `Card` com título "Pendentes de conversão (N)" (o contador continua no título). Linhas mantidas (`flex justify-between items-center border-b py-2`, com `last:border-b-0`). Ganha uma mensagem de estado vazio ("Nenhuma prospecção pendente.") quando a lista está vazia — aplicando de saída a lição da Fase 8 (Cards vazios sem mensagem parecem quebrados), em vez de esperar a revisão final apontar. |
 | "Conversão" (2 `<p>`) | Vira `Card` com título "Conversão", mesmo texto (`Convertidos hoje: N`, `Taxa de conversão deste mês: N%...`). |
 
 ## `TelefoneClienteBusca` (`src/components/telefone-cliente-busca.tsx`)

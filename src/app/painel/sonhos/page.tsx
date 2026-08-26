@@ -1,5 +1,6 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SonhoRow } from '@/components/sonho-row'
@@ -54,12 +55,17 @@ export default async function SonhosPage() {
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Sonhos</h1>
 
-      <form action={criarSonho} className="flex gap-2 mb-6 flex-wrap items-center">
-        <Input name="nome" placeholder="Nome do sonho" className="w-40" required />
-        <Input name="valor_alvo" type="number" step="0.01" min="0.01" placeholder="Valor-alvo" className="w-32" required />
-        <Input name="percentual_comissao" type="number" step="0.01" min="0.01" max="100" placeholder="% da comissão" className="w-32" required />
-        <Button type="submit">+ Novo sonho</Button>
-      </form>
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Novo sonho</h2>
+          <form action={criarSonho} className="flex gap-2 flex-wrap items-center">
+            <Input name="nome" placeholder="Nome do sonho" className="w-40" required />
+            <Input name="valor_alvo" type="number" step="0.01" min="0.01" placeholder="Valor-alvo" className="w-32" required />
+            <Input name="percentual_comissao" type="number" step="0.01" min="0.01" max="100" placeholder="% da comissão" className="w-32" required />
+            <Button type="submit">+ Novo sonho</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {sonhosComProgresso.map(({ sonho, valorAcumulado }) => (
         <SonhoRow key={sonho.id} sonho={sonho} valorAcumulado={valorAcumulado} />

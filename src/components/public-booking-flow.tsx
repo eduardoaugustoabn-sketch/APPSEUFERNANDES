@@ -11,8 +11,8 @@ import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number }
 type Barbeiro = { id: string; nome: string }
 
-const CHIP_BASE = 'rounded-lg px-3 py-1.5 text-sm transition-colors'
-const CHIP_SELECIONADO = 'border border-primary bg-primary text-primary-foreground font-semibold'
+const CHIP_BASE = 'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors'
+const CHIP_SELECIONADO = 'border border-primary bg-primary text-primary-foreground'
 const CHIP_PADRAO = 'border border-input bg-input-bg hover:border-ring'
 
 export function PublicBookingFlow({
@@ -119,7 +119,9 @@ export function PublicBookingFlow({
               {servicos.map((s) => (
                 <button
                   key={s.id}
+                  type="button"
                   onClick={() => selecionarServico(s)}
+                  aria-pressed={servico?.id === s.id}
                   className={`${CHIP_BASE} ${servico?.id === s.id ? CHIP_SELECIONADO : CHIP_PADRAO}`}
                 >
                   {s.nome} ({s.duracao_minutos}min · R${s.preco})
@@ -134,7 +136,9 @@ export function PublicBookingFlow({
               {barbeiros.map((b) => (
                 <button
                   key={b.id}
+                  type="button"
                   onClick={() => selecionarBarbeiro(b)}
+                  aria-pressed={barbeiro?.id === b.id}
                   className={`${CHIP_BASE} ${barbeiro?.id === b.id ? CHIP_SELECIONADO : CHIP_PADRAO}`}
                 >
                   {b.nome}
@@ -150,7 +154,9 @@ export function PublicBookingFlow({
                 {horarios.map((h) => (
                   <button
                     key={h.hora_inicio}
+                    type="button"
                     onClick={() => setHorario(h.hora_inicio)}
+                    aria-pressed={horario === h.hora_inicio}
                     className={`${CHIP_BASE} ${horario === h.hora_inicio ? CHIP_SELECIONADO : CHIP_PADRAO}`}
                   >
                     {h.hora_inicio}

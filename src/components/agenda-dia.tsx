@@ -9,6 +9,7 @@ import { AgendarSlotForm } from './agendar-slot-form'
 import { RemarcarForm } from './remarcar-form'
 import { AtenderAgoraForm } from './atender-agora-form'
 import { BloqueioForm } from './bloqueio-form'
+import { gerarSlots, statusDoSlot } from '@/lib/agenda-slots'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
@@ -25,21 +26,6 @@ type AgendamentoDia = {
 
 type Bloqueio = { id: string; hora_inicio: string; hora_fim: string; motivo: string | null }
 type Expediente = { hora_inicio: string; hora_fim: string }
-
-const PASSO_MINUTOS = 60
-
-function gerarSlots(horaInicio: string, horaFim: string): string[] {
-  const slots: string[] = []
-  let atual = horaInicio.slice(0, 5)
-  const fim = horaFim.slice(0, 5)
-  while (atual < fim) {
-    slots.push(`${atual}:00`)
-    const [h, m] = atual.split(':').map(Number)
-    const totalMin = h * 60 + m + PASSO_MINUTOS
-    atual = `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
-  }
-  return slots
-}
 
 export function AgendaDia({
   barbeariaId, membroId, servicos, produtos,
@@ -79,17 +65,9 @@ export function AgendaDia({
   const slots = expedientes.flatMap((e) => gerarSlots(e.hora_inicio, e.hora_fim))
   const slotsUnicos = Array.from(new Set(slots)).sort()
 
-  function statusDoSlot(slot: string) {
-    const bloqueio = bloqueios.find((b) => b.hora_inicio.slice(0, 5) <= slot.slice(0, 5) && slot.slice(0, 5) < b.hora_fim.slice(0, 5))
-    if (bloqueio) return { tipo: 'bloqueado' as const, bloqueio }
-    const doSlot = agendamentos.filter((a) => a.hora_inicio.slice(0, 5) <= slot.slice(0, 5) && slot.slice(0, 5) < a.hora_fim.slice(0, 5))
-    if (doSlot.length > 0) return { tipo: 'ocupado' as const, agendamentos: doSlot }
-    return { tipo: 'livre' as const }
-  }
-
-  const livresCount = slotsUnicos.filter((s) => statusDoSlot(s).tipo === 'livre').length
-  const agendadosCount = slotsUnicos.filter((s) => statusDoSlot(s).tipo === 'ocupado').length
-  const bloqueadosCount = slotsUnicos.filter((s) => statusDoSlot(s).tipo === 'bloqueado').length
+  const livresCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'livre').length
+  const agendadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'ocupado').length
+  const bloqueadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'bloqueado').length
   const previstoNoDia = agendamentos.reduce((s, a) => s + (a.servicos?.preco ?? 0), 0)
 
   function fecharPaineis() {
@@ -100,7 +78,7 @@ export function AgendaDia({
   }
 
   function clicarSlot(slot: string) {
-    const info = statusDoSlot(slot)
+    const info = statusDoSlot(slot, bloqueios, agendamentos)
     if (info.tipo === 'bloqueado') return
     fecharPaineis()
     setSlotParaAgendar(slot)
@@ -197,7 +175,7 @@ export function AgendaDia({
               {!carregando && slotsUnicos.length === 0 && <p className="text-sm text-muted-foreground">Sem expediente cadastrado para este dia.</p>}
 
               {!carregando && slotsUnicos.map((slot) => {
-                const info = statusDoSlot(slot)
+                const info = statusDoSlot(slot, bloqueios, agendamentos)
                 const rotulo = slot.slice(0, 5)
 
                 if (info.tipo === 'bloqueado') {

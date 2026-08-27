@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button'
 import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 export function EditarClienteForm({
-  clienteId, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual,
+  clienteId, cpfAtual, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual,
 }: {
   clienteId: string
+  cpfAtual: string | null
   bairroAtual: string | null
   cidadeAtual: string | null
   observacaoAtual: string | null
@@ -19,6 +20,7 @@ export function EditarClienteForm({
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
+  const [cpf, setCpf] = useState(cpfAtual ?? '')
   const [bairro, setBairro] = useState(bairroAtual ?? '')
   const [cidade, setCidade] = useState(cidadeAtual ?? '')
   const [observacao, setObservacao] = useState(observacaoAtual ?? '')
@@ -31,6 +33,7 @@ export function EditarClienteForm({
     const { data, error } = await supabase
       .from('clientes')
       .update({
+        cpf: cpf.trim() || null,
         bairro: bairro.trim() || null, cidade: cidade.trim() || null, observacao: observacao.trim() || null,
         categoria_origem: categoriaOrigem || null,
       })
@@ -50,6 +53,7 @@ export function EditarClienteForm({
   }
 
   function cancelar() {
+    setCpf(cpfAtual ?? '')
     setBairro(bairroAtual ?? '')
     setCidade(cidadeAtual ?? '')
     setObservacao(observacaoAtual ?? '')
@@ -65,7 +69,7 @@ export function EditarClienteForm({
         {observacaoAtual && <p className="text-sm text-muted-foreground mb-2">Observação: {observacaoAtual}</p>}
         {categoriaLabel && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaLabel}</p>}
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">
-          Editar bairro/cidade/observação/origem
+          Editar CPF/bairro/cidade/observação/origem
         </button>
       </div>
     )
@@ -73,6 +77,7 @@ export function EditarClienteForm({
 
   return (
     <div className="flex flex-col gap-2 border rounded-lg p-3">
+      <Input placeholder="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
       <Input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
       <Input placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
       <textarea

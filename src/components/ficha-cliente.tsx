@@ -9,7 +9,7 @@ type VendaHistorico = { data: string; preco_unitario: number; quantidade: number
 export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const supabase = await getServerSupabaseClient()
 
-  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, data_nascimento, bairro, cidade, observacao, categoria_origem').eq('id', clienteId).single()
+  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, cpf, data_nascimento, bairro, cidade, observacao, categoria_origem').eq('id', clienteId).single()
   const { data: ranking } = await supabase.rpc('ranking_cliente', { p_cliente_id: clienteId }) as { data: Ranking[] | null }
   const { data: atendimentos } = await supabase.from('atendimentos').select('data, preco, servicos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: AtendimentoHistorico[] | null }
   const { data: vendas } = await supabase.from('vendas_produtos').select('data, preco_unitario, quantidade, produtos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: VendaHistorico[] | null }
@@ -41,6 +41,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
           <p className="font-heading text-lg font-semibold mt-3">
             {cliente?.nome} · {cliente?.telefone}
             {cliente?.data_nascimento ? ` · nasc. ${new Date(cliente.data_nascimento).toLocaleDateString()}` : ''}
+            {cliente?.cpf ? ` · CPF ${cliente.cpf}` : ''}
             {cliente?.bairro ? ` · ${cliente.bairro}` : ''}
             {cliente?.cidade ? ` · ${cliente.cidade}` : ''}
           </p>
@@ -48,6 +49,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
 
           <EditarClienteForm
             clienteId={clienteId}
+            cpfAtual={cliente?.cpf ?? null}
             bairroAtual={cliente?.bairro ?? null}
             cidadeAtual={cliente?.cidade ?? null}
             observacaoAtual={cliente?.observacao ?? null}

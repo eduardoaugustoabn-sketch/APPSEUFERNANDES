@@ -18,13 +18,13 @@ export function PublicRouteError({ error, retry }: { error: Error & { digest?: s
           <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">Barbearia</span>
         </div>
       </div>
-      <Card className="w-full max-w-sm">
+      <Card role="alert" className="w-full max-w-sm">
         <CardContent className="p-6 flex flex-col items-center text-center gap-3">
           <h1 className="font-heading text-lg font-bold">Algo deu errado</h1>
           <p className="text-sm text-muted-foreground">Tente novamente em alguns instantes.</p>
           <Button onClick={() => retry()}>Tentar de novo</Button>
           {error.digest && (
-            <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">{error.digest}</p>
+            <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">Código do erro: {error.digest}</p>
           )}
         </CardContent>
       </Card>

@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ['400', '500'],
 })
 
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <html lang="pt-BR" className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col items-center justify-center gap-8 px-4">
@@ -28,11 +28,12 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">Barbearia</span>
           </div>
         </div>
+        <title>Seu Fernandes</title>
         <Card className="w-full max-w-sm">
           <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-            <p className="font-heading text-lg font-bold">Algo deu errado</p>
+            <h1 className="font-heading text-lg font-bold">Algo deu errado</h1>
             <p className="text-sm text-muted-foreground">Tente novamente em alguns instantes.</p>
-            <Button onClick={reset}>Tentar de novo</Button>
+            <Button onClick={() => retry()}>Tentar de novo</Button>
           </CardContent>
         </Card>
       </body>

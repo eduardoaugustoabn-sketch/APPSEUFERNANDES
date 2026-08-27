@@ -13,7 +13,7 @@ export default function NotFound() {
       </div>
       <Card className="w-full max-w-sm">
         <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-          <p className="font-heading text-lg font-bold">Página não encontrada</p>
+          <h1 className="font-heading text-lg font-bold">Página não encontrada</h1>
           <p className="text-sm text-muted-foreground">O link que você acessou não existe ou pode ter mudado.</p>
           <Link href="/" className="text-sm text-primary underline">Voltar para o início</Link>
         </CardContent>

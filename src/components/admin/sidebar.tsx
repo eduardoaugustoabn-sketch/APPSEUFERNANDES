@@ -13,6 +13,12 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <rect x="14" y="11" width="7" height="10" rx="2" />
     </>
   ),
+  '/admin/agenda': (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
   '/admin/servicos': (
     <>
       <circle cx="6" cy="6" r="2.6" />

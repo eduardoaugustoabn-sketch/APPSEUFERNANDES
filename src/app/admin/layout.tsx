@@ -4,6 +4,7 @@ import { AdminSidebar } from '@/components/admin/sidebar'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Visão geral' },
+  { href: '/admin/agenda', label: 'Agenda' },
   { href: '/admin/servicos', label: 'Serviços' },
   { href: '/admin/produtos', label: 'Produtos' },
   { href: '/admin/planos-carreira', label: 'Planos de carreira' },

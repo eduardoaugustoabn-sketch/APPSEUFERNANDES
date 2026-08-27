@@ -10,11 +10,14 @@ export function RouteError({ error, retry }: { error: Error & { digest?: string 
   }, [error])
 
   return (
-    <Card>
+    <Card role="alert">
       <CardContent className="p-6 flex flex-col items-center text-center gap-3">
         <h1 className="font-heading text-lg font-bold">Algo deu errado nesta página</h1>
         <p className="text-sm text-muted-foreground">Tente novamente em alguns instantes.</p>
         <Button onClick={() => retry()}>Tentar de novo</Button>
+        {error.digest && (
+          <p className="font-mono text-[10px] tracking-[0.12em] text-muted-foreground">{error.digest}</p>
+        )}
       </CardContent>
     </Card>
   )

@@ -4,10 +4,16 @@ import { useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number }
 type Barbeiro = { id: string; nome: string }
+
+const CHIP_BASE = 'rounded-lg px-3 py-1.5 text-sm transition-colors'
+const CHIP_SELECIONADO = 'border border-primary bg-primary text-primary-foreground font-semibold'
+const CHIP_PADRAO = 'border border-input bg-input-bg hover:border-ring'
 
 export function PublicBookingFlow({
   barbearia, servicos, barbeiros,
@@ -75,73 +81,105 @@ export function PublicBookingFlow({
     setConfirmado(true)
   }
 
+  const cabecalho = (
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-[46px] h-[46px] rounded-[14px] bg-primary flex items-center justify-center font-extrabold text-lg text-primary-foreground">SF</div>
+      <div className="flex flex-col items-center leading-tight">
+        <span className="text-lg font-bold tracking-tight">{barbearia.nome}</span>
+        <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">Barbearia</span>
+      </div>
+    </div>
+  )
+
   if (confirmado) {
-    return <p className="p-6">✓ Agendamento confirmado! {servico?.nome} com {barbeiro?.nome} às {horario}.</p>
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4">
+        {cabecalho}
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+            <div className="w-[34px] h-[34px] rounded-[11px] bg-primary flex items-center justify-center">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4"><path d="M5 13l4 4 10-10" /></svg>
+            </div>
+            <p>Agendamento confirmado! {servico?.nome} com {barbeiro?.nome} às {horario}.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="font-heading text-2xl font-bold mb-4">{barbearia.nome}</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-10">
+      {cabecalho}
 
-      <p className="font-heading text-base font-semibold mt-4">1. Escolha o serviço</p>
-      <div className="flex gap-2 flex-wrap">
-        {servicos.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => selecionarServico(s)}
-            className={`border rounded px-3 py-1 ${servico?.id === s.id ? 'bg-primary text-primary-foreground' : ''}`}
-          >
-            {s.nome} ({s.duracao_minutos}min · R${s.preco})
-          </button>
-        ))}
-      </div>
-
-      <p className="font-heading text-base font-semibold mt-4">2. Escolha o barbeiro</p>
-      <div className="flex gap-2 flex-wrap">
-        {barbeiros.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => selecionarBarbeiro(b)}
-            className={`border rounded px-3 py-1 ${barbeiro?.id === b.id ? 'bg-primary text-primary-foreground' : ''}`}
-          >
-            {b.nome}
-          </button>
-        ))}
-      </div>
-
-      {horarios.length > 0 && (
-        <>
-          <p className="font-heading text-base font-semibold mt-4">3. Escolha o horário</p>
-          <div className="flex gap-2 flex-wrap">
-            {horarios.map((h) => (
-              <button key={h.hora_inicio} onClick={() => setHorario(h.hora_inicio)} className="border rounded px-3 py-1">
-                {h.hora_inicio}
-              </button>
-            ))}
+      <Card className="w-full max-w-md">
+        <CardContent className="p-6 flex flex-col gap-6">
+          <div>
+            <p className="font-heading text-base font-bold mb-3">1. Escolha o serviço</p>
+            <div className="flex gap-2 flex-wrap">
+              {servicos.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => selecionarServico(s)}
+                  className={`${CHIP_BASE} ${servico?.id === s.id ? CHIP_SELECIONADO : CHIP_PADRAO}`}
+                >
+                  {s.nome} ({s.duracao_minutos}min · R${s.preco})
+                </button>
+              ))}
+            </div>
           </div>
-        </>
-      )}
 
-      {horario && (
-        <>
-          <p className="font-heading text-base font-semibold mt-4">4. Seus dados</p>
-          <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mb-2" />
-          <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} className="mb-2" />
-          <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} className="mb-2" />
-          <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="mb-2" />
-          <select
-            value={categoriaOrigem}
-            onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}
-            className="border rounded px-2 py-1 w-full"
-          >
-            <option value="">Como conheceu a barbearia?</option>
-            {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          {reconhecimento && <p className="text-sm text-primary mt-2">{reconhecimento}</p>}
-          {erro && <p className="text-sm text-destructive mt-2">{erro}</p>}
-          <Button onClick={confirmar} className="w-full mt-4">Confirmar agendamento</Button>
-        </>
-      )}
+          <div>
+            <p className="font-heading text-base font-bold mb-3">2. Escolha o barbeiro</p>
+            <div className="flex gap-2 flex-wrap">
+              {barbeiros.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => selecionarBarbeiro(b)}
+                  className={`${CHIP_BASE} ${barbeiro?.id === b.id ? CHIP_SELECIONADO : CHIP_PADRAO}`}
+                >
+                  {b.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {horarios.length > 0 && (
+            <div>
+              <p className="font-heading text-base font-bold mb-3">3. Escolha o horário</p>
+              <div className="flex gap-2 flex-wrap">
+                {horarios.map((h) => (
+                  <button
+                    key={h.hora_inicio}
+                    onClick={() => setHorario(h.hora_inicio)}
+                    className={`${CHIP_BASE} ${horario === h.hora_inicio ? CHIP_SELECIONADO : CHIP_PADRAO}`}
+                  >
+                    {h.hora_inicio}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {horario && (
+            <div>
+              <p className="font-heading text-base font-bold mb-3">4. Seus dados</p>
+              <div className="flex flex-col gap-3">
+                <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+                <Input placeholder="Telefone" value={telefone} onBlur={(e) => verificarCliente(e.target.value)} onChange={(e) => setTelefone(e.target.value)} />
+                <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} />
+                <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+                <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')} aria-label="Como conheceu a barbearia?">
+                  <option value="">Como conheceu a barbearia?</option>
+                  {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </Select>
+                {reconhecimento && <p className="text-sm text-primary">{reconhecimento}</p>}
+                {erro && <p className="text-sm text-destructive">{erro}</p>}
+                <Button onClick={confirmar} className="w-full">Confirmar agendamento</Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

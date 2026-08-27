@@ -8,7 +8,7 @@ export default async function PainelLojaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('id, barbearia_id').eq('user_id', user!.id).single()
 
-  const { data: produtos } = await supabase.from('produtos_loja').select('*').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
+  const { data: produtos } = await supabase.from('produtos_loja').select('id, nome, categoria, preco_venda, quantidade_estoque, ativo').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
   const { data: vendas } = await supabase
     .from('vendas_loja')
     .select('data, quantidade, preco_unitario, comissao_valor, clientes(nome), produtos_loja(nome)')

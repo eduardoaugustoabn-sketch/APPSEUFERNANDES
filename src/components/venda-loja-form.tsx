@@ -21,7 +21,11 @@ export function VendaLojaForm({
   onSalvo?: () => void
 }) {
   const router = useRouter()
-  const [cliente, setCliente] = useState<{ nome: string; telefone: string; categoriaOrigem?: CategoriaOrigem; reconhecido?: boolean } | null>(null)
+  const [cliente, setCliente] = useState<{
+    nome: string; telefone: string
+    dataNascimento?: string; bairro?: string; cidade?: string
+    categoriaOrigem?: CategoriaOrigem; reconhecido?: boolean
+  } | null>(null)
   const [produtoId, setProdutoId] = useState('')
   const [quantidade, setQuantidade] = useState(1)
   const [mensagem, setMensagem] = useState<string | null>(null)
@@ -39,6 +43,8 @@ export function VendaLojaForm({
 
     const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
       p_barbearia_id: barbeariaId, p_nome: cliente.nome, p_telefone: cliente.telefone,
+      p_data_nascimento: cliente.dataNascimento ?? null,
+      p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
       p_categoria_origem: cliente.categoriaOrigem ?? null,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }

@@ -1,5 +1,5 @@
 begin;
-select plan(4);
+select plan(6);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -42,6 +42,15 @@ select is(
   'stock is decremented by the quantity sold'
 );
 
+-- João tenta vender em nome do Marcos (outro barbeiro) — RLS deve bloquear.
+select throws_ok(
+  $$insert into vendas_loja (barbearia_id, membro_id, cliente_id, produto_id, quantidade, preco_unitario) values
+    ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000003', 'c1000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', 1, 100)$$,
+  '42501',
+  'new row violates row-level security policy for table "vendas_loja"',
+  'barbeiro cannot insert a venda_loja on behalf of a DIFFERENT barbeiro'
+);
+
 -- Admin vende em nome do Marcos (outro barbeiro).
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-000000000002', true);
@@ -59,6 +68,12 @@ select is(
   (select comissao_valor from vendas_loja where membro_id = 'a1000000-0000-0000-0000-000000000003'),
   15.00,
   'commission on the admin-recorded sale is credited using the TARGET barbeiro (Marcos) plano, not the admin'
+);
+
+select is(
+  (select quantidade_estoque from produtos_loja where id = 'e1000000-0000-0000-0000-000000000001'),
+  7,
+  'stock is decremented again by the admin-recorded sale (8 -> 7)'
 );
 
 select * from finish();

@@ -62,12 +62,11 @@ export function AgendaDia({
 
   useEffect(() => { carregar() }, [carregar])
 
-  const slots = expedientes.flatMap((e) => gerarSlots(e.hora_inicio, e.hora_fim))
-  const slotsUnicos = Array.from(new Set(slots)).sort()
+  const slotsUnicos = expedientes.length > 0 ? gerarSlots('00:00', '24:00') : []
 
-  const livresCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'livre').length
-  const agendadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'ocupado').length
-  const bloqueadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos).tipo === 'bloqueado').length
+  const livresCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos, expedientes).tipo === 'livre').length
+  const agendadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos, expedientes).tipo === 'ocupado').length
+  const bloqueadosCount = slotsUnicos.filter((s) => statusDoSlot(s, bloqueios, agendamentos, expedientes).tipo === 'bloqueado').length
   const previstoNoDia = agendamentos.reduce((s, a) => s + (a.servicos?.preco ?? 0), 0)
 
   function fecharPaineis() {
@@ -78,8 +77,8 @@ export function AgendaDia({
   }
 
   function clicarSlot(slot: string) {
-    const info = statusDoSlot(slot, bloqueios, agendamentos)
-    if (info.tipo === 'bloqueado') return
+    const info = statusDoSlot(slot, bloqueios, agendamentos, expedientes)
+    if (info.tipo === 'bloqueado' || info.tipo === 'fora_do_expediente') return
     fecharPaineis()
     setSlotParaAgendar(slot)
   }
@@ -175,8 +174,18 @@ export function AgendaDia({
               {!carregando && slotsUnicos.length === 0 && <p className="text-sm text-muted-foreground">Sem expediente cadastrado para este dia.</p>}
 
               {!carregando && slotsUnicos.map((slot) => {
-                const info = statusDoSlot(slot, bloqueios, agendamentos)
+                const info = statusDoSlot(slot, bloqueios, agendamentos, expedientes)
                 const rotulo = slot.slice(0, 5)
+
+                if (info.tipo === 'fora_do_expediente') {
+                  return (
+                    <div key={slot} className="flex items-center gap-4 px-4 py-3 opacity-40">
+                      <span className="font-mono text-[13px] text-muted-foreground w-11 shrink-0">{rotulo}</span>
+                      <span className="w-2 h-2 rounded-sm bg-muted-foreground/15 shrink-0" />
+                      <span className="text-[13.5px] text-muted-foreground">Fora do expediente</span>
+                    </div>
+                  )
+                }
 
                 if (info.tipo === 'bloqueado') {
                   return (

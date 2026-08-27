@@ -66,7 +66,7 @@ export function AgendaTodosBarbeiros({ barbeiros }: { barbeiros: Barbeiro[] }) {
           const expedienteBarbeiro = expedientes.filter((e) => e.membro_id === barbeiro.id)
           const bloqueiosBarbeiro = bloqueios.filter((b) => b.membro_id === barbeiro.id)
           const agendamentosBarbeiro = agendamentos.filter((a) => a.membro_id === barbeiro.id)
-          const slots = Array.from(new Set(expedienteBarbeiro.flatMap((e) => gerarSlots(e.hora_inicio, e.hora_fim)))).sort()
+          const slots = expedienteBarbeiro.length > 0 ? gerarSlots('00:00', '24:00') : []
 
           return (
             <Card key={barbeiro.id}>
@@ -76,8 +76,18 @@ export function AgendaTodosBarbeiros({ barbeiros }: { barbeiros: Barbeiro[] }) {
                   {carregando && <p className="text-sm text-muted-foreground">Carregando...</p>}
                   {!carregando && slots.length === 0 && <p className="text-sm text-muted-foreground">Sem expediente cadastrado para este dia.</p>}
                   {!carregando && slots.map((slot) => {
-                    const info = statusDoSlot(slot, bloqueiosBarbeiro, agendamentosBarbeiro)
+                    const info = statusDoSlot(slot, bloqueiosBarbeiro, agendamentosBarbeiro, expedienteBarbeiro)
                     const rotulo = slot.slice(0, 5)
+
+                    if (info.tipo === 'fora_do_expediente') {
+                      return (
+                        <div key={slot} className="flex items-center gap-3 px-3 py-2 opacity-40">
+                          <span className="font-mono text-[12px] text-muted-foreground w-10 shrink-0">{rotulo}</span>
+                          <span className="w-2 h-2 rounded-sm bg-muted-foreground/15 shrink-0" />
+                          <span className="text-[13px] text-muted-foreground">Fora do expediente</span>
+                        </div>
+                      )
+                    }
 
                     if (info.tipo === 'bloqueado') {
                       return (

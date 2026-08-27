@@ -15,6 +15,7 @@ Esta é a **Fase 16**: `src/components/public-route-error.tsx` (compartilhado) +
 - **`error.digest` visível desde o início** — lição da revisão final da Fase 15 (sem isso, um erro em produção não tem como ser rastreado no log do servidor), aplicada de saída em vez de esperar a revisão apontar de novo.
 - **Cabeçalho "SF" duplicado inline** (mesma decisão já tomada 3 vezes: `/login`, `public-booking-flow.tsx`, `not-found.tsx`/`global-error.tsx`) — continua sendo pouco código pra justificar extrair agora, e tocar nesses arquivos já existentes pra compartilhar um componente novo estaria fora do escopo desta fase (que é só adicionar os `error.tsx` que faltam).
 - **Nenhuma lógica de negócio muda.**
+- **`Seu Fernandes` continua fixo no cabeçalho, inclusive na rota `/[barbeariaSlug]`** — decisão confirmada com o usuário na revisão final: o app é de uma barbearia só, não multi-tenant de verdade (a tabela `barbearias`/slug existe na estrutura, mas só "Seu Fernandes" usa o sistema na prática). O nome dinâmico (`barbearia.nome`) que `public-booking-flow.tsx` mostra na tela normal não precisa se refletir na tela de erro.
 
 ## `src/components/public-route-error.tsx`
 

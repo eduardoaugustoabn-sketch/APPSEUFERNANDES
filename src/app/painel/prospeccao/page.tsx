@@ -56,15 +56,15 @@ export default async function ProspeccaoPage() {
   inicioSemana.setDate(agora.getDate() - diasDesdeSegunda)
   const inicioSemanaStr = inicioSemana.toISOString().slice(0, 10)
 
-  const { data: contatosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).eq('data', hoje)
-  const { data: contatosSemana } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('data', inicioSemanaStr)
+  const { data: agendadosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('agendado_em', `${hoje}T00:00:00`)
+  const { data: agendadosSemana } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('agendado_em', `${inicioSemanaStr}T00:00:00`)
   const { data: convertidosHoje } = await supabase.from('prospeccoes').select('id').eq('membro_id', membro!.id).gte('convertido_em', `${hoje}T00:00:00`)
   const { data: pendentes } = await supabase.from('prospeccoes').select('*').eq('membro_id', membro!.id).in('status', ['novo_lead', 'em_contato', 'interessado']).order('criado_em')
   const { data: contatosMes } = await supabase.from('prospeccoes').select('status').eq('membro_id', membro!.id).gte('data', inicioMes)
 
-  const totalContatosHoje = contatosHoje?.length ?? 0
+  const totalAgendadosHoje = agendadosHoje?.length ?? 0
   const metaDia = membro!.meta_prospeccao_dia ?? 0
-  const totalContatosSemana = contatosSemana?.length ?? 0
+  const totalAgendadosSemana = agendadosSemana?.length ?? 0
   const metaSemana = membro!.meta_prospeccao_semana ?? 0
   const totalMes = contatosMes?.length ?? 0
   const convertidosMes = contatosMes?.filter((c) => c.status === 'convertido').length ?? 0
@@ -82,28 +82,28 @@ export default async function ProspeccaoPage() {
             <h2 className="font-heading text-base font-bold mb-5">Metas de prospecção</h2>
             {metaDia > 0 && (
               <div className="mb-4">
-                <p className="text-sm mb-1">Meta diária de contatos</p>
+                <p className="text-sm mb-1">Meta diária de agendados</p>
                 <div className="w-full bg-muted rounded-full h-6 overflow-hidden mb-1">
-                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosHoje / metaDia) * 100, 100)}%` }}>
-                    {totalContatosHoje} / {metaDia}
+                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalAgendadosHoje / metaDia) * 100, 100)}%` }}>
+                    {totalAgendadosHoje} / {metaDia}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {totalContatosHoje >= metaDia ? 'Meta batida!' : `${totalContatosHoje} de ${metaDia} — faltam ${metaDia - totalContatosHoje}`}
+                  {totalAgendadosHoje >= metaDia ? 'Meta batida!' : `${totalAgendadosHoje} de ${metaDia} — faltam ${metaDia - totalAgendadosHoje}`}
                 </p>
               </div>
             )}
 
             {metaSemana > 0 && (
               <div>
-                <p className="text-sm mb-1">Meta semanal de contatos</p>
+                <p className="text-sm mb-1">Meta semanal de agendados</p>
                 <div className="w-full bg-muted rounded-full h-6 overflow-hidden mb-1">
-                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalContatosSemana / metaSemana) * 100, 100)}%` }}>
-                    {totalContatosSemana} / {metaSemana}
+                  <div className="bg-primary h-full text-primary-foreground text-xs flex items-center justify-center" style={{ width: `${Math.min((totalAgendadosSemana / metaSemana) * 100, 100)}%` }}>
+                    {totalAgendadosSemana} / {metaSemana}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {totalContatosSemana >= metaSemana ? 'Meta batida!' : `${totalContatosSemana} de ${metaSemana} — faltam ${metaSemana - totalContatosSemana}`}
+                  {totalAgendadosSemana >= metaSemana ? 'Meta batida!' : `${totalAgendadosSemana} de ${metaSemana} — faltam ${metaSemana - totalAgendadosSemana}`}
                 </p>
               </div>
             )}

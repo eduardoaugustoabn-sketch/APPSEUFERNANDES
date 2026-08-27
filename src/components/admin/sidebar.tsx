@@ -33,6 +33,12 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M12 12v9" />
     </>
   ),
+  '/admin/loja': (
+    <>
+      <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
   '/admin/planos-carreira': (
     <>
       <path d="M3 17l5-5 4 4 8-9" />

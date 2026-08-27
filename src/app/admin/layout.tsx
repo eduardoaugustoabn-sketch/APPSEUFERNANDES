@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/admin/agenda', label: 'Agenda' },
   { href: '/admin/servicos', label: 'Serviços' },
   { href: '/admin/produtos', label: 'Produtos' },
+  { href: '/admin/loja', label: 'Loja' },
   { href: '/admin/planos-carreira', label: 'Planos de carreira' },
   { href: '/admin/barbeiros', label: 'Barbeiros' },
   { href: '/admin/ranking', label: 'Ranking' },

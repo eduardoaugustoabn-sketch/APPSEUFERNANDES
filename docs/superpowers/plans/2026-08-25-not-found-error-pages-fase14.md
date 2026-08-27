@@ -45,7 +45,7 @@ export default function NotFound() {
       </div>
       <Card className="w-full max-w-sm">
         <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-          <p className="font-heading text-lg font-bold">Página não encontrada</p>
+          <h1 className="font-heading text-lg font-bold">Página não encontrada</h1>
           <p className="text-sm text-muted-foreground">O link que você acessou não existe ou pode ter mudado.</p>
           <Link href="/" className="text-sm text-primary underline">Voltar para o início</Link>
         </CardContent>
@@ -103,7 +103,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ['400', '500'],
 })
 
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <html lang="pt-BR" className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col items-center justify-center gap-8 px-4">
@@ -114,11 +114,12 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">Barbearia</span>
           </div>
         </div>
+        <title>Seu Fernandes</title>
         <Card className="w-full max-w-sm">
           <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-            <p className="font-heading text-lg font-bold">Algo deu errado</p>
+            <h1 className="font-heading text-lg font-bold">Algo deu errado</h1>
             <p className="text-sm text-muted-foreground">Tente novamente em alguns instantes.</p>
-            <Button onClick={reset}>Tentar de novo</Button>
+            <Button onClick={() => retry()}>Tentar de novo</Button>
           </CardContent>
         </Card>
       </body>
@@ -128,6 +129,8 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
 ```
 
 Nota: o parâmetro `error` fica só na assinatura de tipo (não é desestruturado nem usado no corpo) — não exibimos detalhes técnicos do erro pro usuário final, e o Next.js exige essa forma de props pra esse arquivo especial mesmo quando `error` não é consumido.
+
+**Correção pós-revisão** (aplicada antes da task ser despachada de novo): a prop correta nesta versão do Next.js (16.3.0) é `retry`, não `reset` — ver a nota na spec pra explicação completa. `<title>` e os `<h1>` também foram adicionados.
 
 - [ ] **Step 2: Build**
 

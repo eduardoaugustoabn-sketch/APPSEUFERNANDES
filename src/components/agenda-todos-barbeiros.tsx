@@ -24,7 +24,7 @@ export function AgendaTodosBarbeiros({ barbeiros }: { barbeiros: Barbeiro[] }) {
   const [expedientes, setExpedientes] = useState<Expediente[]>([])
   const [bloqueios, setBloqueios] = useState<Bloqueio[]>([])
   const [agendamentos, setAgendamentos] = useState<AgendamentoDia[]>([])
-  const [carregando, setCarregando] = useState(false)
+  const [carregando, setCarregando] = useState(true)
 
   const carregar = useCallback(async () => {
     const barbeiroIds = barbeiros.map((b) => b.id)
@@ -52,7 +52,14 @@ export function AgendaTodosBarbeiros({ barbeiros }: { barbeiros: Barbeiro[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-auto" />
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-auto" />
+        <div className="flex gap-3.5 text-[11.5px] text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-primary" />Agendado</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-amber" />Bloqueado</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-muted-foreground/30" />Livre</span>
+        </div>
+      </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 items-start">
         {barbeiros.map((barbeiro) => {
@@ -86,12 +93,17 @@ export function AgendaTodosBarbeiros({ barbeiros }: { barbeiros: Barbeiro[] }) {
                       return (
                         <div key={slot} className="rounded-xl bg-muted px-3 py-2">
                           <span className="font-mono text-[12px] font-semibold block mb-1">{rotulo}</span>
-                          {info.agendamentos.map((a) => (
-                            <div key={a.id} className="flex items-center gap-2 py-1">
-                              <span className={`w-2 h-2 rounded-sm shrink-0 ${a.status === 'realizado' ? 'bg-primary' : a.status === 'nao_compareceu' ? 'bg-muted-foreground/30' : 'bg-amber'}`} />
-                              <span className="text-[13px] font-medium">{a.clientes?.nome ?? 'cliente'} · {a.servicos?.nome ?? ''}</span>
-                            </div>
-                          ))}
+                          {info.agendamentos.map((a) => {
+                            const eDesteSlot = a.hora_inicio.slice(0, 5) === slot.slice(0, 5)
+                            return (
+                              <div key={a.id} className="flex items-center gap-2 py-1">
+                                <span className={`w-2 h-2 rounded-sm shrink-0 ${a.status === 'realizado' ? 'bg-primary' : a.status === 'nao_compareceu' ? 'bg-muted-foreground/30' : 'bg-amber'}`} />
+                                <span className="text-[13px] font-medium">
+                                  {eDesteSlot ? `${a.clientes?.nome ?? 'cliente'} · ${a.servicos?.nome ?? ''}` : '↳ continua'}
+                                </span>
+                              </div>
+                            )
+                          })}
                         </div>
                       )
                     }

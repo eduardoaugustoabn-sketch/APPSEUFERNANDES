@@ -148,9 +148,25 @@ export default async function ProspeccaoPage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="font-heading text-base font-bold mb-5">Conversão</h2>
-          <p className="text-sm">Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">Taxa de conversão deste mês: {taxaMes}% ({finalizadosMes} finalizados de {totalMes} prospectados — os que ainda não agendaram/compareceram não entram nessa conta)</p>
+          <h2 className="font-heading text-base font-bold mb-5">Conversão de prospecção (mês)</h2>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4 mb-4">
+            <div>
+              <p className="font-mono text-[10px] tracking-[0.13em] uppercase text-muted-foreground">Contatos feitos</p>
+              <p className="text-2xl font-extrabold tracking-tight mt-1">{totalMes}</p>
+            </div>
+            <div>
+              <p className="font-mono text-[10px] tracking-[0.13em] uppercase text-muted-foreground">Viraram atendimento</p>
+              <p className="text-2xl font-extrabold tracking-tight mt-1 text-primary">{convertidosMes}</p>
+            </div>
+            <div>
+              <p className="font-mono text-[10px] tracking-[0.13em] uppercase text-muted-foreground">Taxa de conversão</p>
+              <p className="text-2xl font-extrabold tracking-tight mt-1">{taxaMes}%</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            De {finalizadosMes} contatos já finalizados este mês (que agendaram e compareceram, ou não), {convertidosMes} viraram atendimento — os que ainda não agendaram/compareceram não entram nessa conta.
+          </p>
+          <p className="text-sm mt-3">Convertidos hoje: {convertidosHoje?.length ?? 0}</p>
         </CardContent>
       </Card>
     </div>

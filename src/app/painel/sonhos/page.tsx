@@ -39,15 +39,33 @@ export default async function SonhosPage() {
         p_membro_id: membro!.id,
         p_data_inicio: sonho.criado_em,
       })
+      const comissaoBruta = Number(comissao ?? 0)
       const valorAcumulado = Math.min(
-        Number(comissao ?? 0) * (sonho.percentual_comissao / 100),
+        comissaoBruta * (sonho.percentual_comissao / 100),
         sonho.valor_alvo
       )
       if (!sonho.concluido && valorAcumulado >= sonho.valor_alvo) {
         await supabase.from('sonhos').update({ concluido: true }).eq('id', sonho.id)
         sonho.concluido = true
       }
-      return { sonho, valorAcumulado }
+
+      // Estima quantos atendimentos faltam usando a própria média do
+      // barbeiro no mesmo período do sonho (comissão bruta acumulada /
+      // atendimentos feitos), não um ticket médio genérico da barbearia —
+      // assim a estimativa reflete o ritmo real dele.
+      const { count: numeroAtendimentos } = await supabase
+        .from('atendimentos')
+        .select('id', { count: 'exact', head: true })
+        .eq('membro_id', membro!.id)
+        .gte('data', sonho.criado_em)
+      const mediaComissaoPorAtendimento = numeroAtendimentos && numeroAtendimentos > 0 ? comissaoBruta / numeroAtendimentos : 0
+      const contribuicaoPorAtendimento = mediaComissaoPorAtendimento * (sonho.percentual_comissao / 100)
+      const valorRestante = Math.max(sonho.valor_alvo - valorAcumulado, 0)
+      const atendimentosFaltam = !sonho.concluido && contribuicaoPorAtendimento > 0
+        ? Math.ceil(valorRestante / contribuicaoPorAtendimento)
+        : null
+
+      return { sonho, valorAcumulado, atendimentosFaltam }
     })
   )
 
@@ -67,8 +85,8 @@ export default async function SonhosPage() {
         </CardContent>
       </Card>
 
-      {sonhosComProgresso.map(({ sonho, valorAcumulado }) => (
-        <SonhoRow key={sonho.id} sonho={sonho} valorAcumulado={valorAcumulado} />
+      {sonhosComProgresso.map(({ sonho, valorAcumulado, atendimentosFaltam }) => (
+        <SonhoRow key={sonho.id} sonho={sonho} valorAcumulado={valorAcumulado} atendimentosFaltam={atendimentosFaltam} />
       ))}
     </div>
   )

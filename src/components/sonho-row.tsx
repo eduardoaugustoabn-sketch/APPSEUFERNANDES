@@ -15,7 +15,7 @@ type Sonho = {
   concluido: boolean
 }
 
-export function SonhoRow({ sonho, valorAcumulado }: { sonho: Sonho; valorAcumulado: number }) {
+export function SonhoRow({ sonho, valorAcumulado, atendimentosFaltam }: { sonho: Sonho; valorAcumulado: number; atendimentosFaltam: number | null }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
   const [nome, setNome] = useState(sonho.nome)
@@ -93,6 +93,9 @@ export function SonhoRow({ sonho, valorAcumulado }: { sonho: Sonho; valorAcumula
         <p className="text-sm text-muted-foreground">
           R$ {valorAcumulado.toFixed(2)} de R$ {Number(sonho.valor_alvo).toFixed(2)} · {sonho.percentual_comissao}% da comissão reservado
         </p>
+        {!sonho.concluido && atendimentosFaltam != null && (
+          <p className="text-xs text-muted-foreground mt-1">Faltam ~{atendimentosFaltam} atendimentos (na sua média atual)</p>
+        )}
       </CardContent>
     </Card>
   )

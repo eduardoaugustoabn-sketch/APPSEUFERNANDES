@@ -22,6 +22,7 @@ async function novoContato(formData: FormData) {
   const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
     p_barbearia_id: membro!.barbearia_id, p_nome: nome, p_telefone: telefone,
     p_bairro: bairro, p_cidade: cidade, p_categoria_origem: categoriaOrigem,
+    p_membro_id: membro!.id,
   })
   if (clienteId.error) throw new Error(clienteId.error.message)
 
@@ -115,7 +116,7 @@ export default async function ProspeccaoPage() {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Novo contato prospectado</h2>
           <form action={novoContato} className="flex gap-2 items-center flex-wrap">
-            <TelefoneClienteBusca />
+            <TelefoneClienteBusca meuMembroId={membro!.id} />
             <Select name="canal" aria-label="Canal" className="w-40" defaultValue="">
               <option value="">Canal (opcional)</option>
               <option value="whatsapp">WhatsApp</option>

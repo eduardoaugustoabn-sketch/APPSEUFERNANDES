@@ -44,6 +44,7 @@ export function AtenderAgoraForm({
       p_data_nascimento: cliente.dataNascimento ?? null,
       p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
       p_categoria_origem: cliente.categoriaOrigem ?? null,
+      p_membro_id: membroId,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
@@ -77,7 +78,7 @@ export function AtenderAgoraForm({
       <CardContent className="p-6">
         <h3 className="font-heading text-base font-bold mb-4">Atender agora</h3>
         <div className="flex flex-col gap-3">
-          <ClienteAutocomplete onResolved={setCliente} />
+          <ClienteAutocomplete onResolved={setCliente} meuMembroId={membroId} />
           <Select value={servicoId} onChange={(e) => setServicoId(e.target.value)}>
             <option value="">Serviço</option>
             {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}

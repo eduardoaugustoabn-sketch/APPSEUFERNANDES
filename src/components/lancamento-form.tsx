@@ -138,6 +138,7 @@ export function LancamentoForm({
       p_data_nascimento: cliente.dataNascimento ?? null,
       p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
       p_categoria_origem: cliente.categoriaOrigem ?? null,
+      p_membro_id: membroId,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
@@ -211,6 +212,7 @@ export function LancamentoForm({
           key={clienteAutocompleteKey}
           onResolved={setCliente}
           valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
+          meuMembroId={membroId}
         />
 
         <div className="mt-4">

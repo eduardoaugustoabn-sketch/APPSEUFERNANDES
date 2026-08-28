@@ -46,6 +46,7 @@ export function VendaLojaForm({
       p_data_nascimento: cliente.dataNascimento ?? null,
       p_bairro: cliente.bairro ?? null, p_cidade: cliente.cidade ?? null,
       p_categoria_origem: cliente.categoriaOrigem ?? null,
+      p_membro_id: membroId,
     })
     if (clienteId.error) { setMensagem(clienteId.error.message); setSalvando(false); return }
 
@@ -70,7 +71,7 @@ export function VendaLojaForm({
     <Card>
       <CardContent className="p-6">
         <h2 className="font-heading text-base font-bold mb-5">Registrar venda</h2>
-        <ClienteAutocomplete key={clienteAutocompleteKey} onResolved={setCliente} />
+        <ClienteAutocomplete key={clienteAutocompleteKey} onResolved={setCliente} meuMembroId={membroId} />
         <div className="flex gap-2 mt-3">
           <Select value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className="flex-1">
             <option value="">Produto</option>

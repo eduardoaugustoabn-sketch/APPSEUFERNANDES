@@ -18,8 +18,20 @@ export function ReatribuirDonoForm({
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
-    await supabase.from('clientes').update({ cadastrado_por_membro_id: donoId || null }).eq('id', clienteId)
+    const { data, error } = await supabase
+      .from('clientes')
+      .update({ cadastrado_por_membro_id: donoId || null })
+      .eq('id', clienteId)
+      .select('id')
     setSalvando(false)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    if (!data || data.length === 0) {
+      alert('Não foi possível salvar — você não tem permissão para editar este cliente.')
+      return
+    }
     router.refresh()
   }
 

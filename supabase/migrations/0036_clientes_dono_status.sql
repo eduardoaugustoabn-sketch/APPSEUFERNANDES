@@ -25,6 +25,12 @@ begin
     raise exception 'Categoria de origem inválida.';
   end if;
 
+  if p_membro_id is not null and not exists (
+    select 1 from membros where id = p_membro_id and barbearia_id = p_barbearia_id
+  ) then
+    raise exception 'Membro inválido para esta barbearia';
+  end if;
+
   v_telefone := regexp_replace(p_telefone, '\D', '', 'g');
 
   insert into clientes (barbearia_id, nome, telefone, data_nascimento, bairro, cidade, categoria_origem, cadastrado_por_membro_id)
@@ -121,7 +127,7 @@ language sql security definer set search_path = public as $$
     c.data_nascimento, c.bairro, c.cidade,
     c.cadastrado_por_membro_id, m.nome as cadastrado_por_nome
   from clientes c
-  left join membros m on m.id = c.cadastrado_por_membro_id
+  left join membros m on m.id = c.cadastrado_por_membro_id and m.barbearia_id = c.barbearia_id
   where c.barbearia_id = auth_barbearia_id()
     and length(regexp_replace(p_busca, '\D', '', 'g')) >= 4
     and c.telefone like '%' || regexp_replace(p_busca, '\D', '', 'g') || '%'
@@ -169,7 +175,7 @@ language sql security definer set search_path = public as $$
       where a.cliente_id = c.id and a.data >= current_date and a.status <> 'cancelado'
     ) as tem_agendamento_futuro
   from clientes c
-  left join membros m on m.id = c.cadastrado_por_membro_id
+  left join membros m on m.id = c.cadastrado_por_membro_id and m.barbearia_id = c.barbearia_id
   left join lateral (
     select max(a.data) as ultima_vinda from atendimentos a where a.cliente_id = c.id
   ) u on true
@@ -179,4 +185,5 @@ language sql security definer set search_path = public as $$
   order by c.nome;
 $$;
 
+revoke all on function public.clientes_com_status(uuid, uuid) from public, anon;
 grant execute on function public.clientes_com_status(uuid, uuid) to authenticated;

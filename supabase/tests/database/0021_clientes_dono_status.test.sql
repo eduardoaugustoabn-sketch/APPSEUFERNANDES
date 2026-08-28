@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(12);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a'),
@@ -107,6 +107,40 @@ select is(
   (select tem_agendamento_futuro from clientes_com_status('11111111-1111-1111-1111-111111111111') where telefone = '11900000004'),
   true,
   'tem_agendamento_futuro is true when the client has a future non-cancelled agendamento'
+);
+
+-- p_membro_id filter: um cliente cadastrado pelo Marcos não deve aparecer
+-- quando João filtra por si mesmo, e deve aparecer quando Marcos filtra por si mesmo.
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Do Marcos', '11900000007', null, null, null, 'indicacao', 'a1000000-0000-0000-0000-000000000003');
+
+select is(
+  (select count(*)::int from clientes_com_status('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000001') where telefone = '11900000007'),
+  0,
+  'p_membro_id filter excludes a client owned by a different barbeiro'
+);
+
+select is(
+  (select count(*)::int from clientes_com_status('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000003') where telefone = '11900000007'),
+  1,
+  'p_membro_id filter includes the client owned by that barbeiro'
+);
+
+-- Cobertura: cliente do João é atendido pelo Marcos (ex.: férias do João) —
+-- prova que clientes_com_status precisa ser security definer. Sem isso, a
+-- leitura de atendimentos feita como João (RLS restringe a
+-- "membro_id = auth_membro_id()") ignoraria silenciosamente este
+-- atendimento do Marcos e o status ficaria errado (ou null).
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Cliente Cobertura', '11900000008', null, null, null, 'indicacao', 'a1000000-0000-0000-0000-000000000001');
+
+select set_config('request.jwt.claim.sub', 'cccccccc-0000-0000-0000-000000000003', true);
+insert into atendimentos (barbearia_id, membro_id, cliente_id, servico_id, preco, data) values
+  ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000003', (select id from clientes where telefone = '11900000008'), 'b1000000-0000-0000-0000-000000000001', 60, current_date - 5);
+
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', true);
+select is(
+  (select status from clientes_com_status('11111111-1111-1111-1111-111111111111') where telefone = '11900000008'),
+  'verde',
+  'clientes_com_status sees an atendimento performed by a DIFFERENT barbeiro (coverage) even when called as the client owner (proves security definer is load-bearing)'
 );
 
 -- Tenant isolation: membro de outra barbearia não consegue ler os clientes da Barbearia A passando o barbearia_id dela.

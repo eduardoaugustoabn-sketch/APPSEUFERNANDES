@@ -11,6 +11,7 @@ export default async function PublicBookingPage({ params }: { params: Promise<{ 
 
   const { data: servicos } = await supabase.from('servicos').select('*').eq('barbearia_id', barbearia.id).eq('ativo', true)
   const { data: barbeiros } = await supabase.from('membros').select('id, nome').eq('barbearia_id', barbearia.id).eq('papel', 'barbeiro').eq('ativo', true)
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', barbearia.id).eq('ativo', true).order('nome')
 
-  return <PublicBookingFlow barbearia={barbearia} servicos={servicos ?? []} barbeiros={barbeiros ?? []} />
+  return <PublicBookingFlow barbearia={barbearia} servicos={servicos ?? []} barbeiros={barbeiros ?? []} categorias={categorias ?? []} />
 }

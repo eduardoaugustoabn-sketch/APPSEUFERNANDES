@@ -6,18 +6,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
-import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
+import type { CategoriaOrigem } from '@/lib/categorias-origem'
 
 type Servico = { id: string; nome: string; duracao_minutos: number; preco: number }
 type Barbeiro = { id: string; nome: string }
+type Categoria = { id: string; nome: string }
 
 const CHIP_BASE = 'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors'
 const CHIP_SELECIONADO = 'border border-primary bg-primary text-primary-foreground'
 const CHIP_PADRAO = 'border border-input bg-input-bg hover:border-ring'
 
 export function PublicBookingFlow({
-  barbearia, servicos, barbeiros,
-}: { barbearia: { id: string; nome: string }; servicos: Servico[]; barbeiros: Barbeiro[] }) {
+  barbearia, servicos, barbeiros, categorias,
+}: { barbearia: { id: string; nome: string }; servicos: Servico[]; barbeiros: Barbeiro[]; categorias: Categoria[] }) {
   const [servico, setServico] = useState<Servico | null>(null)
   const [barbeiro, setBarbeiro] = useState<Barbeiro | null>(null)
   const [data] = useState(() => new Date().toISOString().slice(0, 10))
@@ -176,7 +177,7 @@ export function PublicBookingFlow({
                 <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} />
                 <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')} aria-label="Como conheceu a barbearia?">
                   <option value="">Como conheceu a barbearia?</option>
-                  {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  {categorias.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
                 </Select>
                 {reconhecimento && <p className="text-sm text-primary">{reconhecimento}</p>}
                 {erro && <p className="text-sm text-destructive">{erro}</p>}

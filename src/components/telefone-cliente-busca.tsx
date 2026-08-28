@@ -14,6 +14,8 @@ type ResultadoBusca = {
   data_nascimento: string | null
   bairro: string | null
   cidade: string | null
+  cadastrado_por_membro_id: string | null
+  cadastrado_por_nome: string | null
 }
 
 // Não reaproveita ClienteAutocomplete de propósito — esta tela tem seu
@@ -21,18 +23,20 @@ type ResultadoBusca = {
 // callback onResolved que ClienteAutocomplete usa pra reportar mudanças
 // pro componente pai. Os campos aqui postam direto pelo <form> nativo,
 // via os atributos name.
-export function TelefoneClienteBusca() {
+export function TelefoneClienteBusca({ meuMembroId }: { meuMembroId?: string }) {
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [bairro, setBairro] = useState('')
   const [cidade, setCidade] = useState('')
   const [resultados, setResultados] = useState<ResultadoBusca[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
+  const [donoAtual, setDonoAtual] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buscaSeqRef = useRef(0)
 
   function verificar(tel: string) {
     setTelefone(tel)
+    setDonoAtual(null)
     const seq = ++buscaSeqRef.current
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -60,6 +64,11 @@ export function TelefoneClienteBusca() {
     setCidade(cliente.cidade ?? '')
     setMostrarLista(false)
     setResultados([])
+    setDonoAtual(
+      cliente.cadastrado_por_membro_id && cliente.cadastrado_por_membro_id !== meuMembroId
+        ? cliente.cadastrado_por_nome
+        : null
+    )
   }
 
   return (
@@ -90,6 +99,11 @@ export function TelefoneClienteBusca() {
           </div>
         )}
       </div>
+      {donoAtual && (
+        <p className="text-[12.5px] text-amber-text bg-amber-tint rounded-xl px-3 py-2 w-full">
+          Este cliente já é atendido por {donoAtual}.
+        </p>
+      )}
       <Input name="bairro" placeholder="Bairro (opcional)" value={bairro} onChange={(e) => setBairro(e.target.value)} className="w-32" />
       <Input name="cidade" placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-32" />
       <Select name="categoria_origem" aria-label="Como conheceu a barbearia?" className="w-56" defaultValue="">

@@ -14,16 +14,19 @@ type ResultadoBusca = {
   data_nascimento: string | null
   bairro: string | null
   cidade: string | null
+  cadastrado_por_membro_id: string | null
+  cadastrado_por_nome: string | null
 }
 
 export function ClienteAutocomplete({
-  onResolved, valorInicial,
+  onResolved, valorInicial, meuMembroId,
 }: {
   onResolved: (info: {
     nome: string; telefone: string; totalCortes: number; reconhecido: boolean
     dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: CategoriaOrigem
   }) => void
   valorInicial?: { nome: string; telefone: string }
+  meuMembroId?: string
 }) {
   const [nome, setNome] = useState(valorInicial?.nome ?? '')
   const [telefone, setTelefone] = useState(valorInicial?.telefone ?? '')
@@ -33,6 +36,7 @@ export function ClienteAutocomplete({
   const [categoriaOrigem, setCategoriaOrigem] = useState<CategoriaOrigem | ''>('')
   const [resultados, setResultados] = useState<ResultadoBusca[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
+  const [donoAtual, setDonoAtual] = useState<string | null>(null)
   // Refs (not just state) so onResolved always reads the latest value
   // regardless of render timing.
   const nomeRef = useRef(valorInicial?.nome ?? '')
@@ -119,6 +123,7 @@ export function ClienteAutocomplete({
     telefoneRef.current = tel
     setTelefone(tel)
     reconhecidoRef.current = false
+    setDonoAtual(null)
     const seq = ++buscaSeqRef.current
     // Resolve synchronously with the raw typed value first — the caller
     // (LancamentoForm's salvar()) reads whatever onResolved last reported,
@@ -165,6 +170,11 @@ export function ClienteAutocomplete({
     setCidade(cliente.cidade ?? '')
     setMostrarLista(false)
     setResultados([])
+    setDonoAtual(
+      cliente.cadastrado_por_membro_id && cliente.cadastrado_por_membro_id !== meuMembroId
+        ? cliente.cadastrado_por_nome
+        : null
+    )
     onResolved({
       nome: cliente.nome, telefone: cliente.telefone, totalCortes: cliente.total_cortes, reconhecido: true,
       dataNascimento: cliente.data_nascimento ?? undefined,
@@ -198,6 +208,11 @@ export function ClienteAutocomplete({
           </div>
         )}
       </div>
+      {donoAtual && (
+        <p className="text-[12.5px] text-amber-text bg-amber-tint rounded-xl px-3 py-2">
+          Este cliente já é atendido por {donoAtual}.
+        </p>
+      )}
       <Input type="date" placeholder="Data de nascimento (opcional)" value={dataNascimento} onChange={(e) => handleDataNascimentoChange(e.target.value)} />
       <Input placeholder="Bairro (opcional)" value={bairro} onChange={(e) => handleBairroChange(e.target.value)} />
       <Input placeholder="Cidade (opcional)" value={cidade} onChange={(e) => handleCidadeChange(e.target.value)} />

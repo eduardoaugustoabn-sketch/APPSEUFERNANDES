@@ -42,6 +42,11 @@ create policy "publico le categorias_origem ativas" on categorias_origem for sel
 insert into categorias_origem (barbearia_id, nome)
 select id, categoria from barbearias, unnest(array['Indicação', 'Redes sociais', 'Google/Internet', 'Passou na rua', 'Outro']) as categoria;
 
+-- A constraint precisa sair ANTES de reescrever os valores abaixo — ela só
+-- aceita os 5 slugs antigos, e "Indicação"/"Redes sociais"/etc. violariam
+-- ela se a ordem fosse invertida.
+alter table clientes drop constraint clientes_categoria_origem_check;
+
 -- Converte os valores antigos (gravados como slug) pro texto por extenso,
 -- pra ficar consistente com o que as categorias novas usam.
 update clientes set categoria_origem = 'Indicação' where categoria_origem = 'indicacao';
@@ -49,8 +54,6 @@ update clientes set categoria_origem = 'Redes sociais' where categoria_origem = 
 update clientes set categoria_origem = 'Google/Internet' where categoria_origem = 'google_internet';
 update clientes set categoria_origem = 'Passou na rua' where categoria_origem = 'passou_na_rua';
 update clientes set categoria_origem = 'Outro' where categoria_origem = 'outro';
-
-alter table clientes drop constraint clientes_categoria_origem_check;
 
 -- Validação passa a ser dinâmica (contra a tabela categorias_origem) em
 -- vez de uma lista fixa no corpo da função. Corpo base: versão atual de

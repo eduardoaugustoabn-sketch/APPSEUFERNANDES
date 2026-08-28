@@ -6,10 +6,10 @@ import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
+import type { CategoriaOrigem } from '@/lib/categorias-origem'
 
 export function EditarClienteForm({
-  clienteId, cpfAtual, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual, prazoRetornoAtual,
+  clienteId, cpfAtual, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual, prazoRetornoAtual, categorias,
 }: {
   clienteId: string
   cpfAtual: string | null
@@ -18,6 +18,7 @@ export function EditarClienteForm({
   observacaoAtual: string | null
   categoriaOrigemAtual: CategoriaOrigem | null
   prazoRetornoAtual: number | null
+  categorias: { id: string; nome: string }[]
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
@@ -65,13 +66,11 @@ export function EditarClienteForm({
     setEditando(false)
   }
 
-  const categoriaLabel = CATEGORIAS_ORIGEM.find((c) => c.value === categoriaOrigemAtual)?.label
-
   if (!editando) {
     return (
       <div>
         {observacaoAtual && <p className="text-sm text-muted-foreground mb-2">Observação: {observacaoAtual}</p>}
-        {categoriaLabel && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaLabel}</p>}
+        {categoriaOrigemAtual && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaOrigemAtual}</p>}
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">
           Editar CPF/bairro/cidade/observação/origem/prazo de retorno
         </button>
@@ -92,7 +91,7 @@ export function EditarClienteForm({
       />
       <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}>
         <option value="">Como conheceu a barbearia?</option>
-        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        {categorias.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
       </Select>
       <Select value={prazoRetorno} onChange={(e) => setPrazoRetorno(e.target.value)}>
         <option value="">Prazo médio de retorno: padrão (12 dias)</option>

@@ -47,6 +47,8 @@ export default async function ProspeccaoPage() {
     .eq('user_id', user!.id)
     .single()
 
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
+
   const hoje = new Date().toISOString().slice(0, 10)
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
 
@@ -116,7 +118,7 @@ export default async function ProspeccaoPage() {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Novo contato prospectado</h2>
           <form action={novoContato} className="flex gap-2 items-center flex-wrap">
-            <TelefoneClienteBusca meuMembroId={membro!.id} />
+            <TelefoneClienteBusca meuMembroId={membro!.id} categorias={categorias ?? []} />
             <Select name="canal" aria-label="Canal" className="w-40" defaultValue="">
               <option value="">Canal (opcional)</option>
               <option value="whatsapp">WhatsApp</option>

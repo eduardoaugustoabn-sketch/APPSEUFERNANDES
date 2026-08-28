@@ -3,6 +3,8 @@ import { EditarClienteForm } from '@/components/editar-cliente-form'
 import { ReatribuirDonoForm } from '@/components/reatribuir-dono-form'
 import { Card, CardContent } from '@/components/ui/card'
 
+type Categoria = { id: string; nome: string }
+
 type Ranking = { item: string; tipo: string; quantidade: number; valor_total: number }
 type AtendimentoHistorico = { data: string; preco: number; servicos: { nome: string } | null }
 type VendaHistorico = { data: string; preco_unitario: number; quantidade: number; produtos: { nome: string } | null }
@@ -22,6 +24,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const { data: euMembro } = await supabase.from('membros').select('id, barbearia_id, papel').eq('user_id', user!.id).single()
 
   const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, cpf, data_nascimento, bairro, cidade, observacao, categoria_origem, prazo_retorno_dias').eq('id', clienteId).single()
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', euMembro!.barbearia_id).eq('ativo', true).order('nome') as { data: Categoria[] | null }
   // clientes_com_status não tem parâmetro de filtro por cliente_id (só por
   // barbearia_id/membro_id) — busca todos os clientes da barbearia e filtra
   // pelo id certo. Aceitável aqui: a ficha é uma página de baixo tráfego,
@@ -99,6 +102,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
             observacaoAtual={cliente?.observacao ?? null}
             categoriaOrigemAtual={cliente?.categoria_origem ?? null}
             prazoRetornoAtual={cliente?.prazo_retorno_dias ?? null}
+            categorias={categorias ?? []}
           />
         </CardContent>
       </Card>

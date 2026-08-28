@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
 
 export function EditarClienteForm({
-  clienteId, cpfAtual, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual,
+  clienteId, cpfAtual, bairroAtual, cidadeAtual, observacaoAtual, categoriaOrigemAtual, prazoRetornoAtual,
 }: {
   clienteId: string
   cpfAtual: string | null
@@ -17,6 +17,7 @@ export function EditarClienteForm({
   cidadeAtual: string | null
   observacaoAtual: string | null
   categoriaOrigemAtual: CategoriaOrigem | null
+  prazoRetornoAtual: number | null
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
@@ -25,6 +26,7 @@ export function EditarClienteForm({
   const [cidade, setCidade] = useState(cidadeAtual ?? '')
   const [observacao, setObservacao] = useState(observacaoAtual ?? '')
   const [categoriaOrigem, setCategoriaOrigem] = useState<CategoriaOrigem | ''>(categoriaOrigemAtual ?? '')
+  const [prazoRetorno, setPrazoRetorno] = useState(prazoRetornoAtual != null ? String(prazoRetornoAtual) : '')
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
@@ -36,6 +38,7 @@ export function EditarClienteForm({
         cpf: cpf.trim() || null,
         bairro: bairro.trim() || null, cidade: cidade.trim() || null, observacao: observacao.trim() || null,
         categoria_origem: categoriaOrigem || null,
+        prazo_retorno_dias: prazoRetorno === '' ? null : Number(prazoRetorno),
       })
       .eq('id', clienteId)
       .select('id')
@@ -58,6 +61,7 @@ export function EditarClienteForm({
     setCidade(cidadeAtual ?? '')
     setObservacao(observacaoAtual ?? '')
     setCategoriaOrigem(categoriaOrigemAtual ?? '')
+    setPrazoRetorno(prazoRetornoAtual != null ? String(prazoRetornoAtual) : '')
     setEditando(false)
   }
 
@@ -69,7 +73,7 @@ export function EditarClienteForm({
         {observacaoAtual && <p className="text-sm text-muted-foreground mb-2">Observação: {observacaoAtual}</p>}
         {categoriaLabel && <p className="text-sm text-muted-foreground mb-2">Como conheceu: {categoriaLabel}</p>}
         <button type="button" onClick={() => setEditando(true)} className="text-xs text-primary underline">
-          Editar CPF/bairro/cidade/observação/origem
+          Editar CPF/bairro/cidade/observação/origem/prazo de retorno
         </button>
       </div>
     )
@@ -89,6 +93,13 @@ export function EditarClienteForm({
       <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}>
         <option value="">Como conheceu a barbearia?</option>
         {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </Select>
+      <Select value={prazoRetorno} onChange={(e) => setPrazoRetorno(e.target.value)}>
+        <option value="">Prazo médio de retorno: padrão (12 dias)</option>
+        <option value="7">7 dias</option>
+        <option value="10">10 dias</option>
+        <option value="15">15 dias</option>
+        <option value="30">30 dias</option>
       </Select>
       <div className="flex gap-2">
         <Button type="button" onClick={salvar} disabled={salvando}>Salvar</Button>

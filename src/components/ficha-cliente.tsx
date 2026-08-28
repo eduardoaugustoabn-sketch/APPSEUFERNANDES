@@ -1,15 +1,33 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { EditarClienteForm } from '@/components/editar-cliente-form'
+import { ReatribuirDonoForm } from '@/components/reatribuir-dono-form'
 import { Card, CardContent } from '@/components/ui/card'
 
 type Ranking = { item: string; tipo: string; quantidade: number; valor_total: number }
 type AtendimentoHistorico = { data: string; preco: number; servicos: { nome: string } | null }
 type VendaHistorico = { data: string; preco_unitario: number; quantidade: number; produtos: { nome: string } | null }
+type ClienteComStatus = {
+  id: string
+  cadastrado_por_membro_id: string | null; cadastrado_por_nome: string | null
+  prazo_retorno_dias: number; dias_sem_vir: number | null; status: string | null
+  tem_agendamento_futuro: boolean
+}
+
+const LABEL_STATUS: Record<string, string> = { verde: 'Corte em dia', amarelo: 'Precisa reagendar', vermelho: 'Sumiu' }
+const COR_STATUS: Record<string, string> = { verde: 'bg-primary', amarelo: 'bg-amber', vermelho: 'bg-destructive' }
 
 export async function FichaCliente({ clienteId }: { clienteId: string }) {
   const supabase = await getServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: euMembro } = await supabase.from('membros').select('id, barbearia_id, papel').eq('user_id', user!.id).single()
 
-  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, cpf, data_nascimento, bairro, cidade, observacao, categoria_origem').eq('id', clienteId).single()
+  const { data: cliente } = await supabase.from('clientes').select('nome, telefone, criado_em, cpf, data_nascimento, bairro, cidade, observacao, categoria_origem, prazo_retorno_dias').eq('id', clienteId).single()
+  // clientes_com_status não tem parâmetro de filtro por cliente_id (só por
+  // barbearia_id/membro_id) — busca todos os clientes da barbearia e filtra
+  // pelo id certo. Aceitável aqui: a ficha é uma página de baixo tráfego,
+  // carregada uma de cada vez; não vale criar uma segunda RPC só por isso.
+  const { data: statusRows } = await supabase.rpc('clientes_com_status', { p_barbearia_id: euMembro!.barbearia_id }) as { data: ClienteComStatus[] | null }
+  const status = statusRows?.find((s) => s.id === clienteId) ?? null
   const { data: ranking } = await supabase.rpc('ranking_cliente', { p_cliente_id: clienteId }) as { data: Ranking[] | null }
   const { data: atendimentos } = await supabase.from('atendimentos').select('data, preco, servicos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: AtendimentoHistorico[] | null }
   const { data: vendas } = await supabase.from('vendas_produtos').select('data, preco_unitario, quantidade, produtos(nome)').eq('cliente_id', clienteId).order('data', { ascending: false }) as { data: VendaHistorico[] | null }
@@ -25,6 +43,11 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
     .select('data, canal, status, convertido_em')
     .eq('cliente_id', clienteId)
     .order('criado_em', { ascending: false }) as { data: { data: string; canal: string | null; status: string; convertido_em: string | null }[] | null }
+
+  const souAdmin = euMembro!.papel === 'admin'
+  const { data: barbeiros } = souAdmin
+    ? await supabase.from('membros').select('id, nome').eq('barbearia_id', euMembro!.barbearia_id).eq('papel', 'barbeiro').eq('ativo', true).order('nome')
+    : { data: null }
 
   const maiorQuantidade = Math.max(1, ...(ranking ?? []).map((r) => r.quantidade))
 
@@ -47,6 +70,27 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
           </p>
           <p className="text-xs text-muted-foreground mb-4">Cliente desde {cliente?.criado_em ? new Date(cliente.criado_em).toLocaleDateString() : ''}</p>
 
+          {status?.status && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`w-2.5 h-2.5 rounded-sm shrink-0 ${COR_STATUS[status.status]}`} />
+              <span className="text-sm font-semibold">{LABEL_STATUS[status.status]} — {status.dias_sem_vir} dias sem vir (prazo: {status.prazo_retorno_dias}d)</span>
+            </div>
+          )}
+          {status?.tem_agendamento_futuro && (
+            <p className="text-sm font-semibold text-primary mb-3">Já tem um agendamento futuro — não precisa recontatar.</p>
+          )}
+          {!souAdmin && status?.cadastrado_por_membro_id && status.cadastrado_por_membro_id !== euMembro!.id && (
+            <p className="text-sm bg-amber-tint text-amber-text rounded-xl px-3 py-2 mb-3">
+              Este cliente já é atendido por {status.cadastrado_por_nome}.
+            </p>
+          )}
+          {souAdmin && (
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground mb-1.5">Dono do cadastro</p>
+              <ReatribuirDonoForm clienteId={clienteId} barbeiros={barbeiros ?? []} donoAtualId={status?.cadastrado_por_membro_id ?? null} />
+            </div>
+          )}
+
           <EditarClienteForm
             clienteId={clienteId}
             cpfAtual={cliente?.cpf ?? null}
@@ -54,6 +98,7 @@ export async function FichaCliente({ clienteId }: { clienteId: string }) {
             cidadeAtual={cliente?.cidade ?? null}
             observacaoAtual={cliente?.observacao ?? null}
             categoriaOrigemAtual={cliente?.categoria_origem ?? null}
+            prazoRetornoAtual={cliente?.prazo_retorno_dias ?? null}
           />
         </CardContent>
       </Card>

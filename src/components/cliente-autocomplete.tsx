@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
-import { CATEGORIAS_ORIGEM, type CategoriaOrigem } from '@/lib/categorias-origem'
+import type { CategoriaOrigem } from '@/lib/categorias-origem'
 import { Select } from '@/components/ui/select'
 
 type ResultadoBusca = {
@@ -19,7 +19,7 @@ type ResultadoBusca = {
 }
 
 export function ClienteAutocomplete({
-  onResolved, valorInicial, meuMembroId,
+  onResolved, valorInicial, meuMembroId, categorias,
 }: {
   onResolved: (info: {
     nome: string; telefone: string; totalCortes: number; reconhecido: boolean
@@ -27,6 +27,7 @@ export function ClienteAutocomplete({
   }) => void
   valorInicial?: { nome: string; telefone: string }
   meuMembroId?: string
+  categorias: { id: string; nome: string }[]
 }) {
   const [nome, setNome] = useState(valorInicial?.nome ?? '')
   const [telefone, setTelefone] = useState(valorInicial?.telefone ?? '')
@@ -108,14 +109,13 @@ export function ClienteAutocomplete({
   }
 
   function handleCategoriaOrigemChange(value: string) {
-    const categoria = value as CategoriaOrigem | ''
-    categoriaOrigemRef.current = categoria
-    setCategoriaOrigem(categoria)
+    categoriaOrigemRef.current = value
+    setCategoriaOrigem(value)
     onResolved({
       nome: nomeRef.current, telefone: telefoneRef.current, totalCortes: 0, reconhecido: reconhecidoRef.current,
       dataNascimento: dataNascimentoRef.current || undefined,
       bairro: bairroRef.current || undefined, cidade: cidadeRef.current || undefined,
-      categoriaOrigem: categoria || undefined,
+      categoriaOrigem: value || undefined,
     })
   }
 
@@ -221,7 +221,7 @@ export function ClienteAutocomplete({
         onChange={(e) => handleCategoriaOrigemChange(e.target.value)}
       >
         <option value="">Como conheceu a barbearia?</option>
-        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        {categorias.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
       </Select>
     </div>
   )

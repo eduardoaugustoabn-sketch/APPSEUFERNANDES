@@ -4,7 +4,6 @@ import { useRef, useState } from 'react'
 import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { CATEGORIAS_ORIGEM } from '@/lib/categorias-origem'
 
 type ResultadoBusca = {
   id: string
@@ -23,7 +22,7 @@ type ResultadoBusca = {
 // callback onResolved que ClienteAutocomplete usa pra reportar mudanças
 // pro componente pai. Os campos aqui postam direto pelo <form> nativo,
 // via os atributos name.
-export function TelefoneClienteBusca({ meuMembroId }: { meuMembroId?: string }) {
+export function TelefoneClienteBusca({ meuMembroId, categorias }: { meuMembroId?: string; categorias: { id: string; nome: string }[] }) {
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [bairro, setBairro] = useState('')
@@ -108,7 +107,7 @@ export function TelefoneClienteBusca({ meuMembroId }: { meuMembroId?: string }) 
       <Input name="cidade" placeholder="Cidade (opcional)" value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-32" />
       <Select name="categoria_origem" aria-label="Como conheceu a barbearia?" className="w-56" defaultValue="">
         <option value="">Como conheceu a barbearia?</option>
-        {CATEGORIAS_ORIGEM.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        {categorias.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
       </Select>
     </>
   )

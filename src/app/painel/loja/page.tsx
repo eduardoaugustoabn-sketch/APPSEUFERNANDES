@@ -9,6 +9,7 @@ export default async function PainelLojaPage() {
   const { data: membro } = await supabase.from('membros').select('id, barbearia_id').eq('user_id', user!.id).single()
 
   const { data: produtos } = await supabase.from('produtos_loja').select('id, nome, categoria, preco_venda, quantidade_estoque, ativo').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
   const { data: vendas } = await supabase
     .from('vendas_loja')
     .select('data, quantidade, preco_unitario, comissao_valor, clientes(nome), produtos_loja(nome)')
@@ -23,7 +24,7 @@ export default async function PainelLojaPage() {
       <h1 className="font-heading text-2xl font-bold mb-4">Loja</h1>
 
       <div className="mb-6">
-        <VendaLojaForm barbeariaId={membro!.barbearia_id} membroId={membro!.id} produtos={produtos ?? []} />
+        <VendaLojaForm barbeariaId={membro!.barbearia_id} membroId={membro!.id} produtos={produtos ?? []} categorias={categorias ?? []} />
       </div>
 
       <Card className="mb-6">

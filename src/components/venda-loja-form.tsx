@@ -13,11 +13,12 @@ import type { CategoriaOrigem } from '@/lib/categorias-origem'
 type ProdutoLoja = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
 
 export function VendaLojaForm({
-  barbeariaId, membroId, produtos, onSalvo,
+  barbeariaId, membroId, produtos, categorias, onSalvo,
 }: {
   barbeariaId: string
   membroId: string
   produtos: ProdutoLoja[]
+  categorias: { id: string; nome: string }[]
   onSalvo?: () => void
 }) {
   const router = useRouter()
@@ -71,7 +72,7 @@ export function VendaLojaForm({
     <Card>
       <CardContent className="p-6">
         <h2 className="font-heading text-base font-bold mb-5">Registrar venda</h2>
-        <ClienteAutocomplete key={clienteAutocompleteKey} onResolved={setCliente} meuMembroId={membroId} />
+        <ClienteAutocomplete key={clienteAutocompleteKey} onResolved={setCliente} meuMembroId={membroId} categorias={categorias} />
         <div className="flex gap-2 mt-3">
           <Select value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className="flex-1">
             <option value="">Produto</option>

@@ -6,10 +6,11 @@ import { VendaLojaForm } from './venda-loja-form'
 
 type Barbeiro = { id: string; nome: string }
 type ProdutoLoja = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
+type Categoria = { id: string; nome: string }
 
 export function AdminVendaLoja({
-  barbeariaId, barbeiros, produtos,
-}: { barbeariaId: string; barbeiros: Barbeiro[]; produtos: ProdutoLoja[] }) {
+  barbeariaId, barbeiros, produtos, categorias,
+}: { barbeariaId: string; barbeiros: Barbeiro[]; produtos: ProdutoLoja[]; categorias: Categoria[] }) {
   const [barbeiroId, setBarbeiroId] = useState('')
 
   return (
@@ -19,7 +20,7 @@ export function AdminVendaLoja({
         {barbeiros.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
       </Select>
 
-      {barbeiroId && <VendaLojaForm barbeariaId={barbeariaId} membroId={barbeiroId} produtos={produtos} />}
+      {barbeiroId && <VendaLojaForm barbeariaId={barbeariaId} membroId={barbeiroId} produtos={produtos} categorias={categorias} />}
     </div>
   )
 }

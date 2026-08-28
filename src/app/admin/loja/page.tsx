@@ -35,6 +35,7 @@ export default async function LojaPage() {
     .from('membros').select('id, nome')
     .eq('barbearia_id', membro!.barbearia_id).eq('papel', 'barbeiro').eq('ativo', true)
     .order('nome')
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
   const { data: vendas } = await supabase
     .from('vendas_loja')
     .select('data, quantidade, preco_unitario, comissao_valor, clientes(nome), produtos_loja(nome), membros(nome)')
@@ -76,7 +77,7 @@ export default async function LojaPage() {
       </Card>
 
       <div className="mb-6">
-        <AdminVendaLoja barbeariaId={membro!.barbearia_id} barbeiros={barbeiros ?? []} produtos={(produtos ?? []).filter((p) => p.ativo)} />
+        <AdminVendaLoja barbeariaId={membro!.barbearia_id} barbeiros={barbeiros ?? []} produtos={(produtos ?? []).filter((p) => p.ativo)} categorias={categorias ?? []} />
       </div>
 
       <Card>

@@ -4,9 +4,17 @@ select plan(4);
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
 
+-- Seed default categorias_origem for this test barbearia
+insert into categorias_origem (barbearia_id, nome) values
+  ('11111111-1111-1111-1111-111111111111', 'Indicação'),
+  ('11111111-1111-1111-1111-111111111111', 'Redes sociais'),
+  ('11111111-1111-1111-1111-111111111111', 'Google/Internet'),
+  ('11111111-1111-1111-1111-111111111111', 'Passou na rua'),
+  ('11111111-1111-1111-1111-111111111111', 'Outro');
+
 set local role anon;
 
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', '1990-05-20', null, null, 'indicacao');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Marcos Silva', '11988887777', '1990-05-20', null, null, 'Indicação');
 
 reset role;
 
@@ -31,7 +39,7 @@ select is(
 
 set local role anon;
 
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Outro Cliente', '11977776666', null, null, null, 'indicacao');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'Outro Cliente', '11977776666', null, null, null, 'Indicação');
 
 reset role;
 
@@ -44,7 +52,7 @@ select is(
 set local role anon;
 
 -- Create a client without birthday first, then backfill the birthday on a later call.
-select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555', null, null, null, 'indicacao');
+select criar_ou_obter_cliente('11111111-1111-1111-1111-111111111111', 'João Santos', '11966665555', null, null, null, 'Indicação');
 
 reset role;
 

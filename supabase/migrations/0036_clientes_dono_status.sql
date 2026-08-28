@@ -21,6 +21,10 @@ begin
     raise exception 'Barbearia inválida';
   end if;
 
+  if p_categoria_origem is not null and p_categoria_origem not in ('indicacao', 'redes_sociais', 'google_internet', 'passou_na_rua', 'outro') then
+    raise exception 'Categoria de origem inválida.';
+  end if;
+
   v_telefone := regexp_replace(p_telefone, '\D', '', 'g');
 
   insert into clientes (barbearia_id, nome, telefone, data_nascimento, bairro, cidade, categoria_origem, cadastrado_por_membro_id)

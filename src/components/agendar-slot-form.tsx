@@ -16,7 +16,7 @@ type AgendamentoExistente = { hora_inicio: string; hora_fim: string }
 // agendamento) acontece depois, reabrindo esse mesmo horário já ocupado
 // (ver AgendaDia + LancamentoForm), que é quando o cliente de fato chega.
 export function AgendarSlotForm({
-  barbeariaId, membroId, servicos, data, horaInicio, agendamentosExistentes, onAgendado,
+  barbeariaId, membroId, servicos, data, horaInicio, agendamentosExistentes, categorias, onAgendado,
 }: {
   barbeariaId: string
   membroId: string
@@ -24,6 +24,7 @@ export function AgendarSlotForm({
   data: string
   horaInicio: string
   agendamentosExistentes: AgendamentoExistente[]
+  categorias: { id: string; nome: string }[]
   onAgendado?: () => void
 }) {
   const [cliente, setCliente] = useState<{ nome: string; telefone: string; dataNascimento?: string; bairro?: string; cidade?: string; categoriaOrigem?: CategoriaOrigem; reconhecido?: boolean } | null>(null)
@@ -94,7 +95,7 @@ export function AgendarSlotForm({
       <CardContent className="p-6">
         <h3 className="font-heading text-base font-bold mb-4">Agendar horário — {horaInicio.slice(0, 5)}</h3>
         <div className="flex flex-col gap-3">
-          <ClienteAutocomplete onResolved={setCliente} meuMembroId={membroId} />
+          <ClienteAutocomplete onResolved={setCliente} meuMembroId={membroId} categorias={categorias} />
           <Select value={servicoId} onChange={(e) => { setServicoId(e.target.value); setPedindoConfirmacao(false) }}>
             <option value="">Serviço</option>
             {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}

@@ -17,11 +17,12 @@ type Servico = { id: string; nome: string; duracao_minutos: number; ativo: boole
 // agendamento" (LancamentoForm com modoAgenda) que a Agenda já usa — sem
 // caminho de dado que não passe por agendamentos.
 export function AtenderAgoraForm({
-  barbeariaId, membroId, servicos, onCriado, onCancelar,
+  barbeariaId, membroId, servicos, categorias, onCriado, onCancelar,
 }: {
   barbeariaId: string
   membroId: string
   servicos: Servico[]
+  categorias: { id: string; nome: string }[]
   onCriado: (modoAgenda: ModoAgenda) => void
   onCancelar?: () => void
 }) {
@@ -78,7 +79,7 @@ export function AtenderAgoraForm({
       <CardContent className="p-6">
         <h3 className="font-heading text-base font-bold mb-4">Atender agora</h3>
         <div className="flex flex-col gap-3">
-          <ClienteAutocomplete onResolved={setCliente} meuMembroId={membroId} />
+          <ClienteAutocomplete onResolved={setCliente} meuMembroId={membroId} categorias={categorias} />
           <Select value={servicoId} onChange={(e) => setServicoId(e.target.value)}>
             <option value="">Serviço</option>
             {servicos.filter((s) => s.ativo).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}

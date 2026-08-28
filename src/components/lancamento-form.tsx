@@ -32,13 +32,14 @@ export type ModoAgenda = {
 }
 
 export function LancamentoForm({
-  barbeariaId, membroId, servicos, produtos, modoAgenda, onSalvo,
+  barbeariaId, membroId, servicos, produtos, modoAgenda, categorias, onSalvo,
 }: {
   barbeariaId: string
   membroId: string
   servicos: Servico[]
   produtos: Produto[]
   modoAgenda: ModoAgenda
+  categorias: { id: string; nome: string }[]
   onSalvo?: () => void
 }) {
   const router = useRouter()
@@ -213,6 +214,7 @@ export function LancamentoForm({
           onResolved={setCliente}
           valorInicial={{ nome: modoAgenda.clienteNome, telefone: modoAgenda.clienteTelefone }}
           meuMembroId={membroId}
+          categorias={categorias}
         />
 
         <div className="mt-4">

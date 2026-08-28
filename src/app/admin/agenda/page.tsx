@@ -12,6 +12,7 @@ export default async function AdminAgendaPage() {
     .order('nome')
   const { data: servicos } = await supabase.from('servicos').select('id, nome, preco, duracao_minutos, ativo').eq('barbearia_id', membro!.barbearia_id)
   const { data: produtos } = await supabase.from('produtos').select('id, nome, preco_venda, quantidade_estoque, ativo').eq('barbearia_id', membro!.barbearia_id)
+  const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
 
   return (
     <div>
@@ -21,6 +22,7 @@ export default async function AdminAgendaPage() {
         barbeiros={barbeiros ?? []}
         servicos={servicos ?? []}
         produtos={produtos ?? []}
+        categorias={categorias ?? []}
       />
     </div>
   )

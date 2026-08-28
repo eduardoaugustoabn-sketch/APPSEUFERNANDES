@@ -13,6 +13,7 @@ import { gerarSlots, statusDoSlot } from '@/lib/agenda-slots'
 
 type Servico = { id: string; nome: string; preco: number; duracao_minutos: number; ativo: boolean }
 type Produto = { id: string; nome: string; preco_venda: number; quantidade_estoque: number; ativo: boolean }
+type Categoria = { id: string; nome: string }
 
 type AgendamentoDia = {
   id: string
@@ -28,8 +29,8 @@ type Bloqueio = { id: string; hora_inicio: string; hora_fim: string; motivo: str
 type Expediente = { hora_inicio: string; hora_fim: string }
 
 export function AgendaDia({
-  barbeariaId, membroId, servicos, produtos,
-}: { barbeariaId: string; membroId: string; servicos: Servico[]; produtos: Produto[] }) {
+  barbeariaId, membroId, servicos, produtos, categorias,
+}: { barbeariaId: string; membroId: string; servicos: Servico[]; produtos: Produto[]; categorias: Categoria[] }) {
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10))
   const [expedientes, setExpedientes] = useState<Expediente[]>([])
   const [bloqueios, setBloqueios] = useState<Bloqueio[]>([])
@@ -288,6 +289,7 @@ export function AgendaDia({
               servicos={servicos}
               produtos={produtos}
               modoAgenda={modoAgenda}
+              categorias={categorias}
               onSalvo={() => { fecharPaineis(); carregar() }}
             />
           )}
@@ -299,6 +301,7 @@ export function AgendaDia({
               data={data}
               horaInicio={slotParaAgendar}
               agendamentosExistentes={agendamentos}
+              categorias={categorias}
               onAgendado={() => { fecharPaineis(); carregar() }}
             />
           )}
@@ -318,6 +321,7 @@ export function AgendaDia({
               barbeariaId={barbeariaId}
               membroId={membroId}
               servicos={servicos}
+              categorias={categorias}
               onCriado={(modo) => { fecharPaineis(); setModoAgenda(modo) }}
               onCancelar={fecharPaineis}
             />

@@ -54,8 +54,14 @@ select throws_ok(
   'criar_ou_obter_cliente rejects a deactivated categoria_origem'
 );
 
--- Leitura pública (anon) só vê categorias ativas.
+-- Leitura pública (anon) só vê categorias ativas. Precisa limpar o JWT
+-- claim explicitamente — "reset role" só troca o role do Postgres, não
+-- o request.jwt.claim.sub que ficou setado pro admin acima (isso nunca
+-- acontece numa requisição real, onde anon e authenticated são sempre
+-- sessões separadas — é só um artefato de testar os dois papéis na
+-- mesma transação).
 reset role;
+select set_config('request.jwt.claim.sub', '', true);
 set local role anon;
 
 select is(

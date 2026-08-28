@@ -18,7 +18,16 @@ export function CategoriaOrigemRow({ categoria }: { categoria: CategoriaOrigem }
   async function salvar() {
     setSalvando(true)
     const supabase = getBrowserSupabaseClient()
+    const nomeAntigo = categoria.nome
     await supabase.from('categorias_origem').update({ nome }).eq('id', categoria.id)
+    if (nome !== nomeAntigo) {
+      // Renomear precisa propagar pros clientes já cadastrados com o nome
+      // antigo, senão o catálogo e os dados históricos divergem
+      // silenciosamente. A policy de update de clientes já restringe isso
+      // ao tenant certo (barbearia_id = auth_barbearia_id()), não precisa
+      // filtrar por barbearia_id aqui também.
+      await supabase.from('clientes').update({ categoria_origem: nome }).eq('categoria_origem', nomeAntigo)
+    }
     setSalvando(false)
     setEditando(false)
     router.refresh()

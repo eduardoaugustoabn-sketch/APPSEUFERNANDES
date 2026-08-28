@@ -91,6 +91,9 @@ export function EditarClienteForm({
       />
       <Select value={categoriaOrigem} onChange={(e) => setCategoriaOrigem(e.target.value as CategoriaOrigem | '')}>
         <option value="">Como conheceu a barbearia?</option>
+        {categoriaOrigemAtual && !categorias.some((c) => c.nome === categoriaOrigemAtual) && (
+          <option value={categoriaOrigemAtual}>{categoriaOrigemAtual} (desativada)</option>
+        )}
         {categorias.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
       </Select>
       <Select value={prazoRetorno} onChange={(e) => setPrazoRetorno(e.target.value)}>

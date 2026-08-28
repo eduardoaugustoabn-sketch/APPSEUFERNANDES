@@ -14,7 +14,7 @@ async function criarCategoria(formData: FormData) {
 
   await supabase.from('categorias_origem').insert({
     barbearia_id: membro!.barbearia_id,
-    nome: formData.get('nome') as string,
+    nome: (formData.get('nome') as string).trim(),
   })
   revalidatePath('/admin/categorias-origem')
 }

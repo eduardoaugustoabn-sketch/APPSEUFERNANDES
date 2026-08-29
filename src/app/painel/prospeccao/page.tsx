@@ -18,6 +18,12 @@ async function novoContato(formData: FormData) {
   const bairro = (formData.get('bairro') as string) || null
   const cidade = (formData.get('cidade') as string) || null
   const categoriaOrigem = (formData.get('categoria_origem') as string) || null
+  const canal = (formData.get('canal') as string) || null
+
+  if (canal) {
+    const { data: canalValido } = await supabase.from('canais_prospeccao').select('id').eq('barbearia_id', membro!.barbearia_id).eq('nome', canal).eq('ativo', true).maybeSingle()
+    if (!canalValido) throw new Error('Canal inválido.')
+  }
 
   const clienteId = await supabase.rpc('criar_ou_obter_cliente', {
     p_barbearia_id: membro!.barbearia_id, p_nome: nome, p_telefone: telefone,
@@ -32,7 +38,7 @@ async function novoContato(formData: FormData) {
     nome,
     telefone,
     cliente_id: clienteId.data,
-    canal: (formData.get('canal') as string) || null,
+    canal,
     oferta_corte_gratis: formData.get('oferta_corte_gratis') === 'on',
   })
   revalidatePath('/painel/prospeccao')
@@ -48,6 +54,7 @@ export default async function ProspeccaoPage() {
     .single()
 
   const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
+  const { data: canais } = await supabase.from('canais_prospeccao').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
 
   const hoje = new Date().toISOString().slice(0, 10)
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
@@ -121,11 +128,7 @@ export default async function ProspeccaoPage() {
             <TelefoneClienteBusca meuMembroId={membro!.id} categorias={categorias ?? []} />
             <Select name="canal" aria-label="Canal" className="w-40" defaultValue="">
               <option value="">Canal (opcional)</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="indicacao">Indicação</option>
-              <option value="rua">Na rua</option>
-              <option value="redes_sociais">Redes sociais</option>
-              <option value="outro">Outro</option>
+              {canais?.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </Select>
             <label className="text-sm flex items-center gap-1">
               <input type="checkbox" name="oferta_corte_gratis" /> Ofereci corte grátis + consultoria

@@ -67,6 +67,11 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M16 5.5a3.5 3.5 0 0 1 0 7M17.5 14.4c2.1.8 3.5 2.6 3.5 5.6" />
     </>
   ),
+  '/admin/canais-prospeccao': (
+    <>
+      <path d="M4 6h16M4 12h10M4 18h6" />
+    </>
+  ),
   '/admin/categorias-origem': (
     <>
       <path d="M4 6h16M4 12h10M4 18h6" />

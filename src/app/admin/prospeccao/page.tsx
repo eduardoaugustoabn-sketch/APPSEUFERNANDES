@@ -26,6 +26,16 @@ export default async function AdminProspeccaoPage() {
     .eq('status', 'convertido')
     .order('convertido_em', { ascending: false }) as { data: Linha[] | null }
 
+  const { data: canais } = await supabase.from('canais_prospeccao').select('nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
+  const { data: prospeccoesPorCanal } = await supabase.from('prospeccoes').select('canal, status').eq('barbearia_id', membro!.barbearia_id)
+
+  const rankingCanais = (canais ?? [])
+    .map((c) => ({
+      nome: c.nome,
+      conversoes: (prospeccoesPorCanal ?? []).filter((p) => p.canal === c.nome && p.status === 'convertido').length,
+    }))
+    .sort((a, b) => b.conversoes - a.conversoes)
+
   const agendamentoIds = (convertidos ?? []).map((c) => c.agendamento_id).filter((id): id is string => id !== null)
 
   const { data: atendimentosPorAgendamento } = await supabase
@@ -54,6 +64,20 @@ export default async function AdminProspeccaoPage() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-4">Conversão de prospecção</h1>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="font-heading text-base font-bold mb-5">Ranking de canais</h2>
+          {rankingCanais.length === 0 && <p className="text-sm text-muted-foreground">Nenhum canal cadastrado.</p>}
+          {rankingCanais.map((c) => (
+            <div key={c.nome} className="flex justify-between items-center border-b py-2 last:border-b-0">
+              <span className="text-sm">{c.nome}</span>
+              <span className="font-mono text-sm font-bold">{c.conversoes} {c.conversoes === 1 ? 'atendimento' : 'atendimentos'}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="p-6">
           <Table>

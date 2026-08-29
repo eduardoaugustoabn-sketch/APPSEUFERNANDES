@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/admin/barbeiros', label: 'Barbeiros' },
   { href: '/admin/ranking', label: 'Ranking' },
   { href: '/admin/prospeccao', label: 'Prospecção' },
+  { href: '/admin/canais-prospeccao', label: 'Canais de prospecção' },
   { href: '/admin/clientes', label: 'Clientes' },
   { href: '/admin/categorias-origem', label: 'Categorias de origem' },
   { href: '/admin/sonhos', label: 'Sonhos' },

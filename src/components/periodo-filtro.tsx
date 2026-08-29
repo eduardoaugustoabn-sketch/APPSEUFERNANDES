@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Select } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import type { PeriodoPreset } from '@/lib/periodo'
 export function PeriodoFiltro({ preset, inicio, fim }: { preset: PeriodoPreset; inicio: string; fim: string }) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [presetSelecionado, setPresetSelecionado] = useState<PeriodoPreset>(preset)
   const [inicioCustom, setInicioCustom] = useState(inicio)
   const [fimCustom, setFimCustom] = useState(fim)
@@ -23,10 +24,17 @@ export function PeriodoFiltro({ preset, inicio, fim }: { preset: PeriodoPreset; 
   }, [preset, inicio, fim])
 
   function navegar(novoPreset: PeriodoPreset, novoInicio?: string, novoFim?: string) {
-    const params = new URLSearchParams({ periodo: novoPreset })
+    // Parte dos params atuais da URL para preservar outros filtros que a
+    // página possa ter (ex.: um filtro de status futuro), em vez de
+    // descartá-los ao trocar só o período.
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('periodo', novoPreset)
     if (novoPreset === 'personalizado' && novoInicio && novoFim) {
       params.set('inicio', novoInicio)
       params.set('fim', novoFim)
+    } else {
+      params.delete('inicio')
+      params.delete('fim')
     }
     router.push(`${pathname}?${params.toString()}`)
   }
@@ -49,7 +57,7 @@ export function PeriodoFiltro({ preset, inicio, fim }: { preset: PeriodoPreset; 
           <Input type="date" value={inicioCustom} onChange={(e) => setInicioCustom(e.target.value)} className="w-40" aria-label="Data de início" />
           <span className="text-sm text-muted-foreground">até</span>
           <Input type="date" value={fimCustom} onChange={(e) => setFimCustom(e.target.value)} className="w-40" aria-label="Data de fim" />
-          <Button type="button" onClick={() => navegar('personalizado', inicioCustom, fimCustom)} disabled={!inicioCustom || !fimCustom}>
+          <Button type="button" onClick={() => navegar('personalizado', inicioCustom, fimCustom)} disabled={!inicioCustom || !fimCustom || inicioCustom > fimCustom}>
             Aplicar
           </Button>
         </>

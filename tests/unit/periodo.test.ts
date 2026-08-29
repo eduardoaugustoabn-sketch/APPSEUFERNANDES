@@ -72,4 +72,28 @@ describe('resolverPeriodo', () => {
     const resultado = resolverPeriodo({ periodo: 'bagunca' })
     expect(resultado.preset).toBe('este_mes')
   })
+
+  it('falls back to este_mes when personalizado inicio has an invalid format', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 15))
+    const resultado = resolverPeriodo({ periodo: 'personalizado', inicio: 'abc', fim: '2026-05-20' })
+    expect(resultado.preset).toBe('este_mes')
+  })
+
+  it('falls back to este_mes when personalizado has a non-existent calendar date', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 15))
+    // 2026-02-30 não existe (fevereiro de 2026 tem 28 dias) — o Date do JS
+    // "rolaria" isso para 2 de março, então precisa ser rejeitado
+    // explicitamente em vez de aceito silenciosamente com a data errada.
+    const resultado = resolverPeriodo({ periodo: 'personalizado', inicio: '2026-02-30', fim: '2026-05-20' })
+    expect(resultado.preset).toBe('este_mes')
+  })
+
+  it('falls back to este_mes when personalizado range exceeds 366 days', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 15))
+    const resultado = resolverPeriodo({ periodo: 'personalizado', inicio: '2020-01-01', fim: '2026-05-20' })
+    expect(resultado.preset).toBe('este_mes')
+  })
 })

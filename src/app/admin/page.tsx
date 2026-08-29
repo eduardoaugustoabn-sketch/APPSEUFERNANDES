@@ -24,12 +24,23 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   const produtosBaixos = (produtos ?? []).filter((p) => p.quantidade_estoque <= p.estoque_minimo)
   const { data: barbeiros } = await supabase.from('membros').select('id, nome, plano_carreira_id').eq('barbearia_id', membro!.barbearia_id).eq('papel', 'barbeiro')
 
+  // Diferente de atendimentos/vendas/prospecções (só têm datas passadas),
+  // agendamentos legitimamente têm datas futuras (status agendado/confirmado).
+  // Para o preset "este_mes", `fim` é hoje — usar `fim` aqui cortaria
+  // agendamentos futuros do próprio mês corrente. As demais queries da
+  // página continuam usando `fim` normalmente (hoje é o corte certo para
+  // faturamento/ocupação, que não existem para dias que ainda não aconteceram).
+  const fimAgendamentos =
+    preset === 'este_mes'
+      ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10)
+      : fim
+
   const { data: agendamentosMes } = await supabase
     .from('agendamentos')
     .select('status, vezes_remarcado')
     .eq('barbearia_id', membro!.barbearia_id)
     .gte('data', inicio)
-    .lte('data', fim)
+    .lte('data', fimAgendamentos)
 
   const totalAgendamentos = agendamentosMes?.length ?? 0
   const realizadosCount = agendamentosMes?.filter((a) => a.status === 'realizado').length ?? 0
@@ -102,11 +113,11 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
       </div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(215px,1fr))] gap-4 mb-6">
         <KpiCard
-          label="Faturamento do mês (todos)"
+          label="Faturamento do período (todos)"
           value={`R$ ${faturamentoTotal.toFixed(2)}`}
         />
         <KpiCard
-          label="Comissões acumuladas no mês"
+          label="Comissões acumuladas no período"
           value={`R$ ${comissaoTotal.toFixed(2)}`}
         />
         <KpiCard
@@ -119,7 +130,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
       <h2 className="font-heading text-lg font-semibold mb-2">Barbeiros</h2>
       <Table>
         <TableHeader>
-          <TableRow><TableHead>Nome</TableHead><TableHead>Faturamento mês</TableHead><TableHead>Comissão mês</TableHead><TableHead>Ocupação</TableHead></TableRow>
+          <TableRow><TableHead>Nome</TableHead><TableHead>Faturamento</TableHead><TableHead>Comissão</TableHead><TableHead>Ocupação</TableHead></TableRow>
         </TableHeader>
         <TableBody>
           {linhas.map((l) => (
@@ -130,7 +141,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
 
       <Card className="mt-6 mb-5">
         <CardContent className="p-6">
-          <p className="font-heading text-base font-bold mb-5">Indicadores de agendamento (mês, toda a barbearia) <span className="font-normal text-muted-foreground text-sm">— não somado ao financeiro acima</span></p>
+          <p className="font-heading text-base font-bold mb-5">Indicadores de agendamento (toda a barbearia) <span className="font-normal text-muted-foreground text-sm">— não somado ao financeiro acima</span></p>
           <div className="grid grid-cols-5 gap-5 text-center">
             <div><p className="text-2xl font-bold">{totalAgendamentos}</p><p className="text-xs text-muted-foreground mt-1">Total</p></div>
             <div><p className="text-2xl font-bold text-primary">{realizadosCount}</p><p className="text-xs text-muted-foreground mt-1">Realizados</p></div>
@@ -143,7 +154,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
 
       <Card>
         <CardContent className="p-6">
-          <p className="font-heading text-base font-bold mb-5">Prospecção (mês, toda a barbearia)</p>
+          <p className="font-heading text-base font-bold mb-5">Prospecção (toda a barbearia)</p>
           <div className="grid grid-cols-4 gap-5 text-center">
             <div><p className="text-2xl font-bold">{prospectados}</p><p className="text-xs text-muted-foreground mt-1">Prospectados</p></div>
             <div><p className="text-2xl font-bold text-primary">{convertidosProspeccao}</p><p className="text-xs text-muted-foreground mt-1">Convertidos</p></div>

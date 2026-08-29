@@ -1,19 +1,20 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { calcularOciosidade } from '@/lib/ociosidade'
+import { resolverPeriodo } from '@/lib/periodo'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { KpiCard } from '@/components/painel/kpi-card'
+import { PeriodoFiltro } from '@/components/periodo-filtro'
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
 
-  const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
-  const hoje = new Date().toISOString().slice(0, 10)
+  const { preset, inicio, fim, label } = resolverPeriodo(await searchParams)
 
-  const { data: atendimentos } = await supabase.from('atendimentos').select('membro_id, preco, comissao_valor').eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
-  const { data: vendas } = await supabase.from('vendas_produtos').select('membro_id, quantidade, preco_unitario, comissao_valor').eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
+  const { data: atendimentos } = await supabase.from('atendimentos').select('membro_id, preco, comissao_valor').eq('barbearia_id', membro!.barbearia_id).gte('data', inicio).lte('data', fim)
+  const { data: vendas } = await supabase.from('vendas_produtos').select('membro_id, quantidade, preco_unitario, comissao_valor').eq('barbearia_id', membro!.barbearia_id).gte('data', inicio).lte('data', fim)
   // supabase-js's .filter(column, op, value) compares against a literal
   // value, not another column — .filter('quantidade_estoque', 'lte',
   // 'estoque_minimo') was silently comparing against the string
@@ -27,7 +28,8 @@ export default async function AdminOverviewPage() {
     .from('agendamentos')
     .select('status, vezes_remarcado')
     .eq('barbearia_id', membro!.barbearia_id)
-    .gte('data', inicioMes)
+    .gte('data', inicio)
+    .lte('data', fim)
 
   const totalAgendamentos = agendamentosMes?.length ?? 0
   const realizadosCount = agendamentosMes?.filter((a) => a.status === 'realizado').length ?? 0
@@ -39,7 +41,8 @@ export default async function AdminOverviewPage() {
     .from('prospeccoes')
     .select('status, agendamento_id')
     .eq('barbearia_id', membro!.barbearia_id)
-    .gte('data', inicioMes)
+    .gte('data', inicio)
+    .lte('data', fim)
 
   const prospectados = prospeccoesMes?.length ?? 0
   const convertidosProspeccao = prospeccoesMes?.filter((p) => p.status === 'convertido').length ?? 0
@@ -78,7 +81,7 @@ export default async function AdminOverviewPage() {
       // Same cast reasoning as the barbeiro dashboard (Task 15): no
       // generated Supabase types, so .rpc().single() is otherwise untyped.
       const { data: ociosidadeRaw } = await supabase
-        .rpc('ociosidade', { p_membro_id: b.id, p_data_inicio: inicioMes, p_data_fim: hoje })
+        .rpc('ociosidade', { p_membro_id: b.id, p_data_inicio: inicio, p_data_fim: fim })
         .single() as { data: { minutos_disponiveis: number; minutos_ocupados: number; faturamento_servicos: number } | null }
       const ocupacao = calcularOciosidade({
         minutosDisponiveis: ociosidadeRaw?.minutos_disponiveis ?? 0,
@@ -93,7 +96,10 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold mb-4">Visão geral</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+        <h1 className="font-heading text-2xl font-bold">Visão geral — {label}</h1>
+        <PeriodoFiltro preset={preset} inicio={inicio} fim={fim} />
+      </div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(215px,1fr))] gap-4 mb-6">
         <KpiCard
           label="Faturamento do mês (todos)"

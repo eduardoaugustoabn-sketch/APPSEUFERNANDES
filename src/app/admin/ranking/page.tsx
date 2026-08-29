@@ -1,13 +1,15 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { resolverPeriodo } from '@/lib/periodo'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { PeriodoFiltro } from '@/components/periodo-filtro'
 
-export default async function RankingPage() {
+export default async function RankingPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
 
-  const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+  const { preset, inicio, fim, label } = resolverPeriodo(await searchParams)
 
   const { data: barbeiros } = await supabase
     .from('membros').select('id, nome')
@@ -24,10 +26,10 @@ export default async function RankingPage() {
 
   const { data: atendimentos } = await supabase
     .from('atendimentos').select('membro_id, servico_id, preco')
-    .eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
+    .eq('barbearia_id', membro!.barbearia_id).gte('data', inicio).lte('data', fim)
   const { data: vendas } = await supabase
     .from('vendas_produtos').select('membro_id, produto_id, quantidade, preco_unitario')
-    .eq('barbearia_id', membro!.barbearia_id).gte('data', inicioMes)
+    .eq('barbearia_id', membro!.barbearia_id).gte('data', inicio).lte('data', fim)
 
   const { data: clientesStatus } = await supabase.rpc('clientes_com_status', { p_barbearia_id: membro!.barbearia_id }) as {
     data: { cadastrado_por_membro_id: string | null; status: string | null }[] | null
@@ -102,7 +104,10 @@ export default async function RankingPage() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold mb-4">Ranking (mês)</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+        <h1 className="font-heading text-2xl font-bold">Ranking — {label}</h1>
+        <PeriodoFiltro preset={preset} inicio={inicio} fim={fim} />
+      </div>
 
       <h2 className="font-heading text-lg font-semibold mb-3">Clientes ativos</h2>
       <Card className="mb-8">

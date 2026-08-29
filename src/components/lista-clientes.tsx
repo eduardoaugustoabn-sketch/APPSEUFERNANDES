@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
@@ -17,6 +18,7 @@ type Cliente = {
   dias_sem_vir: number | null
   status: string | null
   tem_agendamento_futuro: boolean
+  categoria_origem: string | null
 }
 
 const COR_STATUS: Record<string, string> = {
@@ -41,15 +43,27 @@ const LEGENDA = [
 export function ListaClientes({ clientes, baseHref, mostrarDono }: { clientes: Cliente[]; baseHref: string; mostrarDono?: boolean }) {
   const router = useRouter()
   const [busca, setBusca] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+
+  const categorias = useMemo(
+    () => Array.from(new Set(clientes.map((c) => c.categoria_origem).filter((c): c is string => !!c))).sort(),
+    [clientes]
+  )
 
   const termo = busca.trim()
   const termoLower = termo.toLowerCase()
   const termoDigitos = termo.replace(/\D/g, '')
   const filtrados = clientes.filter((c) => {
-    if (termo === '') return true
-    const nomeBate = c.nome.toLowerCase().includes(termoLower)
-    const telefoneBate = termoDigitos.length > 0 && c.telefone.includes(termoDigitos)
-    return nomeBate || telefoneBate
+    if (termo !== '') {
+      const nomeBate = c.nome.toLowerCase().includes(termoLower)
+      const telefoneBate = termoDigitos.length > 0 && c.telefone.includes(termoDigitos)
+      if (!nomeBate && !telefoneBate) return false
+    }
+    if (filtroStatus === 'sem_historico' && c.status !== null) return false
+    if (filtroStatus && filtroStatus !== 'sem_historico' && c.status !== filtroStatus) return false
+    if (filtroCategoria && c.categoria_origem !== filtroCategoria) return false
+    return true
   })
 
   return (
@@ -64,7 +78,20 @@ export function ListaClientes({ clientes, baseHref, mostrarDono }: { clientes: C
           ))}
         </div>
 
-        <Input placeholder="Buscar por nome ou telefone" value={busca} onChange={(e) => setBusca(e.target.value)} className="mb-4" />
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Input placeholder="Buscar por nome ou telefone" value={busca} onChange={(e) => setBusca(e.target.value)} className="flex-1 min-w-48" />
+          <Select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} aria-label="Filtrar por status" className="w-40">
+            <option value="">Todos os status</option>
+            <option value="verde">Em dia</option>
+            <option value="amarelo">Atenção</option>
+            <option value="vermelho">Atrasado</option>
+            <option value="sem_historico">Sem histórico</option>
+          </Select>
+          <Select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} aria-label="Filtrar por categoria de origem" className="w-48">
+            <option value="">Todas as categorias</option>
+            {categorias.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+          </Select>
+        </div>
 
         <Table>
           <TableHeader>

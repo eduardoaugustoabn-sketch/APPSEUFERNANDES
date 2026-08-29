@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/admin/sidebar'
+import { MobileSidebarShell } from '@/components/mobile-sidebar-shell'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Visão geral' },
@@ -32,9 +33,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (membro?.papel !== 'admin') redirect('/')
 
   return (
-    <div className="flex min-h-screen items-stretch">
-      <AdminSidebar navItems={NAV_ITEMS} nomeAdmin={membro.nome} />
-      <div className="flex-1 min-w-0 p-6 md:p-8 lg:p-10">{children}</div>
-    </div>
+    <MobileSidebarShell titulo="Seu Fernandes" sidebar={<AdminSidebar navItems={NAV_ITEMS} nomeAdmin={membro.nome} />}>
+      {children}
+    </MobileSidebarShell>
   )
 }

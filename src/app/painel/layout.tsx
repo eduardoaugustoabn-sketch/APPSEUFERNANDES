@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { PainelSidebar } from '@/components/painel/sidebar'
+import { MobileSidebarShell } from '@/components/mobile-sidebar-shell'
 
 const NAV_ITEMS = [
   { href: '/painel', label: 'Dashboard' },
@@ -47,14 +48,18 @@ export default async function BarbeiroLayout({ children }: { children: React.Rea
     (vendasMes ?? []).reduce((s, v) => s + Number(v.preco_unitario) * v.quantidade, 0)
 
   return (
-    <div className="flex min-h-screen items-stretch">
-      <PainelSidebar
-        navItems={NAV_ITEMS}
-        nomeMembro={membro.nome}
-        faturamentoMes={faturamentoMes}
-        metaFaturamentoMes={membro.meta_faturamento_mes}
-      />
-      <div className="flex-1 min-w-0 p-6 md:p-8 lg:p-10">{children}</div>
-    </div>
+    <MobileSidebarShell
+      titulo="Seu Fernandes"
+      sidebar={
+        <PainelSidebar
+          navItems={NAV_ITEMS}
+          nomeMembro={membro.nome}
+          faturamentoMes={faturamentoMes}
+          metaFaturamentoMes={membro.meta_faturamento_mes}
+        />
+      }
+    >
+      {children}
+    </MobileSidebarShell>
   )
 }

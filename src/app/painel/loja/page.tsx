@@ -1,12 +1,17 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
+import { resolverPeriodo } from '@/lib/periodo'
 import { VendaLojaForm } from '@/components/venda-loja-form'
+import { VendasLojaLista } from '@/components/vendas-loja-lista'
+import { PeriodoFiltro } from '@/components/periodo-filtro'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
-export default async function PainelLojaPage() {
+export default async function PainelLojaPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('id, barbearia_id').eq('user_id', user!.id).single()
+
+  const { preset, inicio, fim, label } = resolverPeriodo(await searchParams)
 
   const { data: produtos } = await supabase.from('produtos_loja').select('id, nome, categoria, preco_venda, quantidade_estoque, ativo').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
   const { data: categorias } = await supabase.from('categorias_origem').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).order('nome')
@@ -14,8 +19,9 @@ export default async function PainelLojaPage() {
     .from('vendas_loja')
     .select('data, quantidade, preco_unitario, comissao_valor, clientes(nome), produtos_loja(nome)')
     .eq('membro_id', membro!.id)
-    .order('criado_em', { ascending: false })
-    .limit(50) as {
+    .gte('data', inicio)
+    .lte('data', fim)
+    .order('criado_em', { ascending: false }) as {
       data: { data: string; quantidade: number; preco_unitario: number; comissao_valor: number; clientes: { nome: string } | null; produtos_loja: { nome: string } | null }[] | null
     }
 
@@ -48,23 +54,11 @@ export default async function PainelLojaPage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="font-heading text-base font-bold mb-5">Minhas vendas recentes</h2>
-          <Table>
-            <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Cliente</TableHead><TableHead>Produto</TableHead><TableHead>Qtd</TableHead><TableHead>Valor</TableHead><TableHead>Comissão</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {(vendas ?? []).map((v, i) => (
-                <TableRow key={i}>
-                  <TableCell>{new Date(v.data).toLocaleDateString()}</TableCell>
-                  <TableCell>{v.clientes?.nome ?? '—'}</TableCell>
-                  <TableCell>{v.produtos_loja?.nome ?? '—'}</TableCell>
-                  <TableCell>{v.quantidade}</TableCell>
-                  <TableCell>R$ {(v.preco_unitario * v.quantidade).toFixed(2)}</TableCell>
-                  <TableCell>R$ {Number(v.comissao_valor).toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {(vendas ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhuma venda registrada ainda.</p>}
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-5">
+            <h2 className="font-heading text-base font-bold">Minhas vendas — {label}</h2>
+            <PeriodoFiltro preset={preset} inicio={inicio} fim={fim} />
+          </div>
+          <VendasLojaLista vendas={vendas ?? []} />
         </CardContent>
       </Card>
     </div>

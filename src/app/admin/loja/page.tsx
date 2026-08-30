@@ -1,10 +1,13 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { resolverPeriodo } from '@/lib/periodo'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ProdutoLojaRow } from '@/components/produto-loja-row'
 import { AdminVendaLoja } from '@/components/admin-venda-loja'
+import { VendasLojaLista } from '@/components/vendas-loja-lista'
+import { PeriodoFiltro } from '@/components/periodo-filtro'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 async function criarProdutoLoja(formData: FormData) {
@@ -25,10 +28,12 @@ async function criarProdutoLoja(formData: FormData) {
   revalidatePath('/admin/loja')
 }
 
-export default async function LojaPage() {
+export default async function LojaPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await getServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
+
+  const { preset, inicio, fim, label } = resolverPeriodo(await searchParams)
 
   const { data: produtos } = await supabase.from('produtos_loja').select('*').eq('barbearia_id', membro!.barbearia_id).order('nome')
   const { data: barbeiros } = await supabase
@@ -40,8 +45,9 @@ export default async function LojaPage() {
     .from('vendas_loja')
     .select('data, quantidade, preco_unitario, comissao_valor, clientes(nome), produtos_loja(nome), membros(nome)')
     .eq('barbearia_id', membro!.barbearia_id)
-    .order('criado_em', { ascending: false })
-    .limit(50) as {
+    .gte('data', inicio)
+    .lte('data', fim)
+    .order('criado_em', { ascending: false }) as {
       data: { data: string; quantidade: number; preco_unitario: number; comissao_valor: number; clientes: { nome: string } | null; produtos_loja: { nome: string } | null; membros: { nome: string } | null }[] | null
     }
 
@@ -82,24 +88,11 @@ export default async function LojaPage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="font-heading text-base font-bold mb-5">Vendas recentes</h2>
-          <Table>
-            <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Cliente</TableHead><TableHead>Produto</TableHead><TableHead>Qtd</TableHead><TableHead>Valor</TableHead><TableHead>Comissão</TableHead><TableHead>Barbeiro</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {(vendas ?? []).map((v, i) => (
-                <TableRow key={i}>
-                  <TableCell>{new Date(v.data).toLocaleDateString()}</TableCell>
-                  <TableCell>{v.clientes?.nome ?? '—'}</TableCell>
-                  <TableCell>{v.produtos_loja?.nome ?? '—'}</TableCell>
-                  <TableCell>{v.quantidade}</TableCell>
-                  <TableCell>R$ {(v.preco_unitario * v.quantidade).toFixed(2)}</TableCell>
-                  <TableCell>R$ {Number(v.comissao_valor).toFixed(2)}</TableCell>
-                  <TableCell>{v.membros?.nome ?? '—'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {(vendas ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhuma venda registrada ainda.</p>}
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-5">
+            <h2 className="font-heading text-base font-bold">Vendas — {label}</h2>
+            <PeriodoFiltro preset={preset} inicio={inicio} fim={fim} />
+          </div>
+          <VendasLojaLista vendas={vendas ?? []} mostrarBarbeiro />
         </CardContent>
       </Card>
     </div>

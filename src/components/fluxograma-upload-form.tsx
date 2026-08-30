@@ -16,8 +16,11 @@ export function FluxogramaUploadForm({ processoId, barbeariaId, fluxogramaUrlAtu
     setEnviando(true)
     setErro(null)
     const supabase = getBrowserSupabaseClient()
-    const extensao = arquivo.name.split('.').pop()
-    const path = `${barbeariaId}/${processoId}.${extensao}`
+    // Sem extensão no path: o Content-Type é gravado a partir do metadata do
+    // próprio upload, não do nome do objeto -- manter o path fixo faz um
+    // upload de formato diferente sobrescrever o anterior (upsert) em vez de
+    // deixar o arquivo antigo órfão no bucket (não há policy de delete).
+    const path = `${barbeariaId}/${processoId}`
 
     const { error: erroUpload } = await supabase.storage.from('fluxogramas').upload(path, arquivo, { upsert: true })
     if (erroUpload) {

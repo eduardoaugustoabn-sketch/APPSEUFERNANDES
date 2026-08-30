@@ -12,11 +12,12 @@ async function criarProcesso(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
 
-  await supabase.from('processos_onboarding').insert({
+  const { error } = await supabase.from('processos_onboarding').insert({
     barbearia_id: membro!.barbearia_id,
     nome: formData.get('nome') as string,
     descricao: (formData.get('descricao') as string) || null,
   })
+  if (error) throw new Error(error.message)
   revalidatePath('/admin/onboarding')
 }
 

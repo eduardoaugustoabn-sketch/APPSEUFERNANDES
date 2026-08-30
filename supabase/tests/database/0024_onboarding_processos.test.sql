@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(23);
 
 insert into barbearias (id, nome, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Barbearia A', 'barbearia-a');
@@ -10,12 +10,14 @@ insert into barbearias (id, nome, slug) values
 insert into auth.users (id, email) values
   ('bbbbbbbb-0000-0000-0000-000000000002', 'admin@example.com'),
   ('cccccccc-0000-0000-0000-000000000003', 'barbeiro@example.com'),
-  ('dddddddd-0000-0000-0000-000000000004', 'adminb@example.com');
+  ('dddddddd-0000-0000-0000-000000000004', 'adminb@example.com'),
+  ('eeeeeeee-0000-0000-0000-000000000005', 'barbeiro2@example.com');
 
 insert into membros (id, barbearia_id, user_id, papel, nome) values
   ('a1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000002', 'admin', 'Admin'),
   ('a1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'cccccccc-0000-0000-0000-000000000003', 'barbeiro', 'Barbeiro'),
-  ('a1000000-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'dddddddd-0000-0000-0000-000000000004', 'admin', 'AdminB');
+  ('a1000000-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'dddddddd-0000-0000-0000-000000000004', 'admin', 'AdminB'),
+  ('a1000000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'eeeeeeee-0000-0000-0000-000000000005', 'barbeiro', 'Barbeiro 2');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-000000000002', true);
@@ -94,6 +96,16 @@ select is(
   'processo_onboarding_perguntas returns all 4 alternativa rows (2 perguntas x 2 alternativas) for a barbeiro with no direct table access'
 );
 
+-- A função declara só 6 colunas na assinatura (sem `correta`) -- referenciar
+-- essa coluna no resultado precisa falhar na análise da query (undefined_column),
+-- não só "vir vazia", provando que o gabarito é estruturalmente inacessível.
+select throws_ok(
+  $$select correta from processo_onboarding_perguntas('c1000000-0000-0000-0000-000000000001')$$,
+  '42703',
+  'column "correta" does not exist',
+  'processo_onboarding_perguntas does not expose the correta column at all'
+);
+
 -- Todas certas (Processo A1, 2/2) -> 100%, aprovado.
 select is(
   (select nota_percentual from submeter_tentativa_onboarding(
@@ -142,15 +154,29 @@ select is(
   '2 of 3 correct rounds to nota_percentual 67'
 );
 
+-- Enviar menos respostas que o total de perguntas do processo é rejeitado no
+-- servidor -- essa é a fronteira de segurança real, já que a validação de
+-- "todas respondidas" hoje só existe no botão do formulário (client-side) e
+-- chamar a RPC direto contornaria isso sem o check da 0042.
+select throws_ok(
+  $$select submeter_tentativa_onboarding(
+    'c1000000-0000-0000-0000-000000000002',
+    '[{"pergunta_id":"d1000000-0000-0000-0000-000000000003","alternativa_id":"e1000000-0000-0000-0000-000000000005"},{"pergunta_id":"d1000000-0000-0000-0000-000000000004","alternativa_id":"e1000000-0000-0000-0000-000000000007"}]'::jsonb
+  )$$,
+  'Responda todas as perguntas antes de enviar.',
+  'submeter_tentativa_onboarding rejects a partial submission with fewer answers than perguntas'
+);
+
 -- Duplicar a mesma pergunta no array de respostas não infla a nota --
--- responde só a pergunta 1 (certa), duas vezes, pergunta 2 fica sem
--- resposta. Se fosse count(*) em vez de count(distinct pergunta_id), isso
--- contaria como 2 acertos e daria 100% mesmo com uma pergunta inteira sem
--- resposta.
+-- responde a pergunta 1 (certa) duas vezes e a pergunta 2 (errada) uma vez
+-- (as duas perguntas do processo precisam aparecer no array pra passar no
+-- check de completude da 0042). Se fosse count(*) em vez de
+-- count(distinct pergunta_id), a duplicata da pergunta 1 contaria como 2
+-- acertos e daria 100% em vez de 50%.
 select is(
   (select nota_percentual from submeter_tentativa_onboarding(
     'c1000000-0000-0000-0000-000000000001',
-    '[{"pergunta_id":"d1000000-0000-0000-0000-000000000001","alternativa_id":"e1000000-0000-0000-0000-000000000001"},{"pergunta_id":"d1000000-0000-0000-0000-000000000001","alternativa_id":"e1000000-0000-0000-0000-000000000001"}]'::jsonb
+    '[{"pergunta_id":"d1000000-0000-0000-0000-000000000001","alternativa_id":"e1000000-0000-0000-0000-000000000001"},{"pergunta_id":"d1000000-0000-0000-0000-000000000001","alternativa_id":"e1000000-0000-0000-0000-000000000001"},{"pergunta_id":"d1000000-0000-0000-0000-000000000002","alternativa_id":"e1000000-0000-0000-0000-000000000004"}]'::jsonb
   )),
   50,
   'submitting the same pergunta twice does not inflate the score past what answering it once would give'
@@ -185,6 +211,49 @@ select is(
   (select count(*)::int from processos_onboarding where barbearia_id = '11111111-1111-1111-1111-111111111111'),
   0,
   'an admin from a DIFFERENT barbearia cannot read this barbearia''s processos_onboarding'
+);
+
+-- Um segundo barbeiro da Barbearia A submete a própria tentativa; a
+-- asserção anterior de "6 tentativas" usava membro_id = <barbeiro A> e por
+-- isso passaria mesmo com a policy de select totalmente aberta. Um
+-- count(*) SEM filtro nenhum, feito como barbeiro A depois que existe uma
+-- 7ª tentativa (de outro membro) no banco, prova que é a RLS -- e não a
+-- cláusula WHERE da query -- quem restringe a visibilidade.
+select set_config('request.jwt.claim.sub', 'eeeeeeee-0000-0000-0000-000000000005', true);
+select submeter_tentativa_onboarding(
+  'c1000000-0000-0000-0000-000000000001',
+  '[{"pergunta_id":"d1000000-0000-0000-0000-000000000001","alternativa_id":"e1000000-0000-0000-0000-000000000001"},{"pergunta_id":"d1000000-0000-0000-0000-000000000002","alternativa_id":"e1000000-0000-0000-0000-000000000003"}]'::jsonb
+);
+
+select set_config('request.jwt.claim.sub', 'cccccccc-0000-0000-0000-000000000003', true);
+select is(
+  (select count(*)::int from tentativas_onboarding),
+  6,
+  'a barbeiro''s UNFILTERED count(*) still only reflects their own tentativas_onboarding rows even though a 7th row (another membro''s) now exists'
+);
+
+-- Storage RLS: barbeiro não pode subir/gravar objeto no bucket de fluxograma.
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('fluxogramas', '11111111-1111-1111-1111-111111111111/test.png')$$,
+  'new row violates row-level security policy for table "objects"',
+  'a barbeiro cannot insert into storage.objects for the fluxogramas bucket'
+);
+
+-- Storage RLS: admin de outra barbearia não pode gravar sob o prefixo da Barbearia A.
+select set_config('request.jwt.claim.sub', 'dddddddd-0000-0000-0000-000000000004', true);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('fluxogramas', '11111111-1111-1111-1111-111111111111/test.png')$$,
+  'new row violates row-level security policy for table "objects"',
+  'an admin from a different barbearia cannot insert under another barbearia''s storage prefix'
+);
+
+-- Storage RLS: admin da própria barbearia pode gravar sob o próprio prefixo.
+select set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-000000000002', true);
+insert into storage.objects (bucket_id, name) values ('fluxogramas', '11111111-1111-1111-1111-111111111111/test.png');
+select is(
+  (select count(*)::int from storage.objects where bucket_id = 'fluxogramas' and name = '11111111-1111-1111-1111-111111111111/test.png'),
+  1,
+  'an admin can insert a fluxograma object under their own barbearia prefix'
 );
 
 reset role;

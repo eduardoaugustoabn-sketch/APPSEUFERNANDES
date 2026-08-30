@@ -9,7 +9,7 @@ export default async function ProcessoOnboardingPainelPage({ params }: { params:
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('id, barbearia_id').eq('user_id', user!.id).single()
 
-  const { data: processo } = await supabase.from('processos_onboarding').select('*').eq('id', id).eq('barbearia_id', membro!.barbearia_id).single()
+  const { data: processo } = await supabase.from('processos_onboarding').select('*').eq('id', id).eq('barbearia_id', membro!.barbearia_id).eq('ativo', true).single()
   if (!processo) notFound()
 
   const { data: ultimaTentativa } = await supabase

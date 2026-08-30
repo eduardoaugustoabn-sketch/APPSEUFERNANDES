@@ -16,23 +16,35 @@ export function PerguntasOnboardingAdmin({ processoId, perguntas }: { processoId
   const [textos, setTextos] = useState(['', '', '', ''])
   const [correta, setCorreta] = useState(0)
   const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
 
   async function adicionarPergunta() {
     if (!enunciado.trim() || textos.some((t) => !t.trim())) return
     setSalvando(true)
+    setErro(null)
     const supabase = getBrowserSupabaseClient()
+    const ordem = perguntas.length > 0 ? Math.max(...perguntas.map((p) => p.ordem)) + 1 : 0
     const { data: pergunta, error } = await supabase
       .from('perguntas_onboarding')
-      .insert({ processo_id: processoId, enunciado, ordem: perguntas.length })
+      .insert({ processo_id: processoId, enunciado, ordem })
       .select('id')
       .single()
     if (error || !pergunta) {
+      setErro(error?.message ?? 'Não foi possível criar a pergunta.')
       setSalvando(false)
       return
     }
-    await supabase.from('alternativas_onboarding').insert(
+    const { error: erroAlternativas } = await supabase.from('alternativas_onboarding').insert(
       textos.map((texto, i) => ({ pergunta_id: pergunta.id, texto, correta: i === correta, ordem: i }))
     )
+    if (erroAlternativas) {
+      // Não há transação real disponível a partir do client -- desfazemos a
+      // pergunta já criada pra não deixar uma pergunta sem alternativas.
+      await supabase.from('perguntas_onboarding').delete().eq('id', pergunta.id)
+      setErro(erroAlternativas.message)
+      setSalvando(false)
+      return
+    }
     setEnunciado('')
     setTextos(['', '', '', ''])
     setCorreta(0)
@@ -42,7 +54,11 @@ export function PerguntasOnboardingAdmin({ processoId, perguntas }: { processoId
 
   async function removerPergunta(perguntaId: string) {
     const supabase = getBrowserSupabaseClient()
-    await supabase.from('perguntas_onboarding').delete().eq('id', perguntaId)
+    const { error } = await supabase.from('perguntas_onboarding').delete().eq('id', perguntaId)
+    if (error) {
+      setErro(error.message)
+      return
+    }
     router.refresh()
   }
 
@@ -79,6 +95,7 @@ export function PerguntasOnboardingAdmin({ processoId, perguntas }: { processoId
             </div>
           ))}
           <Button type="button" onClick={adicionarPergunta} disabled={salvando} className="self-start">Adicionar pergunta</Button>
+          {erro && <p className="text-sm text-destructive">{erro}</p>}
         </div>
       </CardContent>
     </Card>

@@ -25,9 +25,11 @@ export function ProvaOnboardingForm({ processoId, ultimaTentativa }: { processoI
   const [carregando, setCarregando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [resultado, setResultado] = useState<{ nota_percentual: number; aprovado: boolean } | null>(null)
+  const [erro, setErro] = useState<string | null>(null)
 
   async function iniciarProva() {
     setCarregando(true)
+    setErro(null)
     setResultado(null)
     setRespostas({})
     const supabase = getBrowserSupabaseClient()
@@ -39,18 +41,28 @@ export function ProvaOnboardingForm({ processoId, ultimaTentativa }: { processoI
       atual.alternativas.push({ id: linha.alternativa_id, texto: linha.alternativa_texto })
       agrupadas.set(linha.pergunta_id, atual)
     }
-    setPerguntas(Array.from(agrupadas.values()))
+    const perguntasCarregadas = Array.from(agrupadas.values())
+    setPerguntas(perguntasCarregadas)
     setCarregando(false)
+    if (perguntasCarregadas.length === 0) {
+      setErro('Este processo ainda não tem prova cadastrada.')
+      return
+    }
     setFazendo(true)
   }
 
   async function enviarRespostas() {
     setEnviando(true)
+    setErro(null)
     const supabase = getBrowserSupabaseClient()
     const payload = perguntas.map((p) => ({ pergunta_id: p.id, alternativa_id: respostas[p.id] })).filter((r) => r.alternativa_id)
     const { data, error } = await supabase.rpc('submeter_tentativa_onboarding', { p_processo_id: processoId, p_respostas: payload }) as { data: { nota_percentual: number; aprovado: boolean }[] | null; error: { message: string } | null }
     setEnviando(false)
-    if (error || !data?.[0]) return
+    if (error || !data?.[0]) {
+      setErro(error?.message ?? 'Não foi possível enviar as respostas.')
+      setFazendo(false)
+      return
+    }
     setResultado(data[0])
     setFazendo(false)
     router.refresh()
@@ -63,7 +75,7 @@ export function ProvaOnboardingForm({ processoId, ultimaTentativa }: { processoI
           <h2 className="font-heading text-base font-bold mb-3">Resultado</h2>
           <p className={`text-2xl font-extrabold ${resultado.aprovado ? 'text-primary' : 'text-destructive'}`}>{resultado.nota_percentual}%</p>
           <p className="text-sm text-muted-foreground mt-1">{resultado.aprovado ? 'Aprovado' : 'Reprovado'} — nota mínima 70%</p>
-          <Button type="button" className="mt-4" onClick={iniciarProva}>Refazer prova</Button>
+          <Button type="button" className="mt-4" onClick={iniciarProva} disabled={carregando}>Refazer prova</Button>
         </CardContent>
       </Card>
     )
@@ -109,6 +121,7 @@ export function ProvaOnboardingForm({ processoId, ultimaTentativa }: { processoI
         <Button type="button" onClick={iniciarProva} disabled={carregando}>
           {ultimaTentativa ? 'Refazer prova' : 'Fazer prova'}
         </Button>
+        {erro && <p className="text-sm text-destructive mt-2">{erro}</p>}
       </CardContent>
     </Card>
   )

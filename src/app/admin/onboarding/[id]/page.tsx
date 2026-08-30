@@ -30,7 +30,7 @@ export default async function ProcessoOnboardingAdminPage({ params }: { params: 
 
   const resultados = (barbeiros ?? []).map((b) => {
     const ultima = (tentativas ?? []).find((t) => t.membro_id === b.id)
-    return { nome: b.nome, status: ultima ? (ultima.aprovado ? 'Aprovado' : 'Reprovado') : 'Não iniciado', nota: ultima?.nota_percentual ?? null }
+    return { id: b.id, nome: b.nome, status: ultima ? (ultima.aprovado ? 'Aprovado' : 'Reprovado') : 'Não iniciado', nota: ultima?.nota_percentual ?? null }
   })
 
   return (
@@ -55,7 +55,7 @@ export default async function ProcessoOnboardingAdminPage({ params }: { params: 
             <TableHeader><TableRow><TableHead>Barbeiro</TableHead><TableHead>Status</TableHead><TableHead>Nota</TableHead></TableRow></TableHeader>
             <TableBody>
               {resultados.map((r) => (
-                <TableRow key={r.nome}>
+                <TableRow key={r.id}>
                   <TableCell>{r.nome}</TableCell>
                   <TableCell>{r.status}</TableCell>
                   <TableCell>{r.nota != null ? `${r.nota}%` : '—'}</TableCell>

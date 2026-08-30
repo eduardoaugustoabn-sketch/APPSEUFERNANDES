@@ -12,7 +12,11 @@ export function ProcessoOnboardingRow({ processo }: { processo: Processo }) {
 
   async function alternarAtivo() {
     const supabase = getBrowserSupabaseClient()
-    await supabase.from('processos_onboarding').update({ ativo: !processo.ativo }).eq('id', processo.id)
+    const { error } = await supabase.from('processos_onboarding').update({ ativo: !processo.ativo }).eq('id', processo.id)
+    if (error) {
+      alert(error.message)
+      return
+    }
     router.refresh()
   }
 

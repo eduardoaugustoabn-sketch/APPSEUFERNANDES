@@ -5,7 +5,7 @@ import { getBrowserSupabaseClient } from '@/lib/supabase/client'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 
-const OPCOES = [
+export const OPCOES_STATUS_PROSPECCAO = [
   { value: 'novo_lead', label: 'Novo lead' },
   { value: 'em_contato', label: 'Em contato' },
   { value: 'interessado', label: 'Interessado' },
@@ -29,7 +29,7 @@ export function ProspeccaoStatusForm({ prospeccaoId, statusAtual }: { prospeccao
   return (
     <div className="flex gap-2 items-center shrink-0">
       <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status" className="w-36">
-        {OPCOES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {OPCOES_STATUS_PROSPECCAO.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </Select>
       <Button type="button" onClick={salvar} disabled={salvando || status === statusAtual}>Salvar</Button>
     </div>

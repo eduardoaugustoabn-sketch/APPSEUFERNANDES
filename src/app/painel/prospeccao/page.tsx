@@ -1,6 +1,6 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { ProspeccaoStatusForm } from '@/components/prospeccao-status-form'
+import { PendentesConversaoLista } from '@/components/pendentes-conversao-lista'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -141,13 +141,7 @@ export default async function ProspeccaoPage() {
       <Card className="mb-6">
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Pendentes de conversão ({pendentes?.length ?? 0})</h2>
-          {pendentes?.map((p) => (
-            <div key={p.id} className="flex justify-between items-center border-b py-2 last:border-b-0">
-              <span>{p.nome} · {p.telefone} · {p.canal ?? 'sem canal'}{p.oferta_corte_gratis && ' · corte grátis'} · {new Date(p.criado_em).toLocaleDateString()}</span>
-              <ProspeccaoStatusForm prospeccaoId={p.id} statusAtual={p.status} />
-            </div>
-          ))}
-          {(pendentes?.length ?? 0) === 0 && <p className="text-sm text-muted-foreground">Nenhuma prospecção pendente.</p>}
+          <PendentesConversaoLista pendentes={pendentes ?? []} />
         </CardContent>
       </Card>
 

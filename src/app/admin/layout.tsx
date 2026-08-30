@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/admin/loja', label: 'Loja' },
   { href: '/admin/planos-carreira', label: 'Planos de carreira' },
   { href: '/admin/barbeiros', label: 'Barbeiros' },
+  { href: '/admin/onboarding', label: 'Onboarding' },
   { href: '/admin/ranking', label: 'Ranking' },
   { href: '/admin/prospeccao', label: 'Prospecção' },
   { href: '/admin/canais-prospeccao', label: 'Canais de prospecção' },

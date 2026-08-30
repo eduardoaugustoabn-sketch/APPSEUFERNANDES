@@ -51,6 +51,12 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M4.5 20.5c0-4.14 3.36-7.5 7.5-7.5s7.5 3.36 7.5 7.5" />
     </>
   ),
+  '/admin/onboarding': (
+    <>
+      <path d="M12 3l9 4.5-9 4.5-9-4.5 9-4.5z" />
+      <path d="M3 7.5v6l9 4.5 9-4.5v-6" />
+    </>
+  ),
   '/admin/ranking': (
     <path d="M4 20V13M12 20V6M20 20v-9" />
   ),

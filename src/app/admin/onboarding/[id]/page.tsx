@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { FluxogramaUploadForm } from '@/components/fluxograma-upload-form'
+import { PerguntasOnboardingAdmin } from '@/components/perguntas-onboarding-admin'
 
+type Alternativa = { id: string; texto: string; correta: boolean; ordem: number }
+type Pergunta = { id: string; enunciado: string; ordem: number; alternativas_onboarding: Alternativa[] }
 type Tentativa = { membro_id: string; nota_percentual: number; aprovado: boolean; respondido_em: string }
 
 export default async function ProcessoOnboardingAdminPage({ params }: { params: Promise<{ id: string }> }) {
@@ -15,6 +18,7 @@ export default async function ProcessoOnboardingAdminPage({ params }: { params: 
   const { data: processo } = await supabase.from('processos_onboarding').select('*').eq('id', id).eq('barbearia_id', membro!.barbearia_id).single()
   if (!processo) notFound()
 
+  const { data: perguntas } = await supabase.from('perguntas_onboarding').select('*, alternativas_onboarding(*)').eq('processo_id', id).order('ordem') as { data: Pergunta[] | null }
   const { data: barbeiros } = await supabase.from('membros').select('id, nome').eq('barbearia_id', membro!.barbearia_id).eq('papel', 'barbeiro').eq('ativo', true).order('nome')
   const { data: tentativas } = await supabase.from('tentativas_onboarding').select('membro_id, nota_percentual, aprovado, respondido_em').eq('processo_id', id).order('respondido_em', { ascending: false }) as { data: Tentativa[] | null }
 
@@ -39,6 +43,10 @@ export default async function ProcessoOnboardingAdminPage({ params }: { params: 
           <FluxogramaUploadForm processoId={processo.id} barbeariaId={membro!.barbearia_id} fluxogramaUrlAtual={fluxogramaUrl} />
         </CardContent>
       </Card>
+
+      <div className="mb-6">
+        <PerguntasOnboardingAdmin processoId={processo.id} perguntas={perguntas ?? []} />
+      </div>
 
       <Card>
         <CardContent className="p-6">

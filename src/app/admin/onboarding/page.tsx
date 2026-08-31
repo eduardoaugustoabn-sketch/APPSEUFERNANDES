@@ -12,10 +12,13 @@ async function criarProcesso(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
 
+  const { data: ultimo } = await supabase.from('processos_onboarding').select('ordem').eq('barbearia_id', membro!.barbearia_id).order('ordem', { ascending: false }).limit(1).maybeSingle()
+
   const { error } = await supabase.from('processos_onboarding').insert({
     barbearia_id: membro!.barbearia_id,
     nome: formData.get('nome') as string,
     descricao: (formData.get('descricao') as string) || null,
+    ordem: (ultimo?.ordem ?? 0) + 1,
   })
   if (error) throw new Error(error.message)
   revalidatePath('/admin/onboarding')
@@ -26,7 +29,7 @@ export default async function OnboardingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: membro } = await supabase.from('membros').select('barbearia_id').eq('user_id', user!.id).single()
 
-  const { data: processos } = await supabase.from('processos_onboarding').select('*').eq('barbearia_id', membro!.barbearia_id).order('nome')
+  const { data: processos } = await supabase.from('processos_onboarding').select('*').eq('barbearia_id', membro!.barbearia_id).order('ordem')
 
   return (
     <div>
@@ -47,9 +50,17 @@ export default async function OnboardingPage() {
         <CardContent className="p-6">
           <h2 className="font-heading text-base font-bold mb-5">Processos cadastrados</h2>
           <Table>
-            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Descrição</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Módulo</TableHead><TableHead>Nome</TableHead><TableHead>Descrição</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
             <TableBody>
-              {processos?.map((p) => <ProcessoOnboardingRow key={p.id} processo={p} />)}
+              {processos?.map((p, i) => (
+                <ProcessoOnboardingRow
+                  key={p.id}
+                  processo={p}
+                  numero={i + 1}
+                  anterior={i > 0 ? { id: processos[i - 1].id, ordem: processos[i - 1].ordem } : null}
+                  proximo={i < processos.length - 1 ? { id: processos[i + 1].id, ordem: processos[i + 1].ordem } : null}
+                />
+              ))}
             </TableBody>
           </Table>
           {(processos ?? []).length === 0 && <p className="text-sm text-muted-foreground mt-4">Nenhum processo cadastrado ainda.</p>}

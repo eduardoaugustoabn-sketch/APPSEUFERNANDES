@@ -123,10 +123,10 @@ export default async function BarbeirosPage() {
                 <TableHead>Telefone</TableHead>
                 <TableHead>
                   <div className="flex gap-2 flex-wrap">
-                    <span className="w-40">Plano de carreira</span>
-                    <span className="w-32">Meta prospecção/dia</span>
-                    <span className="w-36">Meta prospecção/semana</span>
-                    <span className="w-44">Meta faturamento/mês (R$)</span>
+                    <span className="w-40 shrink-0">Plano de carreira</span>
+                    <span className="w-32 shrink-0">Meta prospecção/dia</span>
+                    <span className="w-36 shrink-0">Meta prospecção/semana</span>
+                    <span className="w-44 shrink-0">Meta faturamento/mês (R$)</span>
                   </div>
                 </TableHead>
                 <TableHead>Ações</TableHead>
